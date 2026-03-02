@@ -24,6 +24,15 @@ export interface CompanySettings {
   logo_url: string | null;
 }
 
+export interface SocialLinks {
+  facebook: string;
+  instagram: string;
+  tiktok: string;
+  whatsapp: string;
+  telegram: string;
+  youtube: string;
+}
+
 const DEFAULT_SYSTEM: SystemSettings = {
   banner_title: "",
   banner_subtitle: "",
@@ -47,9 +56,19 @@ const DEFAULT_COMPANY: CompanySettings = {
   logo_url: null,
 };
 
+const DEFAULT_SOCIAL: SocialLinks = {
+  facebook: "",
+  instagram: "",
+  tiktok: "",
+  whatsapp: "",
+  telegram: "",
+  youtube: "",
+};
+
 export const useSiteSettings = () => {
   const [system, setSystem] = useState<SystemSettings>(DEFAULT_SYSTEM);
   const [company, setCompany] = useState<CompanySettings>(DEFAULT_COMPANY);
+  const [social, setSocial] = useState<SocialLinks>(DEFAULT_SOCIAL);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,6 +78,7 @@ export const useSiteSettings = () => {
         data.forEach((r: any) => {
           if (r.setting_key === "system") setSystem({ ...DEFAULT_SYSTEM, ...r.setting_value });
           if (r.setting_key === "company_info") setCompany({ ...DEFAULT_COMPANY, ...r.setting_value });
+          if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
         });
       }
       setLoading(false);
@@ -66,5 +86,5 @@ export const useSiteSettings = () => {
     fetch();
   }, []);
 
-  return { system, company, loading };
+  return { system, company, social, loading };
 };

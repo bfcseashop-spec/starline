@@ -19,7 +19,7 @@ const defaultFilters: Filters = {
 
 const Index = () => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const { system, company, loading } = useSiteSettings();
+  const { system, company, social, loading } = useSiteSettings();
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,7 +31,7 @@ const Index = () => {
           }
         `}</style>
       )}
-      <Navbar company={company} headerStyle={system.header_style} />
+      <Navbar company={company} headerStyle={system.header_style} social={social} />
       <main>
         <HeroSection
           bannerTitle={system.banner_title}
@@ -45,7 +45,7 @@ const Index = () => {
         <ComingSoon />
         <WhyStarline />
       </main>
-      <Footer />
+      <Footer company={company} social={social} />
     </div>
   );
 };
