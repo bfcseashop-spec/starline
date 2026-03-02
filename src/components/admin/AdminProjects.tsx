@@ -24,15 +24,17 @@ interface CustomerOption {
   full_name: string | null;
 }
 
-const statusOptions = ["planned", "in_progress", "completed", "on_hold"];
+const statusOptions = ["planned", "in_progress", "completed", "on_hold", "for_sale", "for_rent"];
 
-type FilterStatus = "all" | "planned" | "in_progress" | "completed" | "on_hold";
+type FilterStatus = "all" | "planned" | "in_progress" | "completed" | "on_hold" | "for_sale" | "for_rent";
 const filterLabels: Record<FilterStatus, string> = {
   all: "All Projects",
   planned: "Planned",
   in_progress: "In Progress",
   completed: "Completed",
   on_hold: "On Hold",
+  for_sale: "For Sale",
+  for_rent: "For Rent",
 };
 
 const AdminProjects = () => {
@@ -315,10 +317,12 @@ const AdminProjects = () => {
           const remaining = Math.max(0, p.total_amount - p.paid_amount);
           const overpaid = Math.max(0, p.paid_amount - p.total_amount);
           const isOverpaid = p.paid_amount > p.total_amount;
-          const statusColor = p.status === "completed" ? "bg-dash-green" : p.status === "in_progress" ? "bg-dash-orange" : p.status === "on_hold" ? "bg-destructive" : "bg-dash-blue";
+          const statusColor = p.status === "completed" ? "bg-dash-green" : p.status === "in_progress" ? "bg-dash-orange" : p.status === "on_hold" ? "bg-destructive" : p.status === "for_sale" ? "bg-dash-teal" : p.status === "for_rent" ? "bg-dash-purple" : "bg-dash-blue";
           const statusBadge = p.status === "completed" ? "bg-dash-green/15 text-dash-green"
             : p.status === "in_progress" ? "bg-gold/15 text-gold"
             : p.status === "on_hold" ? "bg-destructive/15 text-destructive"
+            : p.status === "for_sale" ? "bg-dash-teal/15 text-dash-teal"
+            : p.status === "for_rent" ? "bg-dash-purple/15 text-dash-purple"
             : "bg-dash-blue/15 text-dash-blue";
 
           if (viewMode === "grid") {
