@@ -23,6 +23,8 @@ import AdminSocialMedia from "@/components/admin/AdminSocialMedia";
 import AdminBankStatement from "@/components/admin/AdminBankStatement";
 import AdminReports from "@/components/admin/AdminReports";
 import AdminExpenses from "@/components/admin/AdminExpenses";
+import AdminHeroSection from "@/components/admin/AdminHeroSection";
+import AdminHeaderManagement from "@/components/admin/AdminHeaderManagement";
 
 const pageTitle: Record<AdminPage, string> = {
   dashboard: "Dashboard",
@@ -39,6 +41,8 @@ const pageTitle: Record<AdminPage, string> = {
   bank_statement: "Bank Statement",
   reports: "Reports Dashboard",
   expenses: "Expense Management",
+  hero_section: "Hero Section",
+  header_management: "Header Management",
 };
 
 const AdminDashboard = () => {
@@ -187,6 +191,8 @@ const AdminDashboard = () => {
             {activePage === "bank_statement" && <AdminBankStatement />}
             {activePage === "reports" && <AdminReports />}
             {activePage === "expenses" && <AdminExpenses />}
+            {activePage === "hero_section" && <AdminHeroSection />}
+            {activePage === "header_management" && <AdminHeaderManagement />}
           </motion.div>
         </main>
       </div>
