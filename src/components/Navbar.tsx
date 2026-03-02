@@ -160,6 +160,8 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
   const bgOpacity = hc?.bg_opacity ?? 80;
   const logoSize = hc?.logo_size || "default";
   const navFontColor = hc?.nav_font_color || "#ffffff";
+  const slogan = hc?.slogan || "";
+  const sloganColor = hc?.slogan_color || "#c9a55a";
 
   const logoSizeClass: Record<string, string> = {
     small: "w-7 h-7",
@@ -233,13 +235,18 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
               <img src={logoUrl} alt="Logo" className={`${logoSizeClass[logoSize]} rounded-xl object-contain`} />
             )}
             {!isMinimal && (
-              <span className="text-white">
-                {brandName.includes("Ltd") ? (
-                  <>{brandName.split("Ltd")[0]}<span className="text-gold">Ltd{brandName.split("Ltd")[1] || "."}</span></>
-                ) : (
-                  <>{brandName}<span className="text-gold">.</span></>
+              <div className="flex flex-col">
+                <span className="text-white">
+                  {brandName.includes("Ltd") ? (
+                    <>{brandName.split("Ltd")[0]}<span className="text-gold">Ltd{brandName.split("Ltd")[1] || "."}</span></>
+                  ) : (
+                    <>{brandName}<span className="text-gold">.</span></>
+                  )}
+                </span>
+                {slogan && (
+                  <span className="text-[10px] uppercase tracking-widest leading-tight" style={{ color: sloganColor }}>{slogan}</span>
                 )}
-              </span>
+              </div>
             )}
           </a>
 
