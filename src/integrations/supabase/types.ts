@@ -14,6 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_projects: {
+        Row: {
+          building_image_url: string | null
+          created_at: string
+          expected_completion: string | null
+          id: string
+          location: string | null
+          monthly_installment: number
+          paid_amount: number
+          project_name: string
+          start_date: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          building_image_url?: string | null
+          created_at?: string
+          expected_completion?: string | null
+          id?: string
+          location?: string | null
+          monthly_installment?: number
+          paid_amount?: number
+          project_name: string
+          start_date?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          building_image_url?: string | null
+          created_at?: string
+          expected_completion?: string | null
+          id?: string
+          location?: string | null
+          monthly_installment?: number
+          paid_amount?: number
+          project_name?: string
+          start_date?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          project_id: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          project_id?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          project_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "customer_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          created_at: string
+          details: Json
+          id: string
+          is_active: boolean
+          method_type: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          id?: string
+          is_active?: boolean
+          method_type: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          id?: string
+          is_active?: boolean
+          method_type?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string
+          project_id: string | null
+          reference_no: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          project_id?: string | null
+          reference_no?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string
+          project_id?: string | null
+          reference_no?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "customer_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -67,6 +236,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      work_updates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          progress_percent: number | null
+          project_id: string
+          title: string
+          update_date: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          progress_percent?: number | null
+          project_id: string
+          title: string
+          update_date?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          progress_percent?: number | null
+          project_id?: string
+          title?: string
+          update_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "customer_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
