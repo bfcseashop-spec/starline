@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import {
   Users, Phone, MapPin, Loader2, Search, LayoutGrid, LayoutList,
-  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat, Printer, Download,
+  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat, Printer, Download, UserPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -56,6 +56,10 @@ const AdminCustomers = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "" });
   const [saving, setSaving] = useState(false);
+
+  // Add customer modal
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "" });
 
   // Add amount modal
   const [amountCustomer, setAmountCustomer] = useState<Customer | null>(null);
@@ -169,6 +173,21 @@ const AdminCustomers = () => {
     fetchCustomers();
   };
 
+  const handleAddCustomer = async () => {
+    if (!addForm.email || !addForm.password) { toast.error("Email and password are required"); return; }
+    if (addForm.password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    setSaving(true);
+    const { data, error } = await supabase.functions.invoke("create-customer", {
+      body: { email: addForm.email, password: addForm.password, full_name: addForm.full_name, phone: addForm.phone, address: addForm.address },
+    });
+    setSaving(false);
+    if (error || data?.error) { toast.error(data?.error || error?.message || "Failed to create customer"); return; }
+    toast.success("Customer created!");
+    setShowAddCustomer(false);
+    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "" });
+    fetchCustomers();
+  };
+
   const getAvatarColor = (idx: number) => avatarColors[idx % avatarColors.length];
   const inputClass = "w-full bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow";
 
@@ -188,6 +207,10 @@ const AdminCustomers = () => {
           </button>
           <button onClick={() => setView("grid")} className={`p-2 rounded-lg transition-colors ${view === "grid" ? "bg-dash-blue text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
             <LayoutGrid size={18} />
+          </button>
+          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "" }); setShowAddCustomer(true); }}
+            className="bg-dash-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
+            <UserPlus size={16} /> Add Customer
           </button>
         </div>
       </div>
@@ -392,6 +415,46 @@ const AdminCustomers = () => {
           <p>{search || filter !== "all" ? "No customers match your search/filter." : "No customers found."}</p>
         </div>
       )}
+
+      {/* ADD CUSTOMER MODAL */}
+      <AnimatePresence>
+        {showAddCustomer && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowAddCustomer(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-5">
+                <h3 className="font-heading text-lg font-bold text-foreground">Add Customer</h3>
+                <button onClick={() => setShowAddCustomer(false)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Email *</label>
+                  <input type="email" value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} className={inputClass} placeholder="customer@example.com" maxLength={255} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Password *</label>
+                  <input type="password" value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))} className={inputClass} placeholder="Min 6 characters" maxLength={72} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name</label>
+                  <input value={addForm.full_name} onChange={(e) => setAddForm((f) => ({ ...f, full_name: e.target.value }))} className={inputClass} placeholder="Customer name" maxLength={100} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Phone</label>
+                  <input value={addForm.phone} onChange={(e) => setAddForm((f) => ({ ...f, phone: e.target.value }))} className={inputClass} placeholder="+880 1234 567890" maxLength={20} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Address</label>
+                  <input value={addForm.address} onChange={(e) => setAddForm((f) => ({ ...f, address: e.target.value }))} className={inputClass} placeholder="Customer address" maxLength={200} />
+                </div>
+                <button onClick={handleAddCustomer} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
+                  {saving ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />} Create Customer
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* VIEW MODAL */}
       <ViewCustomerModal customer={viewCustomer} onClose={() => setViewCustomer(null)} formatCurrency={formatCurrency} />
