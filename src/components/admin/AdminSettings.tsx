@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Building2, Upload, Save, Palette, FileText, Landmark, DollarSign, Settings2,
-  Globe, Image as ImageIcon, Type, LayoutDashboard, Sparkles, X
+  Globe, Image as ImageIcon, Type, LayoutDashboard, Sparkles, X, Hash, Printer, Info
 } from "lucide-react";
 
 type SettingsMap = Record<string, Record<string, any>>;
@@ -35,6 +35,19 @@ const BANKS = [
   { id: "binance", name: "Binance Pay", icon: "🪙" },
   { id: "paypal", name: "PayPal", icon: "💰" },
 ];
+
+/* ---- Reusable Section Card ---- */
+const SectionCard = ({ icon: Icon, title, children, iconColor = "text-primary" }: { icon: any; title: string; children: React.ReactNode; iconColor?: string }) => (
+  <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
+    <div className="flex items-center gap-3">
+      <div className={`w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center ${iconColor}`}>
+        <Icon size={16} />
+      </div>
+      <h3 className="font-heading text-base font-bold text-foreground">{title}</h3>
+    </div>
+    {children}
+  </div>
+);
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState<SettingsMap>({});
@@ -90,58 +103,108 @@ const AdminSettings = () => {
     }
   };
 
-  /* ---- Company Info ---- */
+  const removeLogo = () => {
+    setLogoUrl(null);
+    const current = settings.company_info || {};
+    saveSetting("company_info", { ...current, logo_url: null });
+  };
+
+  /* ---- Company Info Tab ---- */
   const CompanyInfoTab = () => {
     const info = settings.company_info || {};
     const [form, setForm] = useState({
       name: info.name || "", email: info.email || "", phone: info.phone || "",
       address: info.address || "", website: info.website || "", tax_id: info.tax_id || "",
+      tagline: info.tagline || "", version: info.version || "1.0.0",
     });
+
     return (
       <div className="space-y-6 max-w-2xl">
-        <div className="flex items-start gap-6">
-          <div className="relative group">
-            <div className="w-28 h-28 rounded-2xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden">
-              {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-              ) : (
-                <Building2 className="text-muted-foreground" size={32} />
-              )}
+        {/* Application Info */}
+        <SectionCard icon={Info} title="Application Info" iconColor="text-blue-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground mb-2 block">Logo / Image</Label>
+            <div className="flex items-start gap-4">
+              <div className="w-20 h-20 rounded-xl border-2 border-dashed border-border bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <Building2 className="text-muted-foreground" size={28} />
+                )}
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => logoRef.current?.click()} className="gap-1.5 text-xs">
+                    <Upload size={12} /> Change Logo
+                  </Button>
+                  {logoUrl && (
+                    <Button variant="outline" size="sm" onClick={removeLogo} className="gap-1.5 text-xs text-destructive hover:text-destructive">
+                      <X size={12} /> Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG, JPG or SVG. Max 2MB. Used on invoices and receipts.</p>
+                {uploading && <p className="text-xs text-primary animate-pulse">Uploading...</p>}
+              </div>
+              <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
             </div>
-            <button
-              onClick={() => logoRef.current?.click()}
-              className="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-            >
-              <Upload size={20} className="text-white" />
-            </button>
-            <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
           </div>
-          <div className="flex-1 space-y-1">
-            <h3 className="font-heading text-lg font-bold text-foreground">Company Logo</h3>
-            <p className="text-xs text-muted-foreground">Upload your company logo (PNG, JPG, SVG). Recommended 512×512.</p>
-            {uploading && <p className="text-xs text-gold animate-pulse">Uploading...</p>}
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {([["name", "Company Name"], ["email", "Email"], ["phone", "Phone"], ["website", "Website"], ["tax_id", "Tax / VAT ID"], ["address", "Address"]] as const).map(([key, label]) => (
-            <div key={key} className={key === "address" ? "sm:col-span-2" : ""}>
-              <Label className="text-xs text-muted-foreground">{label}</Label>
-              {key === "address" ? (
-                <Textarea value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1" />
-              ) : (
-                <Input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1" />
-              )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Application Name</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5 bg-muted/50" />
             </div>
-          ))}
-        </div>
-        <Button onClick={() => saveSetting("company_info", { ...form, logo_url: logoUrl })} disabled={saving} className="bg-gold-gradient text-accent-foreground hover:opacity-90">
-          <Save size={14} className="mr-2" /> Save Company Info
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Version</Label>
+              <Input value={form.version} onChange={(e) => setForm({ ...form, version: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Tagline</Label>
+            <Input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="e.g. Property Management System" />
+          </div>
+        </SectionCard>
+
+        {/* Company Information */}
+        <SectionCard icon={Building2} title="Company Information" iconColor="text-emerald-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Company Name</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5 bg-muted/50" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Address</Label>
+            <Textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="mt-1.5 bg-muted/50" rows={2} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Phone</Label>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Email</Label>
+              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Website</Label>
+              <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Tax / VAT ID</Label>
+              <Input value={form.tax_id} onChange={(e) => setForm({ ...form, tax_id: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+          </div>
+        </SectionCard>
+
+        <Button onClick={() => saveSetting("company_info", { ...form, logo_url: logoUrl })} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
         </Button>
       </div>
     );
   };
 
-  /* ---- Invoice Settings ---- */
+  /* ---- Invoice Settings Tab ---- */
   const InvoiceTab = () => {
     const inv = settings.invoice || {};
     const [form, setForm] = useState({
@@ -152,40 +215,52 @@ const AdminSettings = () => {
     });
     return (
       <div className="space-y-6 max-w-2xl">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* ID Prefixes */}
+        <SectionCard icon={Hash} title="ID Prefixes" iconColor="text-violet-600">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Invoice Prefix</Label>
+              <Input value={form.prefix} onChange={(e) => setForm({ ...form, prefix: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Next Invoice #</Label>
+              <Input value={form.next_number} onChange={(e) => setForm({ ...form, next_number: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Payment Due (days)</Label>
+              <Input type="number" value={form.due_days} onChange={(e) => setForm({ ...form, due_days: e.target.value })} className="mt-1.5 bg-muted/50" />
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Print Settings */}
+        <SectionCard icon={Printer} title="Print Settings" iconColor="text-orange-600">
+          <div className="flex flex-wrap gap-6">
+            <div className="flex items-center gap-2">
+              <Switch checked={form.show_logo} onCheckedChange={(v) => setForm({ ...form, show_logo: v })} />
+              <Label className="text-sm">Show Logo on Invoice</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.show_bank_details} onCheckedChange={(v) => setForm({ ...form, show_bank_details: v })} />
+              <Label className="text-sm">Show Bank Details</Label>
+            </div>
+          </div>
+        </SectionCard>
+
+        {/* Terms & Notes */}
+        <SectionCard icon={FileText} title="Terms & Notes" iconColor="text-sky-600">
           <div>
-            <Label className="text-xs text-muted-foreground">Invoice Prefix</Label>
-            <Input value={form.prefix} onChange={(e) => setForm({ ...form, prefix: e.target.value })} className="mt-1" />
+            <Label className="text-xs font-semibold text-foreground">Footer Note</Label>
+            <Textarea value={form.footer_note} onChange={(e) => setForm({ ...form, footer_note: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="Thank you for your business!" />
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Next Invoice #</Label>
-            <Input value={form.next_number} onChange={(e) => setForm({ ...form, next_number: e.target.value })} className="mt-1" />
+            <Label className="text-xs font-semibold text-foreground">Terms & Conditions</Label>
+            <Textarea value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} className="mt-1.5 bg-muted/50" rows={4} />
           </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Payment Due (days)</Label>
-            <Input type="number" value={form.due_days} onChange={(e) => setForm({ ...form, due_days: e.target.value })} className="mt-1" />
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Switch checked={form.show_logo} onCheckedChange={(v) => setForm({ ...form, show_logo: v })} />
-            <Label className="text-sm">Show Logo on Invoice</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={form.show_bank_details} onCheckedChange={(v) => setForm({ ...form, show_bank_details: v })} />
-            <Label className="text-sm">Show Bank Details</Label>
-          </div>
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">Footer Note</Label>
-          <Textarea value={form.footer_note} onChange={(e) => setForm({ ...form, footer_note: e.target.value })} className="mt-1" placeholder="Thank you for your business!" />
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground">Terms & Conditions</Label>
-          <Textarea value={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.value })} className="mt-1" rows={4} />
-        </div>
-        <Button onClick={() => saveSetting("invoice", form)} disabled={saving} className="bg-gold-gradient text-accent-foreground hover:opacity-90">
-          <Save size={14} className="mr-2" /> Save Invoice Settings
+        </SectionCard>
+
+        <Button onClick={() => saveSetting("invoice", form)} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
         </Button>
       </div>
     );
@@ -203,22 +278,24 @@ const AdminSettings = () => {
 
     return (
       <div className="space-y-6 max-w-2xl">
-        <div>
-          <Label className="text-xs text-muted-foreground">Default Currency</Label>
-          <Select value={defaultCur} onValueChange={setDefaultCur}>
-            <SelectTrigger className="mt-1 w-60"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CURRENCIES.map((c) => (
-                <SelectItem key={c.code} value={c.code}>{c.symbol} {c.name} ({c.code})</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground mb-3 block">Accepted Currencies</Label>
+        <SectionCard icon={DollarSign} title="Default Currency" iconColor="text-emerald-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Default Currency</Label>
+            <Select value={defaultCur} onValueChange={setDefaultCur}>
+              <SelectTrigger className="mt-1.5 w-full bg-muted/50"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CURRENCIES.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>{c.symbol} {c.name} ({c.code})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </SectionCard>
+
+        <SectionCard icon={Globe} title="Accepted Currencies" iconColor="text-blue-600">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {CURRENCIES.map((c) => (
-              <div key={c.code} className={`flex items-center justify-between rounded-xl border p-4 transition-colors cursor-pointer ${enabled.includes(c.code) ? "border-gold bg-gold/5" : "border-border"}`} onClick={() => toggle(c.code)}>
+              <div key={c.code} className={`flex items-center justify-between rounded-xl border p-4 transition-colors cursor-pointer ${enabled.includes(c.code) ? "border-primary bg-primary/5" : "border-border"}`} onClick={() => toggle(c.code)}>
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{c.symbol}</span>
                   <div>
@@ -230,9 +307,10 @@ const AdminSettings = () => {
               </div>
             ))}
           </div>
-        </div>
-        <Button onClick={() => saveSetting("currency", { default: defaultCur, enabled })} disabled={saving} className="bg-gold-gradient text-accent-foreground hover:opacity-90">
-          <Save size={14} className="mr-2" /> Save Currency Settings
+        </SectionCard>
+
+        <Button onClick={() => saveSetting("currency", { default: defaultCur, enabled })} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
         </Button>
       </div>
     );
@@ -251,42 +329,47 @@ const AdminSettings = () => {
 
     return (
       <div className="space-y-4 max-w-3xl">
-        {BANKS.map((b) => {
-          const acc = accounts[b.id] || { enabled: false, account_name: "", account_number: "", branch: "", extra: "" };
-          return (
-            <div key={b.id} className={`rounded-xl border p-4 transition-colors ${acc.enabled ? "border-gold bg-gold/5" : "border-border"}`}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{b.icon}</span>
-                  <h4 className="font-medium text-sm text-foreground">{b.name}</h4>
+        <SectionCard icon={Landmark} title="Bank & Wallet Accounts" iconColor="text-amber-600">
+          <div className="space-y-3">
+            {BANKS.map((b) => {
+              const acc = accounts[b.id] || { enabled: false, account_name: "", account_number: "", branch: "", extra: "" };
+              return (
+                <div key={b.id} className={`rounded-xl border p-4 transition-colors ${acc.enabled ? "border-primary bg-primary/5" : "border-border"}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">{b.icon}</span>
+                      <h4 className="font-medium text-sm text-foreground">{b.name}</h4>
+                    </div>
+                    <Switch checked={acc.enabled} onCheckedChange={(v) => update(b.id, "enabled", v)} />
+                  </div>
+                  {acc.enabled && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Account Name</Label>
+                        <Input value={acc.account_name} onChange={(e) => update(b.id, "account_name", e.target.value)} className="mt-1.5 bg-muted/50" />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Account / Wallet Number</Label>
+                        <Input value={acc.account_number} onChange={(e) => update(b.id, "account_number", e.target.value)} className="mt-1.5 bg-muted/50" />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Branch / Routing</Label>
+                        <Input value={acc.branch} onChange={(e) => update(b.id, "branch", e.target.value)} className="mt-1.5 bg-muted/50" />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-semibold text-foreground">Extra Info (Swift, IBAN, etc.)</Label>
+                        <Input value={acc.extra} onChange={(e) => update(b.id, "extra", e.target.value)} className="mt-1.5 bg-muted/50" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <Switch checked={acc.enabled} onCheckedChange={(v) => update(b.id, "enabled", v)} />
-              </div>
-              {acc.enabled && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Account Name</Label>
-                    <Input value={acc.account_name} onChange={(e) => update(b.id, "account_name", e.target.value)} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Account / Wallet Number</Label>
-                    <Input value={acc.account_number} onChange={(e) => update(b.id, "account_number", e.target.value)} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Branch / Routing</Label>
-                    <Input value={acc.branch} onChange={(e) => update(b.id, "branch", e.target.value)} className="mt-1" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Extra Info (Swift, IBAN, etc.)</Label>
-                    <Input value={acc.extra} onChange={(e) => update(b.id, "extra", e.target.value)} className="mt-1" />
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-        <Button onClick={() => saveSetting("bank", { accounts })} disabled={saving} className="bg-gold-gradient text-accent-foreground hover:opacity-90">
-          <Save size={14} className="mr-2" /> Save Bank Settings
+              );
+            })}
+          </div>
+        </SectionCard>
+
+        <Button onClick={() => saveSetting("bank", { accounts })} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
         </Button>
       </div>
     );
@@ -315,93 +398,93 @@ const AdminSettings = () => {
 
     return (
       <div className="space-y-6 max-w-2xl">
-        <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2"><LayoutDashboard size={16} /> Landing Page</h3>
-
-        {/* Banner */}
-        <div>
-          <Label className="text-xs text-muted-foreground">Banner Image</Label>
-          <div className="mt-1 relative rounded-xl border-2 border-dashed border-border bg-muted h-36 flex items-center justify-center overflow-hidden cursor-pointer group" onClick={() => bannerRef.current?.click()}>
-            {form.banner_image_url ? (
-              <>
-                <img src={form.banner_image_url} className="w-full h-full object-cover" alt="Banner" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                  <Upload size={24} className="text-white" />
+        {/* Landing Page */}
+        <SectionCard icon={LayoutDashboard} title="Landing Page" iconColor="text-indigo-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Banner Image</Label>
+            <div className="mt-1.5 relative rounded-xl border-2 border-dashed border-border bg-muted/50 h-36 flex items-center justify-center overflow-hidden cursor-pointer group" onClick={() => bannerRef.current?.click()}>
+              {form.banner_image_url ? (
+                <>
+                  <img src={form.banner_image_url} className="w-full h-full object-cover" alt="Banner" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Upload size={24} className="text-white" />
+                  </div>
+                </>
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  <ImageIcon size={28} className="mx-auto mb-1" />
+                  <p className="text-xs">Click to upload banner</p>
                 </div>
-              </>
-            ) : (
-              <div className="text-center text-muted-foreground">
-                <ImageIcon size={28} className="mx-auto mb-1" />
-                <p className="text-xs">Click to upload banner</p>
+              )}
+            </div>
+            <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+            {bannerUploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading...</p>}
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Banner Title</Label>
+            <Input value={form.banner_title} onChange={(e) => setForm({ ...form, banner_title: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="Welcome to Starline..." />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Banner Subtitle</Label>
+            <Input value={form.banner_subtitle} onChange={(e) => setForm({ ...form, banner_subtitle: e.target.value })} className="mt-1.5 bg-muted/50" />
+          </div>
+        </SectionCard>
+
+        {/* Colors & Theme */}
+        <SectionCard icon={Palette} title="Colors & Theme" iconColor="text-pink-600">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Primary Color</Label>
+              <div className="flex items-center gap-2 mt-1.5">
+                <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                <Input value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="flex-1 bg-muted/50" />
               </div>
-            )}
-          </div>
-          <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
-          {bannerUploading && <p className="text-xs text-gold animate-pulse mt-1">Uploading...</p>}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="sm:col-span-2">
-            <Label className="text-xs text-muted-foreground">Banner Title</Label>
-            <Input value={form.banner_title} onChange={(e) => setForm({ ...form, banner_title: e.target.value })} className="mt-1" placeholder="Welcome to Starline..." />
-          </div>
-          <div className="sm:col-span-2">
-            <Label className="text-xs text-muted-foreground">Banner Subtitle</Label>
-            <Input value={form.banner_subtitle} onChange={(e) => setForm({ ...form, banner_subtitle: e.target.value })} className="mt-1" />
-          </div>
-        </div>
-
-        <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2 pt-2"><Palette size={16} /> Colors & Theme</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <Label className="text-xs text-muted-foreground">Primary Color</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
-              <Input value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} className="flex-1" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Accent Color</Label>
+              <div className="flex items-center gap-2 mt-1.5">
+                <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+                <Input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="flex-1 bg-muted/50" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Theme</Label>
+              <Select value={form.theme} onValueChange={(v) => setForm({ ...form, theme: v })}>
+                <SelectTrigger className="mt-1.5 bg-muted/50"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="light">Light</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Accent Color</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <input type="color" value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
-              <Input value={form.accent_color} onChange={(e) => setForm({ ...form, accent_color: e.target.value })} className="flex-1" />
-            </div>
+        </SectionCard>
+
+        {/* Features & Sections */}
+        <SectionCard icon={Sparkles} title="Features & Sections" iconColor="text-amber-600">
+          <div className="flex flex-wrap gap-6">
+            {([["show_stats", "Stats Section"], ["show_featured", "Featured Properties"], ["show_contact", "Contact Form"]] as const).map(([key, label]) => (
+              <div key={key} className="flex items-center gap-2">
+                <Switch checked={form[key]} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
+                <Label className="text-sm">{label}</Label>
+              </div>
+            ))}
           </div>
           <div>
-            <Label className="text-xs text-muted-foreground">Theme</Label>
-            <Select value={form.theme} onValueChange={(v) => setForm({ ...form, theme: v })}>
-              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <Label className="text-xs font-semibold text-foreground">Header Style</Label>
+            <Select value={form.header_style} onValueChange={(v) => setForm({ ...form, header_style: v })}>
+              <SelectTrigger className="mt-1.5 w-60 bg-muted/50"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="default">Default</SelectItem>
+                <SelectItem value="centered">Centered</SelectItem>
+                <SelectItem value="minimal">Minimal</SelectItem>
               </SelectContent>
             </Select>
           </div>
-        </div>
+        </SectionCard>
 
-        <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2 pt-2"><Sparkles size={16} /> Features & Sections</h3>
-        <div className="flex flex-wrap gap-6">
-          {([["show_stats", "Stats Section"], ["show_featured", "Featured Properties"], ["show_contact", "Contact Form"]] as const).map(([key, label]) => (
-            <div key={key} className="flex items-center gap-2">
-              <Switch checked={form[key]} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
-              <Label className="text-sm">{label}</Label>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <Label className="text-xs text-muted-foreground">Header Style</Label>
-          <Select value={form.header_style} onValueChange={(v) => setForm({ ...form, header_style: v })}>
-            <SelectTrigger className="mt-1 w-60"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default</SelectItem>
-              <SelectItem value="centered">Centered</SelectItem>
-              <SelectItem value="minimal">Minimal</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button onClick={() => saveSetting("system", form)} disabled={saving} className="bg-gold-gradient text-accent-foreground hover:opacity-90">
-          <Save size={14} className="mr-2" /> Save System Settings
+        <Button onClick={() => saveSetting("system", form)} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
         </Button>
       </div>
     );
@@ -409,21 +492,21 @@ const AdminSettings = () => {
 
   return (
     <Tabs defaultValue="company" className="w-full">
-      <TabsList className="bg-muted/50 border border-border rounded-xl p-1 h-auto flex-wrap gap-1">
-        <TabsTrigger value="company" className="rounded-lg data-[state=active]:bg-gold-gradient data-[state=active]:text-accent-foreground gap-1.5 text-xs">
-          <Building2 size={14} /> Company Info
+      <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 w-full justify-start">
+        <TabsTrigger value="company" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Building2 size={15} /> Company Details
         </TabsTrigger>
-        <TabsTrigger value="invoice" className="rounded-lg data-[state=active]:bg-gold-gradient data-[state=active]:text-accent-foreground gap-1.5 text-xs">
-          <FileText size={14} /> Invoice
+        <TabsTrigger value="invoice" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <FileText size={15} /> Invoice Settings
         </TabsTrigger>
-        <TabsTrigger value="currency" className="rounded-lg data-[state=active]:bg-gold-gradient data-[state=active]:text-accent-foreground gap-1.5 text-xs">
-          <DollarSign size={14} /> Currency
+        <TabsTrigger value="currency" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <DollarSign size={15} /> Currency
         </TabsTrigger>
-        <TabsTrigger value="bank" className="rounded-lg data-[state=active]:bg-gold-gradient data-[state=active]:text-accent-foreground gap-1.5 text-xs">
-          <Landmark size={14} /> Bank
+        <TabsTrigger value="bank" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Landmark size={15} /> Bank
         </TabsTrigger>
-        <TabsTrigger value="system" className="rounded-lg data-[state=active]:bg-gold-gradient data-[state=active]:text-accent-foreground gap-1.5 text-xs">
-          <Settings2 size={14} /> System
+        <TabsTrigger value="system" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Settings2 size={15} /> System
         </TabsTrigger>
       </TabsList>
 
