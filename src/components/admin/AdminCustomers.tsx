@@ -59,7 +59,7 @@ const AdminCustomers = () => {
 
   // Add customer modal
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "" });
+  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" });
 
   // Add amount modal
   const [amountCustomer, setAmountCustomer] = useState<Customer | null>(null);
@@ -178,13 +178,20 @@ const AdminCustomers = () => {
     if (addForm.password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setSaving(true);
     const { data, error } = await supabase.functions.invoke("create-customer", {
-      body: { email: addForm.email, password: addForm.password, full_name: addForm.full_name, phone: addForm.phone, address: addForm.address },
+      body: {
+        email: addForm.email, password: addForm.password, full_name: addForm.full_name,
+        phone: addForm.phone, address: addForm.address,
+        project_name: addForm.project_name || null,
+        total_amount: addForm.total_amount ? Number(addForm.total_amount) : null,
+        down_payment: addForm.down_payment ? Number(addForm.down_payment) : null,
+        installment_amount: addForm.installment_amount ? Number(addForm.installment_amount) : null,
+      },
     });
     setSaving(false);
     if (error || data?.error) { toast.error(data?.error || error?.message || "Failed to create customer"); return; }
     toast.success("Customer created!");
     setShowAddCustomer(false);
-    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "" });
+    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" });
     fetchCustomers();
   };
 
@@ -208,7 +215,7 @@ const AdminCustomers = () => {
           <button onClick={() => setView("grid")} className={`p-2 rounded-lg transition-colors ${view === "grid" ? "bg-dash-blue text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
             <LayoutGrid size={18} />
           </button>
-          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "" }); setShowAddCustomer(true); }}
+          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" }); setShowAddCustomer(true); }}
             className="bg-dash-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
             <UserPlus size={16} /> Add Customer
           </button>
@@ -426,7 +433,7 @@ const AdminCustomers = () => {
                 <h3 className="font-heading text-lg font-bold text-foreground">Add Customer</h3>
                 <button onClick={() => setShowAddCustomer(false)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Email *</label>
                   <input type="email" value={addForm.email} onChange={(e) => setAddForm((f) => ({ ...f, email: e.target.value }))} className={inputClass} placeholder="customer@example.com" maxLength={255} />
@@ -436,7 +443,7 @@ const AdminCustomers = () => {
                   <input type="password" value={addForm.password} onChange={(e) => setAddForm((f) => ({ ...f, password: e.target.value }))} className={inputClass} placeholder="Min 6 characters" maxLength={72} />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name</label>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Customer Name</label>
                   <input value={addForm.full_name} onChange={(e) => setAddForm((f) => ({ ...f, full_name: e.target.value }))} className={inputClass} placeholder="Customer name" maxLength={100} />
                 </div>
                 <div>
@@ -447,6 +454,38 @@ const AdminCustomers = () => {
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Address</label>
                   <input value={addForm.address} onChange={(e) => setAddForm((f) => ({ ...f, address: e.target.value }))} className={inputClass} placeholder="Customer address" maxLength={200} />
                 </div>
+
+                {/* Project Details Section */}
+                <div className="border-t border-border pt-4 mt-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Project Details (Optional)</p>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name</label>
+                      <input value={addForm.project_name} onChange={(e) => setAddForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} placeholder="e.g. Skyline Tower Apt #5B" maxLength={150} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Total Amount</label>
+                        <input type="number" value={addForm.total_amount} onChange={(e) => setAddForm((f) => ({ ...f, total_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Down Payment</label>
+                        <input type="number" value={addForm.down_payment} onChange={(e) => setAddForm((f) => ({ ...f, down_payment: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Installment Amount</label>
+                        <input type="number" value={addForm.installment_amount} onChange={(e) => setAddForm((f) => ({ ...f, installment_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
+                        <input readOnly value={addForm.total_amount && addForm.down_payment ? Math.max(0, Number(addForm.total_amount) - Number(addForm.down_payment)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <button onClick={handleAddCustomer} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <UserPlus size={16} />} Create Customer
                 </button>
