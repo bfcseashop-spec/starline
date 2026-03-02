@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign } from "lucide-react";
-import { motion } from "framer-motion";
+import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Project {
   id: string;
@@ -45,6 +45,7 @@ const AdminProjects = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [viewProject, setViewProject] = useState<Project | null>(null);
   const [form, setForm] = useState({
     user_id: "",
     project_name: "",
@@ -321,7 +322,8 @@ const AdminProjects = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button onClick={() => setViewProject(p)} title="View" className="p-2 rounded-lg bg-dash-blue/10 text-dash-blue hover:bg-dash-blue/20 transition-colors"><Eye size={15} /></button>
                 <button onClick={() => openEdit(p)} className="text-xs bg-muted hover:bg-muted/80 text-foreground px-4 py-2 rounded-lg font-medium transition-colors">Edit</button>
                 <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"><Trash2 size={15} /></button>
               </div>
@@ -379,6 +381,90 @@ const AdminProjects = () => {
           </div>
         )}
       </div>
+
+      {/* VIEW MODAL */}
+      <AnimatePresence>
+        {viewProject && (() => {
+          const vp = viewProject;
+          const paidPct = vp.total_amount > 0 ? Math.min(100, Math.round((vp.paid_amount / vp.total_amount) * 100)) : 0;
+          const remaining = Math.max(0, vp.total_amount - vp.paid_amount);
+          const overpaid = Math.max(0, vp.paid_amount - vp.total_amount);
+          const isOverpaid = vp.paid_amount > vp.total_amount;
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewProject(null)}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="font-heading text-lg font-bold text-foreground">Project Details</h3>
+                  <button onClick={() => setViewProject(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+                </div>
+
+                <div className="text-center mb-5">
+                  <div className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-white mb-3 ${
+                    vp.status === "completed" ? "bg-dash-green" : vp.status === "in_progress" ? "bg-dash-orange" : vp.status === "on_hold" ? "bg-destructive" : "bg-dash-blue"
+                  }`}>
+                    <HardHat size={28} />
+                  </div>
+                  <p className="font-heading text-xl font-bold text-foreground">{vp.project_name}</p>
+                  <span className={`text-xs uppercase font-bold px-3 py-1 rounded-full mt-2 inline-block ${
+                    vp.status === "completed" ? "bg-dash-green/15 text-dash-green"
+                    : vp.status === "in_progress" ? "bg-gold/15 text-gold"
+                    : vp.status === "on_hold" ? "bg-destructive/15 text-destructive"
+                    : "bg-dash-blue/15 text-dash-blue"
+                  }`}>{vp.status.replace("_", " ")}</span>
+                </div>
+
+                {/* Financial cards */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="bg-muted/50 rounded-xl p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Total Budget</p>
+                    <p className="font-bold text-foreground text-sm">{formatCurrency(vp.total_amount)}</p>
+                  </div>
+                  <div className="bg-dash-green/10 rounded-xl p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-dash-green font-semibold mb-1">Investment</p>
+                    <p className="font-bold text-dash-green text-sm">{formatCurrency(vp.paid_amount)}</p>
+                  </div>
+                  <div className={`rounded-xl p-3 text-center ${remaining > 0 ? "bg-destructive/10" : "bg-dash-green/10"}`}>
+                    <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>Remaining</p>
+                    <p className={`font-bold text-sm ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(remaining)}</p>
+                  </div>
+                  <div className={`rounded-xl p-3 text-center ${isOverpaid ? "bg-dash-purple/10" : "bg-muted/50"}`}>
+                    <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>Overpaid</p>
+                    <p className={`font-bold text-sm ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>{formatCurrency(overpaid)}</p>
+                  </div>
+                </div>
+
+                {/* Progress */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${isOverpaid ? "bg-gradient-to-r from-dash-purple to-dash-purple" : "bg-gradient-to-r from-dash-green to-dash-teal"}`} style={{ width: `${paidPct}%` }} />
+                  </div>
+                  <span className="text-xs font-bold text-muted-foreground">{paidPct}%</span>
+                </div>
+
+                {/* Details list */}
+                <div className="space-y-3">
+                  {[
+                    { label: "Customer", value: vp.customer_name || "Unknown" },
+                    { label: "Location", value: vp.location || "—" },
+                    { label: "Monthly EMI", value: vp.monthly_installment > 0 ? formatCurrency(vp.monthly_installment) : "—" },
+                    { label: "Start Date", value: vp.start_date ? new Date(vp.start_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—" },
+                    { label: "Expected Completion", value: vp.expected_completion ? new Date(vp.expected_completion).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                      <span className="text-sm text-muted-foreground">{item.label}</span>
+                      <span className="text-sm font-medium text-foreground">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
+      </AnimatePresence>
     </div>
   );
 };
