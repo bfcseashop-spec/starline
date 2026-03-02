@@ -3,6 +3,7 @@ import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import type { CompanySettings } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { label: "Home", href: "#" },
@@ -11,17 +12,41 @@ const navLinks = [
   { label: "Contact", href: "#contact" },
 ];
 
-const Navbar = () => {
+interface Props {
+  company?: CompanySettings;
+  headerStyle?: string;
+}
+
+const Navbar = ({ company, headerStyle }: Props) => {
   const [open, setOpen] = useState(false);
   const { user, role } = useAuth();
 
   const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
+  const brandName = company?.name || "Starline Builder's";
+  const logoUrl = company?.logo_url;
+  const isCentered = headerStyle === "centered";
+  const isMinimal = headerStyle === "minimal";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/90 backdrop-blur-md border-b border-navy-light">
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
-        <a href="#" className="font-heading text-2xl font-bold text-primary-foreground tracking-wide">
-          Starline Builder's<span className="text-gold"> Ltd.</span>
+      <div className={`max-w-7xl mx-auto px-6 flex items-center ${isCentered ? "justify-center" : "justify-between"} h-20`}>
+        <a href="#" className={`font-heading text-2xl font-bold text-primary-foreground tracking-wide flex items-center gap-3 ${isCentered ? "mr-auto" : ""}`}>
+          {logoUrl && (
+            <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-contain" />
+          )}
+          {!isMinimal && (
+            <>
+              {brandName.includes("Ltd") ? (
+                <>
+                  {brandName.split("Ltd")[0]}<span className="text-gold">Ltd{brandName.split("Ltd")[1] || "."}</span>
+                </>
+              ) : (
+                <>{brandName}<span className="text-gold">.</span></>
+              )}
+            </>
+          )}
+          {isMinimal && logoUrl && null}
+          {isMinimal && !logoUrl && <span>{brandName.slice(0, 2)}</span>}
         </a>
 
         {/* Desktop */}
