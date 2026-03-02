@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye } from "lucide-react";
+import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye, List, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Project {
@@ -46,6 +46,7 @@ const AdminProjects = () => {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [viewProject, setViewProject] = useState<Project | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [form, setForm] = useState({
     user_id: "",
     project_name: "",
@@ -197,6 +198,10 @@ const AdminProjects = () => {
             </div>
           )}
         </div>
+        <div className="flex items-center bg-card border border-border rounded-xl overflow-hidden">
+          <button onClick={() => setViewMode("list")} className={`p-3 transition-colors ${viewMode === "list" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`} title="List view"><List size={16} /></button>
+          <button onClick={() => setViewMode("grid")} className={`p-3 transition-colors ${viewMode === "grid" ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`} title="Grid view"><LayoutGrid size={16} /></button>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -303,13 +308,87 @@ const AdminProjects = () => {
         </div>
       )}
 
-      {/* Project List */}
-      <div className="space-y-4">
+      {/* Project List / Grid */}
+      <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-4"}>
         {filtered.map((p, idx) => {
           const paidPct = p.total_amount > 0 ? Math.min(100, Math.round((p.paid_amount / p.total_amount) * 100)) : 0;
           const remaining = Math.max(0, p.total_amount - p.paid_amount);
           const overpaid = Math.max(0, p.paid_amount - p.total_amount);
           const isOverpaid = p.paid_amount > p.total_amount;
+          const statusColor = p.status === "completed" ? "bg-dash-green" : p.status === "in_progress" ? "bg-dash-orange" : p.status === "on_hold" ? "bg-destructive" : "bg-dash-blue";
+          const statusBadge = p.status === "completed" ? "bg-dash-green/15 text-dash-green"
+            : p.status === "in_progress" ? "bg-gold/15 text-gold"
+            : p.status === "on_hold" ? "bg-destructive/15 text-destructive"
+            : "bg-dash-blue/15 text-dash-blue";
+
+          if (viewMode === "grid") {
+            return (
+              <motion.div
+                key={p.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 ${statusColor}`}>
+                      <HardHat size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm truncate">{p.project_name}</h3>
+                      <p className="text-xs text-muted-foreground truncate">👤 {p.customer_name}</p>
+                    </div>
+                  </div>
+                  <span className={`capitalize font-semibold px-2 py-0.5 rounded-full text-[9px] uppercase shrink-0 ${statusBadge}`}>
+                    {p.status.replace("_", " ")}
+                  </span>
+                </div>
+
+                {p.location && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3"><MapPin size={11} /> {p.location}</p>
+                )}
+
+                {/* Financial grid */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="bg-muted/50 rounded-lg p-2 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Budget</p>
+                    <p className="font-bold text-foreground text-xs">{formatCurrency(p.total_amount)}</p>
+                  </div>
+                  <div className="bg-dash-green/10 rounded-lg p-2 text-center">
+                    <p className="text-[9px] uppercase tracking-wider text-dash-green font-semibold">Investment</p>
+                    <p className="font-bold text-dash-green text-xs">{formatCurrency(p.paid_amount)}</p>
+                  </div>
+                  <div className={`rounded-lg p-2 text-center ${remaining > 0 ? "bg-destructive/10" : "bg-dash-green/10"}`}>
+                    <p className={`text-[9px] uppercase tracking-wider font-semibold ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>Remaining</p>
+                    <p className={`font-bold text-xs ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(remaining)}</p>
+                  </div>
+                  <div className={`rounded-lg p-2 text-center ${isOverpaid ? "bg-dash-purple/10" : "bg-muted/50"}`}>
+                    <p className={`text-[9px] uppercase tracking-wider font-semibold ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>Overpaid</p>
+                    <p className={`font-bold text-xs ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>{formatCurrency(overpaid)}</p>
+                  </div>
+                </div>
+
+                {/* Progress */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${isOverpaid ? "bg-gradient-to-r from-dash-purple to-dash-purple" : "bg-gradient-to-r from-dash-green to-dash-teal"}`} style={{ width: `${paidPct}%` }} />
+                  </div>
+                  <span className="text-[10px] font-bold text-muted-foreground">{paidPct}%</span>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1.5 mt-auto pt-2 border-t border-border">
+                  <button onClick={() => setViewProject(p)} title="View" className="p-2 rounded-lg bg-dash-blue/10 text-dash-blue hover:bg-dash-blue/20 transition-colors"><Eye size={14} /></button>
+                  <button onClick={() => openEdit(p)} className="flex-1 text-xs bg-muted hover:bg-muted/80 text-foreground px-3 py-2 rounded-lg font-medium transition-colors text-center">Edit</button>
+                  <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"><Trash2 size={14} /></button>
+                </div>
+              </motion.div>
+            );
+          }
+
+          // List view (existing)
           return (
           <motion.div
             key={p.id}
@@ -318,12 +397,9 @@ const AdminProjects = () => {
             transition={{ delay: idx * 0.03 }}
             className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow"
           >
-            {/* Top row: Info + Actions */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 ${
-                  p.status === "completed" ? "bg-dash-green" : p.status === "in_progress" ? "bg-dash-orange" : p.status === "on_hold" ? "bg-destructive" : "bg-dash-blue"
-                }`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 ${statusColor}`}>
                   <HardHat size={22} />
                 </div>
                 <div className="min-w-0">
@@ -331,12 +407,7 @@ const AdminProjects = () => {
                   <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                     <span className="flex items-center gap-1 font-medium">👤 {p.customer_name}</span>
                     {p.location && <span className="flex items-center gap-1"><MapPin size={12} /> {p.location}</span>}
-                    <span className={`capitalize font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase ${
-                      p.status === "completed" ? "bg-dash-green/15 text-dash-green"
-                      : p.status === "in_progress" ? "bg-gold/15 text-gold"
-                      : p.status === "on_hold" ? "bg-destructive/15 text-destructive"
-                      : "bg-dash-blue/15 text-dash-blue"
-                    }`}>
+                    <span className={`capitalize font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase ${statusBadge}`}>
                       {p.status.replace("_", " ")}
                     </span>
                   </div>
@@ -349,7 +420,6 @@ const AdminProjects = () => {
               </div>
             </div>
 
-            {/* Financial breakdown */}
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-muted/50 rounded-xl p-3 text-center">
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Total Budget</p>
@@ -369,7 +439,6 @@ const AdminProjects = () => {
               </div>
             </div>
 
-            {/* Progress bar */}
             <div className="mt-3 flex items-center gap-3">
               <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
                 <div className={`h-full rounded-full transition-all ${isOverpaid ? "bg-gradient-to-r from-dash-purple to-dash-purple" : "bg-gradient-to-r from-dash-green to-dash-teal"}`} style={{ width: `${paidPct}%` }} />
@@ -377,7 +446,6 @@ const AdminProjects = () => {
               <span className="text-xs font-bold text-muted-foreground w-10 text-right">{paidPct}%</span>
             </div>
 
-            {/* Monthly EMI + Dates */}
             {(p.monthly_installment > 0 || p.start_date || p.expected_completion) && (
               <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 {p.monthly_installment > 0 && (
@@ -395,7 +463,7 @@ const AdminProjects = () => {
           );
         })}
         {filtered.length === 0 && (
-          <div className="text-center py-20 text-muted-foreground">
+          <div className="text-center py-20 text-muted-foreground col-span-full">
             <HardHat size={48} className="mx-auto mb-4 opacity-40" />
             <p>{search || filter !== "all" ? "No projects match your search/filter." : "No projects yet. Click \"Add Project\" to create one."}</p>
           </div>
