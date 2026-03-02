@@ -45,16 +45,16 @@ const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
       }`}
     >
       {/* Brand */}
-      <div className="px-4 h-16 flex items-center gap-3 border-b border-white/5 shrink-0">
+      <div className="px-4 h-16 flex items-center gap-3 border-b border-border shrink-0">
         <div className="w-9 h-9 rounded-xl bg-gold-gradient flex items-center justify-center shrink-0">
           <Sparkles size={18} className="text-accent-foreground" />
         </div>
         {!collapsed && (
-          <Link to="/" className="font-heading text-base font-bold text-sidebar-foreground truncate">
+          <Link to="/" className="font-heading text-base font-bold text-foreground truncate">
             Starline<span className="text-gold"> Ltd.</span>
           </Link>
         )}
-        <button onClick={() => setCollapsed(!collapsed)} className="text-sidebar-foreground/40 hover:text-gold transition-colors ml-auto">
+        <button onClick={() => setCollapsed(!collapsed)} className="text-muted-foreground hover:text-foreground transition-colors ml-auto">
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
       </div>
@@ -70,12 +70,12 @@ const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left ${
                 active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-lg shadow-black/20"
-                  : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
+                  ? "bg-muted text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
               <div className={`p-1.5 rounded-lg shrink-0 ${active ? item.gradient : ""}`}>
-                <item.icon size={16} className={active ? "text-white" : ""} />
+                <item.icon size={16} className={active ? "text-white" : "text-foreground/70"} />
               </div>
               {!collapsed && <span className="truncate">{item.label}</span>}
             </button>
@@ -86,14 +86,14 @@ const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
       {/* Footer */}
       <div className="px-2 pb-4 shrink-0 space-y-2">
         {!collapsed && (
-          <div className="bg-white/5 rounded-xl p-3">
-            <p className="text-[11px] text-sidebar-foreground/40 truncate">Admin</p>
-            <p className="text-xs text-sidebar-foreground/70 truncate font-medium">{user?.email}</p>
+          <div className="bg-muted/60 rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground truncate">Admin</p>
+            <p className="text-xs text-foreground truncate font-medium">{user?.email}</p>
           </div>
         )}
         <button
           onClick={signOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all w-full"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all w-full"
         >
           <LogOut size={16} className="shrink-0" />
           {!collapsed && <span>Sign Out</span>}
