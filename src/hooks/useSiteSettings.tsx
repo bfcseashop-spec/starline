@@ -33,6 +33,15 @@ export interface SocialLinks {
   youtube: string;
 }
 
+export interface PlatformConfig {
+  link: string;
+  group_link: string;
+  qr_code_url: string;
+  phone: string;
+}
+
+export type SocialPlatforms = Record<string, PlatformConfig>;
+
 const DEFAULT_SYSTEM: SystemSettings = {
   banner_title: "",
   banner_subtitle: "",
@@ -69,6 +78,7 @@ export const useSiteSettings = () => {
   const [system, setSystem] = useState<SystemSettings>(DEFAULT_SYSTEM);
   const [company, setCompany] = useState<CompanySettings>(DEFAULT_COMPANY);
   const [social, setSocial] = useState<SocialLinks>(DEFAULT_SOCIAL);
+  const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatforms>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,6 +89,7 @@ export const useSiteSettings = () => {
           if (r.setting_key === "system") setSystem({ ...DEFAULT_SYSTEM, ...r.setting_value });
           if (r.setting_key === "company_info") setCompany({ ...DEFAULT_COMPANY, ...r.setting_value });
           if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
+          if (r.setting_key === "social_platforms") setSocialPlatforms(r.setting_value || {});
         });
       }
       setLoading(false);
@@ -86,5 +97,5 @@ export const useSiteSettings = () => {
     fetch();
   }, []);
 
-  return { system, company, social, loading };
+  return { system, company, social, socialPlatforms, loading };
 };
