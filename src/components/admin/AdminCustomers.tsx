@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import {
   Users, Phone, MapPin, Loader2, Search, LayoutGrid, LayoutList,
@@ -487,75 +489,198 @@ const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Cu
     });
   }, [customer]);
 
-  if (!customer) return null;
+  const due = customer ? customer.total_amount - customer.paid_amount : 0;
+  const fmt = (n: number) => `${n.toLocaleString()} BDT`;
 
-  const due = customer.total_amount - customer.paid_amount;
+  const buildPdf = useCallback(() => {
+    const doc = new jsPDF();
+    const pageW = doc.internal.pageSize.getWidth();
 
-  const generateStatement = () => {
-    const lines: string[] = [];
-    lines.push("STARLINE BUILDER'S LTD");
-    lines.push("Customer Statement");
-    lines.push("=".repeat(50));
-    lines.push(`Date: ${new Date().toLocaleDateString()}`);
-    lines.push("");
-    lines.push("CUSTOMER INFORMATION");
-    lines.push("-".repeat(30));
-    lines.push(`Name: ${customer.full_name || "Unnamed"}`);
-    if (customer.phone) lines.push(`Phone: ${customer.phone}`);
-    if (customer.address) lines.push(`Address: ${customer.address}`);
-    lines.push("");
-    lines.push("FINANCIAL SUMMARY");
-    lines.push("-".repeat(30));
-    lines.push(`Total Projects: ${customer.project_count}`);
-    lines.push(`Total Amount: ৳${customer.total_amount.toLocaleString()}`);
-    lines.push(`Paid Amount: ৳${customer.paid_amount.toLocaleString()}`);
-    lines.push(`Due Amount: ৳${due.toLocaleString()}`);
-    lines.push("");
+    // Header band
+    doc.setFillColor(30, 41, 59); // navy
+    doc.rect(0, 0, pageW, 38, "F");
+    doc.setFillColor(217, 169, 68); // gold accent line
+    doc.rect(0, 38, pageW, 3, "F");
 
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("STARLINE BUILDER'S LTD", 14, 18);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Customer Statement", 14, 26);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 33);
+
+    let y = 50;
+
+    // Customer info section
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text("Customer Information", 14, y);
+    y += 2;
+    doc.setDrawColor(217, 169, 68);
+    doc.setLineWidth(0.8);
+    doc.line(14, y, 80, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(55, 65, 81);
+    const info = [
+      ["Name", customer.full_name || "Unnamed"],
+      ...(customer.phone ? [["Phone", customer.phone]] : []),
+      ...(customer.address ? [["Address", customer.address]] : []),
+    ];
+    info.forEach(([label, value]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(`${label}:`, 14, y);
+      doc.setFont("helvetica", "normal");
+      doc.text(value as string, 45, y);
+      y += 6;
+    });
+
+    y += 4;
+
+    // Financial summary boxes
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(30, 41, 59);
+    doc.text("Financial Summary", 14, y);
+    y += 2;
+    doc.setDrawColor(217, 169, 68);
+    doc.line(14, y, 80, y);
+    y += 6;
+
+    const boxW = (pageW - 28 - 12) / 4;
+    const boxColors: [number, number, number][] = [
+      [59, 130, 246],  // blue
+      [249, 115, 22],  // orange
+      [34, 197, 94],   // green
+      [244, 63, 94],   // pink
+    ];
+    const summaryData = [
+      { label: "Projects", value: String(customer.project_count) },
+      { label: "Total Amount", value: fmt(customer.total_amount) },
+      { label: "Paid Amount", value: fmt(customer.paid_amount) },
+      { label: "Due Amount", value: fmt(due) },
+    ];
+    summaryData.forEach((s, i) => {
+      const bx = 14 + i * (boxW + 4);
+      doc.setFillColor(...boxColors[i]);
+      doc.roundedRect(bx, y, boxW, 22, 3, 3, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "normal");
+      doc.text(s.label.toUpperCase(), bx + 4, y + 7);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text(s.value, bx + 4, y + 16);
+    });
+    y += 32;
+
+    // Project breakdown table
     if (projects.length > 0) {
-      lines.push("PROJECT BREAKDOWN");
-      lines.push("-".repeat(30));
-      projects.forEach((p) => {
-        lines.push(`\n  ${p.project_name} [${p.status.replace("_", " ")}]`);
-        lines.push(`    Total: ৳${p.total_amount.toLocaleString()} | Paid: ৳${p.paid_amount.toLocaleString()} | EMI: ৳${p.monthly_installment.toLocaleString()} | Due: ৳${(p.total_amount - p.paid_amount).toLocaleString()}`);
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Project Breakdown", 14, y);
+      y += 2;
+      doc.setDrawColor(217, 169, 68);
+      doc.line(14, y, 80, y);
+      y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Project Name", "Status", "Total", "Paid", "EMI", "Due"]],
+        body: projects.map((p) => [
+          p.project_name,
+          p.status.replace("_", " "),
+          fmt(p.total_amount),
+          fmt(p.paid_amount),
+          fmt(p.monthly_installment),
+          fmt(p.total_amount - p.paid_amount),
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8, textColor: [55, 65, 81] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 3 },
       });
-      lines.push("");
+
+      y = (doc as any).lastAutoTable.finalY + 10;
     }
 
+    // Payment history table
     if (payments.length > 0) {
-      lines.push("PAYMENT HISTORY");
-      lines.push("-".repeat(30));
-      lines.push(`${"Date".padEnd(14)}${"Amount".padEnd(16)}${"Method".padEnd(16)}${"Status".padEnd(12)}Project`);
-      payments.forEach((pay) => {
-        lines.push(`${pay.payment_date.padEnd(14)}৳${pay.amount.toLocaleString().padEnd(15)}${pay.payment_method.replace("_", " ").padEnd(16)}${pay.status.padEnd(12)}${pay.project_name || "—"}`);
+      // Check if we need a new page
+      if (y > 240) { doc.addPage(); y = 20; }
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.text("Payment History", 14, y);
+      y += 2;
+      doc.setDrawColor(217, 169, 68);
+      doc.line(14, y, 80, y);
+      y += 4;
+
+      autoTable(doc, {
+        startY: y,
+        head: [["Date", "Amount", "Method", "Status", "Project", "Reference"]],
+        body: payments.map((pay) => [
+          pay.payment_date,
+          fmt(pay.amount),
+          pay.payment_method.replace("_", " "),
+          pay.status,
+          pay.project_name || "—",
+          pay.reference_no || "—",
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8, fontStyle: "bold" },
+        bodyStyles: { fontSize: 8, textColor: [55, 65, 81] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 14, right: 14 },
+        styles: { cellPadding: 3 },
+        didParseCell: (data: any) => {
+          if (data.section === "body" && data.column.index === 3) {
+            data.cell.styles.textColor = data.cell.raw === "completed" ? [34, 197, 94] : [249, 115, 22];
+            data.cell.styles.fontStyle = "bold";
+          }
+        },
       });
+
+      y = (doc as any).lastAutoTable.finalY + 10;
     }
 
-    lines.push("");
-    lines.push("=".repeat(50));
-    lines.push("Generated by Starline Builder's Ltd");
-    return lines.join("\n");
-  };
+    // Footer
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setDrawColor(217, 169, 68);
+    doc.setLineWidth(0.5);
+    doc.line(14, y, pageW - 14, y);
+    y += 6;
+    doc.setFontSize(8);
+    doc.setTextColor(156, 163, 175);
+    doc.setFont("helvetica", "normal");
+    doc.text("Generated by Starline Builder's Ltd", 14, y);
+    doc.text(`Page 1 of ${doc.getNumberOfPages()}`, pageW - 14, y, { align: "right" });
+
+    return doc;
+  }, [customer, projects, payments, due]);
 
   const handlePrint = () => {
-    const content = generateStatement();
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-    printWindow.document.write(`<html><head><title>Customer Statement - ${customer.full_name}</title><style>body{font-family:monospace;white-space:pre-wrap;padding:40px;font-size:13px;line-height:1.6;}</style></head><body>${content}</body></html>`);
-    printWindow.document.close();
-    printWindow.print();
+    const doc = buildPdf();
+    doc.autoPrint();
+    window.open(doc.output("bloburl"), "_blank");
   };
 
   const handleExport = () => {
-    const content = generateStatement();
-    const blob = new Blob([content], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `statement-${(customer.full_name || "customer").replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const doc = buildPdf();
+    doc.save(`statement-${(customer.full_name || "customer").replace(/\s+/g, "-").toLowerCase()}-${new Date().toISOString().split("T")[0]}.pdf`);
   };
+
+  if (!customer) return null;
 
   return (
     <AnimatePresence>
