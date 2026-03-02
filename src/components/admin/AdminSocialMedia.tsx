@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   Share2, Plus, Loader2, Trash2, Pencil, X, Save, Facebook, Instagram, Globe,
   MessageCircle, Send, Twitter, Linkedin, Youtube, Music2, Filter, LayoutGrid, List,
+  Link as LinkIcon, QrCode, Phone, Users, Settings2, Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,15 @@ interface Post {
   published_at: string | null;
   created_at: string;
 }
+
+interface PlatformConfig {
+  link: string;
+  group_link: string;
+  qr_code_url: string;
+  phone: string;
+}
+
+const defaultPlatformConfig: PlatformConfig = { link: "", group_link: "", qr_code_url: "", phone: "" };
 
 const platforms = [
   { id: "facebook", label: "Facebook", icon: Facebook, color: "bg-blue-600", textColor: "text-blue-600", lightBg: "bg-blue-100 dark:bg-blue-500/15" },
@@ -55,13 +65,27 @@ const AdminSocialMedia = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
 
+  // Platform config state
+  const [platformConfigs, setPlatformConfigs] = useState<Record<string, PlatformConfig>>({});
+  const [editPlatformId, setEditPlatformId] = useState<string | null>(null);
+  const [platformForm, setPlatformForm] = useState<PlatformConfig>({ ...defaultPlatformConfig });
+  const [savingPlatform, setSavingPlatform] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
+
   const fetchPosts = async () => {
     const { data } = await supabase.from("social_media_posts").select("*").order("created_at", { ascending: false });
     setPosts((data || []) as Post[]);
     setLoading(false);
   };
 
-  useEffect(() => { fetchPosts(); }, []);
+  const fetchPlatformConfigs = async () => {
+    const { data } = await supabase.from("site_settings").select("setting_value").eq("setting_key", "social_platforms").single();
+    if (data?.setting_value && typeof data.setting_value === "object") {
+      setPlatformConfigs(data.setting_value as unknown as Record<string, PlatformConfig>);
+    }
+  };
+
+  useEffect(() => { fetchPosts(); fetchPlatformConfigs(); }, []);
 
   const resetForm = () => { setForm({ ...emptyForm }); setEditId(null); setShowForm(false); };
 
@@ -101,6 +125,57 @@ const AdminSocialMedia = () => {
     if (error) { toast.error(error.message); return; }
     toast.success("Post deleted"); fetchPosts();
   };
+
+  // Platform config handlers
+  const openPlatformConfig = (platformId: string) => {
+    const existing = platformConfigs[platformId] || { ...defaultPlatformConfig };
+    setPlatformForm({ ...defaultPlatformConfig, ...existing });
+    setEditPlatformId(platformId);
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingQr(true);
+    const ext = file.name.split(".").pop();
+    const filePath = `qr-codes/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("company-assets").upload(filePath, file);
+    setUploadingQr(false);
+    if (error) { toast.error("Upload failed"); return; }
+    const { data: pub } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+    setPlatformForm(prev => ({ ...prev, qr_code_url: pub.publicUrl }));
+  };
+
+  const savePlatformConfig = async () => {
+    if (!editPlatformId) return;
+    setSavingPlatform(true);
+    const updated = { ...platformConfigs, [editPlatformId]: platformForm };
+
+    // Also update social_links for Navbar/Footer compatibility
+    const socialLinks: Record<string, string> = {};
+    Object.entries(updated).forEach(([key, val]) => {
+      if (val.link) socialLinks[key] = val.link;
+    });
+
+    const { error } = await supabase.from("site_settings").upsert(
+      { setting_key: "social_platforms", setting_value: updated as any },
+      { onConflict: "setting_key" }
+    );
+    if (!error) {
+      await supabase.from("site_settings").upsert(
+        { setting_key: "social_links", setting_value: socialLinks as any },
+        { onConflict: "setting_key" }
+      );
+    }
+    setSavingPlatform(false);
+    if (error) { toast.error("Failed to save"); return; }
+    toast.success("Platform settings saved!");
+    setPlatformConfigs(updated);
+    setEditPlatformId(null);
+  };
+
+
+
 
   const filteredPosts = activeFilter === "all" ? posts : posts.filter(p => p.platform === activeFilter);
 
@@ -157,24 +232,31 @@ const AdminSocialMedia = () => {
           {platformCounts.map((p, i) => {
             const Icon = p.icon;
             const isActive = activeFilter === p.id;
+            const hasConfig = !!(platformConfigs[p.id]?.link || platformConfigs[p.id]?.phone || platformConfigs[p.id]?.group_link);
             return (
-              <motion.button key={p.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}
-                onClick={() => setActiveFilter(isActive ? "all" : p.id)}
+              <motion.div key={p.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.03 }}
                 className={`relative flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 ${
                   isActive
                     ? "border-primary bg-primary/5 shadow-md scale-105"
                     : "border-border bg-card hover:border-primary/30 hover:shadow-sm"
                 }`}>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${p.color}`}>
-                  <Icon size={18} />
-                </div>
-                <span className="text-[10px] font-semibold text-foreground truncate w-full text-center">{p.label}</span>
+                <button onClick={() => setActiveFilter(isActive ? "all" : p.id)} className="flex flex-col items-center gap-1.5 w-full">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${p.color}`}>
+                    <Icon size={18} />
+                  </div>
+                  <span className="text-[10px] font-semibold text-foreground truncate w-full text-center">{p.label}</span>
+                </button>
+                {/* Settings gear */}
+                <button onClick={() => openPlatformConfig(p.id)}
+                  className={`absolute top-1 right-1 p-1 rounded-md transition-colors ${hasConfig ? "text-primary" : "text-muted-foreground/40"} hover:text-primary hover:bg-primary/10`}>
+                  <Settings2 size={10} />
+                </button>
                 {p.count > 0 && (
-                  <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center text-white ${p.color.includes("gradient") ? "bg-pink-500" : p.color}`}>
+                  <span className={`absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full text-[9px] font-bold flex items-center justify-center text-white ${p.color.includes("gradient") ? "bg-pink-500" : p.color}`}>
                     {p.count}
                   </span>
                 )}
-              </motion.button>
+              </motion.div>
             );
           })}
         </div>
@@ -342,6 +424,83 @@ const AdminSocialMedia = () => {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* Platform Config Modal */}
+      <AnimatePresence>
+        {editPlatformId && (() => {
+          const plat = platforms.find(p => p.id === editPlatformId);
+          const Icon = plat?.icon || Globe;
+          return (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setEditPlatformId(null)}>
+              <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between p-6 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-white ${plat?.color || "bg-muted"}`}>
+                      <Icon size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-heading text-lg font-bold text-foreground">{plat?.label} Settings</h3>
+                      <p className="text-xs text-muted-foreground">Configure link, group, QR & phone</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setEditPlatformId(null)} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"><X size={18} /></button>
+                </div>
+
+                <div className="p-6 space-y-4">
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5"><LinkIcon size={12} /> Profile / Page Link</Label>
+                    <Input value={platformForm.link} onChange={e => setPlatformForm({ ...platformForm, link: e.target.value })}
+                      className="mt-1.5 bg-muted/50" placeholder="https://..." />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Users size={12} /> Group / Channel Link</Label>
+                    <Input value={platformForm.group_link} onChange={e => setPlatformForm({ ...platformForm, group_link: e.target.value })}
+                      className="mt-1.5 bg-muted/50" placeholder="https://..." />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5"><Phone size={12} /> Phone Number</Label>
+                    <Input value={platformForm.phone} onChange={e => setPlatformForm({ ...platformForm, phone: e.target.value })}
+                      className="mt-1.5 bg-muted/50" placeholder="+880..." />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5"><QrCode size={12} /> QR Code</Label>
+                    {platformForm.qr_code_url ? (
+                      <div className="flex items-center gap-3">
+                        <img src={platformForm.qr_code_url} alt="QR" className="w-20 h-20 rounded-xl border border-border object-contain bg-white" />
+                        <div className="space-y-2">
+                          <Button variant="outline" size="sm" onClick={() => document.getElementById("qr-upload")?.click()} className="gap-1.5 text-xs">
+                            <Upload size={12} /> Change
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setPlatformForm({ ...platformForm, qr_code_url: "" })} className="gap-1.5 text-xs text-destructive hover:text-destructive">
+                            <X size={12} /> Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary/30 transition-colors"
+                        onClick={() => document.getElementById("qr-upload")?.click()}>
+                        <QrCode size={24} className="mx-auto mb-1 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">Click to upload QR code</p>
+                      </div>
+                    )}
+                    <input id="qr-upload" type="file" accept="image/*" className="hidden" onChange={handleQrUpload} />
+                    {uploadingQr && <p className="text-xs text-primary animate-pulse mt-1">Uploading...</p>}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+                  <Button variant="outline" onClick={() => setEditPlatformId(null)}>Cancel</Button>
+                  <Button onClick={savePlatformConfig} disabled={savingPlatform} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                    {savingPlatform ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                    Save Settings
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
