@@ -18,7 +18,7 @@ const HeroSection = ({ bannerTitle, bannerSubtitle, bannerImageUrl }: Props) => 
   const firstPart = words.slice(0, -2).join(" ");
 
   return (
-    <section className="relative min-h-[100vh] flex items-center overflow-hidden">
+    <section className="relative min-h-[60vh] flex items-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
         <img src={bgImage} alt="Hero banner" className="w-full h-full object-cover scale-105" />
