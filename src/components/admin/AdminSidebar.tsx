@@ -1,28 +1,30 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Home, Users, FileText, BarChart3, Settings, MessageSquare,
-  CreditCard, FolderOpen, KeyRound, ClipboardList, LogOut, ChevronLeft, ChevronRight, Sparkles,
+  CreditCard, FolderOpen, Images, ClipboardList, LogOut, ChevronLeft, ChevronRight, Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
+type AdminPage = "dashboard" | "customers" | "projects" | "payments" | "images" | "documents" | "settings";
+
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/admin", gradient: "bg-dash-blue" },
-  { icon: Home, label: "Properties", path: "/admin/properties", gradient: "bg-dash-orange" },
-  { icon: Users, label: "Customers", path: "/admin/customers", gradient: "bg-dash-green" },
-  { icon: MessageSquare, label: "Inquiries", path: "/admin/inquiries", gradient: "bg-dash-purple" },
-  { icon: CreditCard, label: "Payments", path: "/admin/payments", gradient: "bg-dash-teal" },
-  { icon: FolderOpen, label: "Documents", path: "/admin/documents", gradient: "bg-dash-pink" },
-  { icon: KeyRound, label: "Keys", path: "/admin/keys", gradient: "bg-dash-blue" },
-  { icon: ClipboardList, label: "Tasks", path: "/admin/tasks", gradient: "bg-dash-orange" },
-  { icon: FileText, label: "Reports", path: "/admin/reports", gradient: "bg-dash-green" },
-  { icon: BarChart3, label: "Analytics", path: "/admin/analytics", gradient: "bg-dash-purple" },
-  { icon: Settings, label: "Settings", path: "/admin/settings", gradient: "bg-dash-teal" },
+  { id: "dashboard" as AdminPage, icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
+  { id: "customers" as AdminPage, icon: Users, label: "Customers", gradient: "bg-dash-green" },
+  { id: "projects" as AdminPage, icon: Home, label: "Projects", gradient: "bg-dash-orange" },
+  { id: "payments" as AdminPage, icon: CreditCard, label: "Payments", gradient: "bg-dash-teal" },
+  { id: "images" as AdminPage, icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
+  { id: "documents" as AdminPage, icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
+  { id: "settings" as AdminPage, icon: Settings, label: "Settings", gradient: "bg-dash-teal" },
 ];
 
-const AdminSidebar = () => {
+interface AdminSidebarProps {
+  activePage: AdminPage;
+  onPageChange: (page: AdminPage) => void;
+}
+
+const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
   const { signOut, user } = useAuth();
 
   return (
@@ -49,13 +51,13 @@ const AdminSidebar = () => {
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
         {navItems.map((item) => {
-          const active = location.pathname === item.path;
+          const active = activePage === item.id;
           return (
-            <Link
-              key={item.path}
-              to={item.path}
+            <button
+              key={item.id}
+              onClick={() => onPageChange(item.id)}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left ${
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-lg shadow-black/20"
                   : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
@@ -65,7 +67,7 @@ const AdminSidebar = () => {
                 <item.icon size={16} className={active ? "text-white" : ""} />
               </div>
               {!collapsed && <span className="truncate">{item.label}</span>}
-            </Link>
+            </button>
           );
         })}
       </nav>
@@ -74,7 +76,7 @@ const AdminSidebar = () => {
       <div className="px-2 pb-4 shrink-0 space-y-2">
         {!collapsed && (
           <div className="bg-white/5 rounded-xl p-3">
-            <p className="text-[11px] text-sidebar-foreground/40 truncate">Signed in as</p>
+            <p className="text-[11px] text-sidebar-foreground/40 truncate">Admin</p>
             <p className="text-xs text-sidebar-foreground/70 truncate font-medium">{user?.email}</p>
           </div>
         )}
@@ -91,3 +93,4 @@ const AdminSidebar = () => {
 };
 
 export default AdminSidebar;
+export type { AdminPage };
