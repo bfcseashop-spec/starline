@@ -5,7 +5,7 @@ import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
-  Search, ChevronDown, DollarSign,
+  Search, ChevronDown, DollarSign, Upload, ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -19,6 +19,7 @@ interface Payment {
   status: string;
   reference_no: string | null;
   notes: string | null;
+  image_url: string | null;
   customer_name?: string;
   project_name?: string;
 }
@@ -40,7 +41,7 @@ const filterLabels: Record<FilterStatus, string> = {
 
 const emptyForm = {
   user_id: "", project_id: "", amount: "", payment_method: "bank_transfer",
-  payment_date: new Date().toISOString().split("T")[0], status: "completed", reference_no: "", notes: "",
+  payment_date: new Date().toISOString().split("T")[0], status: "completed", reference_no: "", notes: "", image_url: "",
 };
 
 const AdminPayments = () => {
@@ -49,6 +50,7 @@ const AdminPayments = () => {
   const [projects, setProjects] = useState<ProjectOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // Modals
   const [showForm, setShowForm] = useState(false);
@@ -105,6 +107,22 @@ const AdminPayments = () => {
     setShowForm(false);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("payment-images").upload(path, file);
+    if (error) { toast.error("Upload failed: " + error.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(path);
+    setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+    setUploading(false);
+    toast.success("Image uploaded!");
+  };
+
   const openAdd = () => {
     setForm({ ...emptyForm });
     setEditId(null);
@@ -121,6 +139,7 @@ const AdminPayments = () => {
       status: p.status,
       reference_no: p.reference_no || "",
       notes: p.notes || "",
+      image_url: p.image_url || "",
     });
     setEditId(p.id);
     setShowForm(true);
@@ -139,6 +158,7 @@ const AdminPayments = () => {
       status: form.status,
       reference_no: form.reference_no.trim() || null,
       notes: form.notes.trim() || null,
+      image_url: form.image_url || null,
     };
 
     let error;
@@ -411,6 +431,28 @@ const AdminPayments = () => {
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Notes</label>
                   <input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} className={inputClass} placeholder="Optional notes" maxLength={200} />
                 </div>
+                {/* Image Upload */}
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Payment Image</label>
+                  {form.image_url ? (
+                    <div className="relative rounded-xl overflow-hidden border border-border">
+                      <img src={form.image_url} alt="Payment" className="w-full h-40 object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-80 transition-opacity"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-xl py-6 cursor-pointer hover:border-ring hover:bg-muted/50 transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                      {uploading ? <Loader2 size={24} className="animate-spin text-muted-foreground" /> : <Upload size={24} className="text-muted-foreground" />}
+                      <span className="text-xs text-muted-foreground">{uploading ? "Uploading..." : "Click to upload image"}</span>
+                      <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    </label>
+                  )}
+                </div>
                 <button onClick={handleSave} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   {editId ? "Update Payment" : "Record Payment"}
@@ -464,6 +506,12 @@ const AdminPayments = () => {
                   </div>
                 ))}
               </div>
+
+              {viewPayment.image_url && (
+                <div className="mt-4 rounded-xl overflow-hidden border border-border">
+                  <img src={viewPayment.image_url} alt="Payment receipt" className="w-full h-48 object-cover" />
+                </div>
+              )}
 
               <button onClick={() => { handlePrint(viewPayment); }} className="w-full mt-5 bg-dash-purple text-white py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-md">
                 <Printer size={16} /> Print Receipt
