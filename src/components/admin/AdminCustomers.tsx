@@ -56,6 +56,7 @@ const AdminCustomers = () => {
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
   const [editProjects, setEditProjects] = useState<{ id: string; project_name: string; total_amount: number; paid_amount: number; monthly_installment: number }[]>([]);
+  const [showNewProject, setShowNewProject] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Add customer modal
@@ -115,6 +116,7 @@ const AdminCustomers = () => {
   const openEdit = async (c: Customer) => {
     setEditForm({ full_name: c.full_name || "", phone: c.phone || "", address: c.address || "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
     setEditCustomer(c);
+    setShowNewProject(false);
     const { data } = await supabase.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment").eq("user_id", c.user_id);
     const projects = data || [];
     setEditProjects(projects);
@@ -167,6 +169,31 @@ const AdminCustomers = () => {
         monthly_installment: Number(editForm.installment_amount) || 0,
       }).eq("id", editForm.project_id);
       if (projError) { setSaving(false); toast.error(projError.message); return; }
+    } else if (showNewProject && editForm.project_name.trim()) {
+      // Create new project for this customer
+      const totalAmt = Number(editForm.total_amount) || 0;
+      const downPay = Number(editForm.down_payment) || 0;
+      const paidAmt = Number(editForm.paid_amount) || 0;
+      const totalPaid = downPay + paidAmt;
+      const installmentAmt = Number(editForm.installment_amount) || 0;
+
+      const { error: projError } = await supabase.from("customer_projects").insert({
+        user_id: editCustomer.user_id,
+        project_name: editForm.project_name.trim(),
+        total_amount: totalAmt,
+        paid_amount: totalPaid,
+        monthly_installment: installmentAmt,
+        status: "in_progress",
+      });
+      if (projError) { setSaving(false); toast.error(projError.message); return; }
+
+      // Record payments
+      if (downPay > 0) {
+        await supabase.from("payments").insert({ user_id: editCustomer.user_id, amount: downPay, payment_method: "cash", status: "completed", notes: "Down payment" });
+      }
+      if (paidAmt > 0) {
+        await supabase.from("payments").insert({ user_id: editCustomer.user_id, amount: paidAmt, payment_method: "cash", status: "completed", notes: "Initial payment" });
+      }
     }
 
     setSaving(false);
@@ -572,7 +599,7 @@ const AdminCustomers = () => {
                 </div>
 
                 {/* Project Details Section */}
-                {editProjects.length > 0 && (
+                {editProjects.length > 0 ? (
                   <div className="border-t border-border pt-4 mt-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Project Details</p>
                     <div className="space-y-4">
@@ -615,6 +642,51 @@ const AdminCustomers = () => {
                         <input readOnly value={editForm.total_amount ? Math.max(0, Number(editForm.total_amount) - Number(editForm.paid_amount || 0)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
                       </div>
                     </div>
+                  </div>
+                ) : (
+                  <div className="border-t border-border pt-4 mt-2">
+                    {!showNewProject ? (
+                      <button onClick={() => setShowNewProject(true)} className="w-full border-2 border-dashed border-border rounded-xl py-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors flex items-center justify-center gap-2">
+                        <Plus size={16} /> Add Project
+                      </button>
+                    ) : (
+                      <>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">New Project</p>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name *</label>
+                            <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} placeholder="e.g. Skyline Tower Apt #5B" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Total Amount</label>
+                              <input type="number" value={editForm.total_amount} onChange={(e) => setEditForm((f) => ({ ...f, total_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Down Payment</label>
+                              <input type="number" value={editForm.down_payment} onChange={(e) => setEditForm((f) => ({ ...f, down_payment: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Paid Amount</label>
+                              <input type="number" value={editForm.paid_amount} onChange={(e) => setEditForm((f) => ({ ...f, paid_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-foreground mb-1.5 block">Installment Amount</label>
+                              <input type="number" value={editForm.installment_amount} onChange={(e) => setEditForm((f) => ({ ...f, installment_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
+                            <input readOnly value={editForm.total_amount ? Math.max(0, Number(editForm.total_amount) - (Number(editForm.down_payment) || 0) - (Number(editForm.paid_amount) || 0)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
+                          </div>
+                          <button onClick={() => { setShowNewProject(false); setEditForm((f) => ({ ...f, project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" })); }} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
+                            Cancel adding project
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
