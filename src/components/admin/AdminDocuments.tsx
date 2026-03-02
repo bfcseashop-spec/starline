@@ -69,7 +69,8 @@ const AdminDocuments = () => {
   const [formUserId, setFormUserId] = useState("");
   const [formProjectId, setFormProjectId] = useState("");
   const [formCategory, setFormCategory] = useState("general");
-  const [formFile, setFormFile] = useState<File | null>(null);
+  const [formFiles, setFormFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, "pending" | "uploading" | "done" | "error">>({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -95,8 +96,8 @@ const AdminDocuments = () => {
   };
 
   const handleUpload = async () => {
-    if (!formFile || !formUserId) {
-      toast.error("Select a customer and file");
+    if (formFiles.length === 0 || !formUserId) {
+      toast.error("Select a customer and at least one file");
       return;
     }
     const allowed = [
@@ -105,53 +106,74 @@ const AdminDocuments = () => {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "image/jpeg", "image/png", "image/webp",
     ];
-    if (!allowed.includes(formFile.type)) {
-      toast.error("Only PDF, Word, JPEG, PNG files are allowed");
-      return;
-    }
-    if (formFile.size > 10 * 1024 * 1024) {
-      toast.error("File must be under 10 MB");
-      return;
+    for (const f of formFiles) {
+      if (!allowed.includes(f.type)) {
+        toast.error(`"${f.name}" is not a supported file type`);
+        return;
+      }
+      if (f.size > 10 * 1024 * 1024) {
+        toast.error(`"${f.name}" exceeds 10 MB limit`);
+        return;
+      }
     }
 
     setUploading(true);
-    const ext = formFile.name.split(".").pop();
-    const path = `${formUserId}/${Date.now()}.${ext}`;
+    const initialProgress: Record<string, "pending" | "uploading" | "done" | "error"> = {};
+    formFiles.forEach((f) => { initialProgress[f.name] = "pending"; });
+    setUploadProgress(initialProgress);
 
-    const { error: uploadError } = await supabase.storage
-      .from("customer-documents")
-      .upload(path, formFile);
-    if (uploadError) {
-      toast.error("Upload failed: " + uploadError.message);
-      setUploading(false);
-      return;
+    let successCount = 0;
+    for (const file of formFiles) {
+      setUploadProgress((prev) => ({ ...prev, [file.name]: "uploading" }));
+      const ext = file.name.split(".").pop();
+      const path = `${formUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("customer-documents")
+        .upload(path, file);
+      if (uploadError) {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "error" }));
+        continue;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("customer-documents")
+        .getPublicUrl(path);
+
+      const { error: insertError } = await supabase.from("documents").insert({
+        user_id: formUserId,
+        project_id: formProjectId || null,
+        file_name: file.name,
+        file_url: urlData.publicUrl,
+        file_type: file.type,
+        file_size: file.size,
+        category: formCategory,
+      });
+
+      if (insertError) {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "error" }));
+      } else {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: "done" }));
+        successCount++;
+      }
     }
 
-    const { data: urlData } = supabase.storage
-      .from("customer-documents")
-      .getPublicUrl(path);
+    if (successCount > 0) {
+      toast.success(`${successCount} document${successCount > 1 ? "s" : ""} uploaded successfully`);
+    }
+    if (successCount < formFiles.length) {
+      toast.error(`${formFiles.length - successCount} file${formFiles.length - successCount > 1 ? "s" : ""} failed`);
+    }
 
-    const { error: insertError } = await supabase.from("documents").insert({
-      user_id: formUserId,
-      project_id: formProjectId || null,
-      file_name: formFile.name,
-      file_url: urlData.publicUrl,
-      file_type: formFile.type,
-      file_size: formFile.size,
-      category: formCategory,
-    });
-
-    if (insertError) {
-      toast.error("Save failed: " + insertError.message);
-    } else {
-      toast.success("Document uploaded successfully");
+    setTimeout(() => {
       setShowForm(false);
-      setFormFile(null);
+      setFormFiles([]);
       setFormUserId("");
       setFormProjectId("");
       setFormCategory("general");
+      setUploadProgress({});
       fetchData();
-    }
+    }, 800);
     setUploading(false);
   };
 
@@ -274,29 +296,58 @@ const AdminDocuments = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">File (PDF, Word, Image) *</label>
+              <label className="text-sm font-medium text-foreground mb-1 block">Files (PDF, Word, Image) *</label>
               <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-6 cursor-pointer hover:border-gold/50 transition-colors bg-muted/50">
                 <Upload size={24} className="text-muted-foreground mb-2" />
                 <span className="text-sm text-muted-foreground">
-                  {formFile ? formFile.name : "Click to select file"}
+                  {formFiles.length > 0 ? `${formFiles.length} file${formFiles.length > 1 ? "s" : ""} selected` : "Click to select files"}
                 </span>
-                {formFile && <span className="text-xs text-muted-foreground mt-1">{formatSize(formFile.size)}</span>}
+                <span className="text-xs text-muted-foreground mt-1">You can select multiple files at once</span>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                  multiple
                   className="hidden"
-                  onChange={(e) => setFormFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files) setFormFiles((prev) => [...prev, ...Array.from(files)]);
+                  }}
                 />
               </label>
+              {formFiles.length > 0 && (
+                <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                  {formFiles.map((f, i) => {
+                    const status = uploadProgress[f.name];
+                    return (
+                      <div key={`${f.name}-${i}`} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-2">
+                        <FileText size={14} className="text-gold shrink-0" />
+                        <span className="truncate flex-1 text-card-foreground">{f.name}</span>
+                        <span className="text-xs text-muted-foreground shrink-0">{formatSize(f.size)}</span>
+                        {status === "uploading" && <Loader2 size={14} className="animate-spin text-gold shrink-0" />}
+                        {status === "done" && <FileCheck size={14} className="text-dash-green shrink-0" />}
+                        {status === "error" && <X size={14} className="text-destructive shrink-0" />}
+                        {!uploading && (
+                          <button
+                            onClick={() => setFormFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="text-muted-foreground hover:text-destructive shrink-0"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <Button
               onClick={handleUpload}
-              disabled={uploading || !formFile || !formUserId}
+              disabled={uploading || formFiles.length === 0 || !formUserId}
               className="w-full bg-gold-gradient text-accent-foreground hover:opacity-90 gap-2"
             >
               {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-              {uploading ? "Uploading..." : "Upload Document"}
+              {uploading ? "Uploading..." : `Upload ${formFiles.length > 1 ? `${formFiles.length} Documents` : "Document"}`}
             </Button>
           </div>
         </div>
