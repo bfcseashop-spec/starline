@@ -42,6 +42,37 @@ export interface PlatformConfig {
 
 export type SocialPlatforms = Record<string, PlatformConfig>;
 
+export interface HeaderConfig {
+  nav_items: { id: string; label: string; href: string; visible: boolean }[];
+  bg_color_scrolled: string;
+  bg_color_initial: string;
+  bg_opacity: number;
+  logo_size: string;
+  show_social_bar: boolean;
+  social_bar_bg: string;
+  social_bar_text: string;
+  header_style: string;
+  sticky: boolean;
+}
+
+const DEFAULT_HEADER: HeaderConfig = {
+  nav_items: [
+    { id: "1", label: "Home", href: "#", visible: true },
+    { id: "2", label: "Properties", href: "#properties", visible: true },
+    { id: "3", label: "About", href: "#about", visible: true },
+    { id: "4", label: "Contact", href: "#contact", visible: true },
+  ],
+  bg_color_scrolled: "#1a1a2e",
+  bg_color_initial: "transparent",
+  bg_opacity: 80,
+  logo_size: "default",
+  show_social_bar: true,
+  social_bar_bg: "#1a1a2e",
+  social_bar_text: "Welcome to Starline Builder's Ltd.",
+  header_style: "default",
+  sticky: true,
+};
+
 const DEFAULT_SYSTEM: SystemSettings = {
   banner_title: "",
   banner_subtitle: "",
@@ -79,6 +110,7 @@ export const useSiteSettings = () => {
   const [company, setCompany] = useState<CompanySettings>(DEFAULT_COMPANY);
   const [social, setSocial] = useState<SocialLinks>(DEFAULT_SOCIAL);
   const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatforms>({});
+  const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -90,6 +122,7 @@ export const useSiteSettings = () => {
           if (r.setting_key === "company_info") setCompany({ ...DEFAULT_COMPANY, ...r.setting_value });
           if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
           if (r.setting_key === "social_platforms") setSocialPlatforms(r.setting_value || {});
+          if (r.setting_key === "header_config") setHeaderConfig({ ...DEFAULT_HEADER, ...r.setting_value });
         });
       }
       setLoading(false);
@@ -97,5 +130,5 @@ export const useSiteSettings = () => {
     fetch();
   }, []);
 
-  return { system, company, social, socialPlatforms, loading };
+  return { system, company, social, socialPlatforms, headerConfig, loading };
 };

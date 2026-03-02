@@ -3,14 +3,7 @@ import { Menu, X, LogIn, LayoutDashboard, ExternalLink, Users, QrCode, Phone } f
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import type { CompanySettings, SocialLinks, SocialPlatforms } from "@/hooks/useSiteSettings";
-
-const navLinks = [
-  { label: "Home", href: "#" },
-  { label: "Properties", href: "#properties" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
-];
+import type { CompanySettings, SocialLinks, SocialPlatforms, HeaderConfig } from "@/hooks/useSiteSettings";
 
 const socialDefs = [
   { key: "facebook" as const, label: "Facebook", icon: (
@@ -44,7 +37,7 @@ const socialDefs = [
 
 interface Props {
   company?: CompanySettings;
-  headerStyle?: string;
+  headerConfig?: HeaderConfig;
   social?: SocialLinks;
   socialPlatforms?: SocialPlatforms;
 }
@@ -152,10 +145,27 @@ const SocialPopover = ({
   );
 };
 
-const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
+const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, role } = useAuth();
+
+  const hc = headerConfig;
+  const visibleNavItems = hc?.nav_items?.filter(n => n.visible) || [];
+  const isMinimal = (hc?.header_style || "default") === "minimal";
+  const showSocialBar = hc?.show_social_bar !== false;
+  const socialBarBg = hc?.social_bar_bg || "#1a1a2e";
+  const socialBarText = hc?.social_bar_text || "Welcome to Starline Builder's Ltd.";
+  const bgScrolled = hc?.bg_color_scrolled || "#1a1a2e";
+  const bgOpacity = hc?.bg_opacity ?? 80;
+  const logoSize = hc?.logo_size || "default";
+
+  const logoSizeClass: Record<string, string> = {
+    small: "w-7 h-7",
+    default: "w-9 h-9",
+    large: "w-12 h-12",
+    xlarge: "w-16 h-16",
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -166,9 +176,7 @@ const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
   const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
   const brandName = company?.name || "Starline Builder's";
   const logoUrl = company?.logo_url;
-  const isMinimal = headerStyle === "minimal";
 
-  // Build active socials from socialPlatforms (rich) or fall back to social (simple links)
   const activeSocials = socialDefs.filter((s) => {
     const cfg = socialPlatforms?.[s.key];
     if (cfg && (cfg.link || cfg.group_link || cfg.qr_code_url || cfg.phone)) return true;
@@ -176,42 +184,52 @@ const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
     return false;
   });
 
+  // Convert hex opacity
+  const hexOpacity = Math.round((bgOpacity / 100) * 255).toString(16).padStart(2, "0");
+
   return (
     <>
       {/* Top social bar */}
-      <div className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${
-        scrolled ? "h-0 opacity-0 overflow-hidden" : "h-10"
-      }`}>
-        <div className="bg-navy h-full">
-          <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
-            <p className="text-white/40 text-xs hidden sm:block">Welcome to Starline Builder's Ltd.</p>
-            <div className="flex items-center gap-1 ml-auto">
-              {activeSocials.map((s) => (
-                <SocialPopover
-                  key={s.key}
-                  platformKey={s.key}
-                  label={s.label}
-                  icon={s.icon}
-                  config={socialPlatforms?.[s.key]}
-                  simpleLink={(social as any)?.[s.key]}
-                />
-              ))}
+      {showSocialBar && (
+        <div className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-300 ${
+          scrolled ? "h-0 opacity-0 overflow-hidden" : "h-10"
+        }`}>
+          <div className="h-full" style={{ backgroundColor: socialBarBg }}>
+            <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
+              <p className="text-white/40 text-xs hidden sm:block">{socialBarText}</p>
+              <div className="flex items-center gap-1 ml-auto">
+                {activeSocials.map((s) => (
+                  <SocialPopover
+                    key={s.key}
+                    platformKey={s.key}
+                    label={s.label}
+                    icon={s.icon}
+                    config={socialPlatforms?.[s.key]}
+                    simpleLink={(social as any)?.[s.key]}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Main navbar */}
-      <nav className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "top-0 bg-gradient-to-r from-navy via-navy-light to-navy shadow-2xl shadow-black/20"
-          : "top-10 bg-gradient-to-r from-black/30 via-black/20 to-transparent backdrop-blur-md"
-      }`}>
+      <nav
+        className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled
+            ? "top-0 shadow-2xl shadow-black/20"
+            : `${showSocialBar ? "top-10" : "top-0"} backdrop-blur-md`
+        }`}
+        style={{
+          backgroundColor: scrolled ? `${bgScrolled}${hexOpacity}` : "rgba(0,0,0,0.2)",
+        }}
+      >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           {/* Brand */}
           <a href="#" className="font-heading text-xl font-bold flex items-center gap-3">
             {logoUrl && (
-              <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-xl object-contain" />
+              <img src={logoUrl} alt="Logo" className={`${logoSizeClass[logoSize]} rounded-xl object-contain`} />
             )}
             {!isMinimal && (
               <span className="text-white">
@@ -226,9 +244,9 @@ const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
+            {visibleNavItems.map((link) => (
               <a
-                key={link.label}
+                key={link.id}
                 href={link.href}
                 className="text-sm font-medium text-white/70 hover:text-white px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
               >
@@ -270,11 +288,12 @@ const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-navy border-t border-white/10 overflow-hidden"
+              className="md:hidden border-t border-white/10 overflow-hidden"
+              style={{ backgroundColor: bgScrolled }}
             >
               <div className="px-6 py-5 flex flex-col gap-3">
-                {navLinks.map((link) => (
-                  <a key={link.label} href={link.href} onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition-colors text-sm py-2 border-b border-white/5">
+                {visibleNavItems.map((link) => (
+                  <a key={link.id} href={link.href} onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition-colors text-sm py-2 border-b border-white/5">
                     {link.label}
                   </a>
                 ))}
