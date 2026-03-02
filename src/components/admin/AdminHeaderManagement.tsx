@@ -30,6 +30,7 @@ interface HeaderSettings {
   social_bar_text: string;
   header_style: string;
   sticky: boolean;
+  nav_font_color: string;
 }
 
 const defaults: HeaderSettings = {
@@ -48,6 +49,7 @@ const defaults: HeaderSettings = {
   social_bar_text: "Welcome to Starline Builder's Ltd.",
   header_style: "default",
   sticky: true,
+  nav_font_color: "#ffffff",
 };
 
 const SectionCard = ({ icon: Icon, title, children, iconColor = "text-primary" }: { icon: any; title: string; children: React.ReactNode; iconColor?: string }) => (
@@ -195,7 +197,7 @@ const AdminHeaderManagement = () => {
             </div>
             <div className="flex items-center gap-1">
               {form.nav_items.filter(n => n.visible).map(n => (
-                <span key={n.id} className="text-white/70 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-default">
+                <span key={n.id} className="text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors cursor-default" style={{ color: form.nav_font_color || "#ffffff" }}>
                   {n.label}
                 </span>
               ))}
@@ -243,6 +245,13 @@ const AdminHeaderManagement = () => {
           <Button variant="outline" size="sm" onClick={addNavItem} className="gap-1.5 text-xs w-full">
             <Plus size={12} /> Add Navigation Link
           </Button>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Nav Font Color</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <input type="color" value={form.nav_font_color} onChange={e => setForm({ ...form, nav_font_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+              <Input value={form.nav_font_color} onChange={e => setForm({ ...form, nav_font_color: e.target.value })} className="flex-1 bg-muted/50" />
+            </div>
+          </div>
         </SectionCard>
 
         {/* Logo Settings */}

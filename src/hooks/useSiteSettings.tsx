@@ -53,6 +53,7 @@ export interface HeaderConfig {
   social_bar_text: string;
   header_style: string;
   sticky: boolean;
+  nav_font_color: string;
 }
 
 const DEFAULT_HEADER: HeaderConfig = {
@@ -71,6 +72,7 @@ const DEFAULT_HEADER: HeaderConfig = {
   social_bar_text: "Welcome to Starline Builder's Ltd.",
   header_style: "default",
   sticky: true,
+  nav_font_color: "#ffffff",
 };
 
 const DEFAULT_SYSTEM: SystemSettings = {
