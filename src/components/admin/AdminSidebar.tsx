@@ -1,22 +1,32 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-  LayoutDashboard, Home, Users, FileText, BarChart3, Settings, MessageSquare,
+  LayoutDashboard, Home, Users, FileText, BarChart3, Settings, 
   CreditCard, FolderOpen, Images, ClipboardList, LogOut, ChevronLeft, ChevronRight, Sparkles,
+  Shield, Landmark, Share2, Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-type AdminPage = "dashboard" | "customers" | "projects" | "payments" | "images" | "work_updates" | "documents" | "settings";
+type AdminPage =
+  | "dashboard" | "customers" | "projects" | "payments" | "images"
+  | "work_updates" | "documents" | "settings"
+  | "roles" | "invoices" | "social_media" | "bank_statement" | "reports" | "expenses";
 
-const navItems = [
-  { id: "dashboard" as AdminPage, icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
-  { id: "customers" as AdminPage, icon: Users, label: "Customers", gradient: "bg-dash-green" },
-  { id: "projects" as AdminPage, icon: Home, label: "Projects", gradient: "bg-dash-orange" },
-  { id: "payments" as AdminPage, icon: CreditCard, label: "Payments", gradient: "bg-dash-teal" },
-  { id: "images" as AdminPage, icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
-  { id: "work_updates" as AdminPage, icon: ClipboardList, label: "Work Updates", gradient: "bg-dash-teal" },
-  { id: "documents" as AdminPage, icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
-  { id: "settings" as AdminPage, icon: Settings, label: "Settings", gradient: "bg-dash-teal" },
+const navItems: { id: AdminPage; icon: typeof LayoutDashboard; label: string; gradient: string; section?: string }[] = [
+  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
+  { id: "customers", icon: Users, label: "Customers", gradient: "bg-dash-green" },
+  { id: "projects", icon: Home, label: "Projects", gradient: "bg-dash-orange" },
+  { id: "payments", icon: CreditCard, label: "Payments", gradient: "bg-dash-teal" },
+  { id: "invoices", icon: FileText, label: "Create Invoice", gradient: "bg-dash-purple" },
+  { id: "expenses", icon: Wallet, label: "Expenses", gradient: "bg-dash-orange" },
+  { id: "bank_statement", icon: Landmark, label: "Bank Statement", gradient: "bg-dash-teal" },
+  { id: "reports", icon: BarChart3, label: "Reports", gradient: "bg-dash-purple" },
+  { id: "images", icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
+  { id: "work_updates", icon: ClipboardList, label: "Work Updates", gradient: "bg-dash-teal" },
+  { id: "documents", icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
+  { id: "social_media", icon: Share2, label: "Social Media", gradient: "bg-dash-blue" },
+  { id: "roles", icon: Shield, label: "Roles & Permissions", gradient: "bg-dash-pink" },
+  { id: "settings", icon: Settings, label: "Settings", gradient: "bg-dash-teal" },
 ];
 
 interface AdminSidebarProps {

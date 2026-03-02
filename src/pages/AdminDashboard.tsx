@@ -16,6 +16,12 @@ import AdminImages from "@/components/admin/AdminImages";
 import AdminWorkUpdates from "@/components/admin/AdminWorkUpdates";
 import AdminDocuments from "@/components/admin/AdminDocuments";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminRoles from "@/components/admin/AdminRoles";
+import AdminInvoices from "@/components/admin/AdminInvoices";
+import AdminSocialMedia from "@/components/admin/AdminSocialMedia";
+import AdminBankStatement from "@/components/admin/AdminBankStatement";
+import AdminReports from "@/components/admin/AdminReports";
+import AdminExpenses from "@/components/admin/AdminExpenses";
 
 const pageTitle: Record<AdminPage, string> = {
   dashboard: "Dashboard",
@@ -26,6 +32,12 @@ const pageTitle: Record<AdminPage, string> = {
   work_updates: "Work Updates",
   documents: "Documents",
   settings: "Settings",
+  roles: "Roles & Permissions",
+  invoices: "Create Invoice",
+  social_media: "Social Media",
+  bank_statement: "Bank Statement",
+  reports: "Reports Dashboard",
+  expenses: "Expense Management",
 };
 
 const AdminDashboard = () => {
@@ -70,6 +82,12 @@ const AdminDashboard = () => {
             {activePage === "work_updates" && <AdminWorkUpdates />}
             {activePage === "documents" && <AdminDocuments />}
             {activePage === "settings" && <AdminSettings />}
+            {activePage === "roles" && <AdminRoles />}
+            {activePage === "invoices" && <AdminInvoices />}
+            {activePage === "social_media" && <AdminSocialMedia />}
+            {activePage === "bank_statement" && <AdminBankStatement />}
+            {activePage === "reports" && <AdminReports />}
+            {activePage === "expenses" && <AdminExpenses />}
           </motion.div>
         </main>
       </div>
