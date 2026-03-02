@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Home", href: "#" },
@@ -11,6 +13,9 @@ const navLinks = [
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const { user, role } = useAuth();
+
+  const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/90 backdrop-blur-md border-b border-navy-light">
@@ -30,12 +35,23 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
-          <a
-            href="#contact"
-            className="bg-gold-gradient text-accent-foreground px-6 py-2.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity"
-          >
-            Get in Touch
-          </a>
+          {user ? (
+            <Link
+              to={dashboardPath}
+              className="bg-gold-gradient text-accent-foreground px-6 py-2.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <LayoutDashboard size={16} />
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              to="/auth"
+              className="bg-gold-gradient text-accent-foreground px-6 py-2.5 rounded text-sm font-semibold hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <LogIn size={16} />
+              Log In
+            </Link>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -64,6 +80,15 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
+              {user ? (
+                <Link to={dashboardPath} onClick={() => setOpen(false)} className="text-gold text-sm uppercase tracking-wide flex items-center gap-2">
+                  <LayoutDashboard size={16} /> Dashboard
+                </Link>
+              ) : (
+                <Link to="/auth" onClick={() => setOpen(false)} className="text-gold text-sm uppercase tracking-wide flex items-center gap-2">
+                  <LogIn size={16} /> Log In
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
