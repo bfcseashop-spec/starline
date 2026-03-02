@@ -16,7 +16,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-primary/90 backdrop-blur-md border-b border-navy-light">
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-20">
         <a href="#" className="font-heading text-2xl font-bold text-primary-foreground tracking-wide">
-          Skyline<span className="text-gold">.</span>
+          Starline Builder's<span className="text-gold"> Ltd.</span>
         </a>
 
         {/* Desktop */}
