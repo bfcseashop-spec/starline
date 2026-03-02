@@ -3,9 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Users, Phone, MapPin, Loader2, Search, LayoutGrid, LayoutList,
-  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown,
+  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface ViewProject {
+  id: string;
+  project_name: string;
+  total_amount: number;
+  paid_amount: number;
+  monthly_installment: number;
+  status: string;
+}
 
 interface Customer {
   user_id: string;
@@ -383,42 +392,7 @@ const AdminCustomers = () => {
       )}
 
       {/* VIEW MODAL */}
-      <AnimatePresence>
-        {viewCustomer && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewCustomer(null)}>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="font-heading text-lg font-bold text-foreground">Customer Details</h3>
-                <button onClick={() => setViewCustomer(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
-              </div>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-dash-blue flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                  {(viewCustomer.full_name || "?")[0].toUpperCase()}
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground text-lg">{viewCustomer.full_name || "Unnamed"}</h4>
-                  {viewCustomer.phone && <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone size={13} /> {viewCustomer.phone}</p>}
-                  {viewCustomer.address && <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin size={13} /> {viewCustomer.address}</p>}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Projects", value: viewCustomer.project_count, bg: "bg-dash-blue" },
-                  { label: "Total Amount", value: formatCurrency(viewCustomer.total_amount), bg: "bg-dash-orange" },
-                  { label: "Paid Amount", value: formatCurrency(viewCustomer.paid_amount), bg: "bg-dash-green" },
-                  { label: "Due Amount", value: formatCurrency(viewCustomer.total_amount - viewCustomer.paid_amount), bg: "bg-dash-pink" },
-                ].map((s, i) => (
-                  <div key={i} className={`${s.bg} rounded-xl p-3 text-white`}>
-                    <p className="text-[10px] uppercase tracking-wider text-white/70">{s.label}</p>
-                    <p className="font-heading text-lg font-bold">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ViewCustomerModal customer={viewCustomer} onClose={() => setViewCustomer(null)} formatCurrency={formatCurrency} />
 
       {/* EDIT MODAL */}
       <AnimatePresence>
@@ -488,6 +462,122 @@ const AdminCustomers = () => {
         )}
       </AnimatePresence>
     </div>
+  );
+};
+
+// View Customer Modal with per-project breakdown
+const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Customer | null; onClose: () => void; formatCurrency: (n: number) => string }) => {
+  const [projects, setProjects] = useState<ViewProject[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!customer) return;
+    setLoading(true);
+    supabase.from("customer_projects")
+      .select("id, project_name, total_amount, paid_amount, monthly_installment, status")
+      .eq("user_id", customer.user_id)
+      .order("project_name")
+      .then(({ data }) => { setProjects((data || []) as ViewProject[]); setLoading(false); });
+  }, [customer]);
+
+  if (!customer) return null;
+
+  const due = customer.total_amount - customer.paid_amount;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-card rounded-2xl border border-border p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-5">
+            <h3 className="font-heading text-lg font-bold text-foreground">Customer Details</h3>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+          </div>
+
+          {/* Customer Info */}
+          <div className="flex items-center gap-4 mb-5">
+            <div className="w-14 h-14 rounded-2xl bg-dash-blue flex items-center justify-center text-white font-bold text-2xl shadow-lg">
+              {(customer.full_name || "?")[0].toUpperCase()}
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground text-lg">{customer.full_name || "Unnamed"}</h4>
+              {customer.phone && <p className="text-sm text-muted-foreground flex items-center gap-1"><Phone size={13} /> {customer.phone}</p>}
+              {customer.address && <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin size={13} /> {customer.address}</p>}
+            </div>
+          </div>
+
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-dash-blue rounded-xl p-3 text-white">
+              <p className="text-[10px] uppercase tracking-wider text-white/70">Projects</p>
+              <p className="font-heading text-lg font-bold">{customer.project_count}</p>
+            </div>
+            <div className="bg-dash-orange rounded-xl p-3 text-white">
+              <p className="text-[10px] uppercase tracking-wider text-white/70">Total Amount</p>
+              <p className="font-heading text-lg font-bold">{formatCurrency(customer.total_amount)}</p>
+            </div>
+            <div className="bg-dash-green rounded-xl p-3 text-white">
+              <p className="text-[10px] uppercase tracking-wider text-white/70">Paid Amount</p>
+              <p className="font-heading text-lg font-bold">{formatCurrency(customer.paid_amount)}</p>
+            </div>
+            <div className="bg-gradient-to-r from-dash-pink to-dash-orange rounded-xl p-3 text-white">
+              <p className="text-[10px] uppercase tracking-wider text-white/70">Due Amount</p>
+              <p className="font-heading text-lg font-bold">{formatCurrency(due)}</p>
+            </div>
+          </div>
+
+          {/* Per-project breakdown */}
+          <div>
+            <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2"><HardHat size={15} /> Project Breakdown</h4>
+            {loading ? (
+              <div className="flex justify-center py-6"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
+            ) : projects.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No projects assigned.</p>
+            ) : (
+              <div className="space-y-3">
+                {projects.map((p) => {
+                  const pDue = p.total_amount - p.paid_amount;
+                  const paidPct = p.total_amount > 0 ? Math.round((p.paid_amount / p.total_amount) * 100) : 0;
+                  return (
+                    <div key={p.id} className="bg-muted/50 rounded-xl p-4 border border-border">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-semibold text-foreground text-sm">{p.project_name}</h5>
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                          p.status === "completed" ? "bg-dash-green/15 text-dash-green"
+                          : p.status === "in_progress" ? "bg-dash-blue/15 text-dash-blue"
+                          : "bg-muted text-muted-foreground"
+                        }`}>{p.status.replace("_", " ")}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-xs mb-2">
+                        <div>
+                          <p className="text-muted-foreground">Total</p>
+                          <p className="font-bold text-foreground">{formatCurrency(p.total_amount)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Paid</p>
+                          <p className="font-bold text-dash-green">{formatCurrency(p.paid_amount)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">EMI</p>
+                          <p className="font-bold text-dash-blue">{formatCurrency(p.monthly_installment)}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Due</p>
+                          <p className={`font-bold ${pDue > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(pDue)}</p>
+                        </div>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-dash-green to-dash-teal rounded-full transition-all" style={{ width: `${paidPct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 };
 
