@@ -1,9 +1,12 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
+import PropertySummary from "@/components/PropertySummary";
 import PropertySearch, { type Filters } from "@/components/PropertySearch";
 import FeaturedProperties from "@/components/FeaturedProperties";
 import StatsSection from "@/components/StatsSection";
+import ComingSoon from "@/components/ComingSoon";
+import WhyStarline from "@/components/WhyStarline";
 import Footer from "@/components/Footer";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -20,7 +23,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Dynamic CSS custom properties from system settings */}
       {!loading && (
         <style>{`
           :root {
@@ -36,9 +38,12 @@ const Index = () => {
           bannerSubtitle={system.banner_subtitle}
           bannerImageUrl={system.banner_image_url}
         />
+        <PropertySummary />
         <PropertySearch onFilter={setFilters} />
         {system.show_featured && <FeaturedProperties filters={filters} />}
         {system.show_stats && <StatsSection />}
+        <ComingSoon />
+        <WhyStarline />
       </main>
       <Footer />
     </div>

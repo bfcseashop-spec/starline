@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, SlidersHorizontal } from "lucide-react";
 
 const locations = ["All Locations", "Manhattan, New York", "Brooklyn Heights, New York", "Beverly Hills, California", "Miami, Florida", "San Francisco, California"];
 const propertyTypes = ["All Types", "Penthouse", "Villa", "Townhouse", "Condo", "Estate"];
@@ -20,12 +20,12 @@ interface Props {
 
 const SelectField = ({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) => (
   <div className="flex-1 min-w-[180px]">
-    <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block font-medium">{label}</label>
+    <label className="text-xs text-muted-foreground uppercase tracking-wider mb-1.5 block font-semibold">{label}</label>
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none bg-muted text-foreground rounded-lg px-4 py-3 pr-10 text-sm outline-none border border-border focus:ring-2 focus:ring-gold/40 transition-shadow cursor-pointer"
+        className="w-full appearance-none bg-background text-foreground rounded-xl px-4 py-3 pr-10 text-sm outline-none border border-border focus:ring-2 focus:ring-gold/40 focus:border-gold/40 transition-all cursor-pointer"
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>{opt}</option>
@@ -59,7 +59,7 @@ const PropertySearch = ({ onFilter }: Props) => {
   const hasFilters = filters.location !== "All Locations" || filters.propertyType !== "All Types" || filters.bedrooms !== "Any" || filters.priceRange !== "Any Price";
 
   return (
-    <section className="relative z-20 -mt-14">
+    <section className="py-12">
       <div className="max-w-6xl mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -67,13 +67,18 @@ const PropertySearch = ({ onFilter }: Props) => {
           viewport={{ once: true }}
           className="bg-card rounded-2xl shadow-xl border border-border p-6 md:p-8"
         >
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Search size={18} className="text-gold" />
-              <h3 className="font-heading text-lg font-semibold text-card-foreground">Find Your Property</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gold/10">
+                <SlidersHorizontal size={18} className="text-gold" />
+              </div>
+              <div>
+                <h3 className="font-heading text-lg font-bold text-foreground">Find Your Property</h3>
+                <p className="text-muted-foreground text-xs">Filter by location, type, rooms and budget</p>
+              </div>
             </div>
             {hasFilters && (
-              <button onClick={reset} className="text-xs text-gold hover:underline font-medium">
+              <button onClick={reset} className="text-xs text-gold hover:underline font-semibold bg-gold/10 px-3 py-1.5 rounded-full">
                 Clear Filters
               </button>
             )}
