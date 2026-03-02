@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, Search, Home, Users, DollarSign, AlertTriangle, FileText, BarChart3 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Bell, Search, Home, Users, DollarSign, AlertTriangle, FileText, BarChart3, Sun, Moon, Calendar, ChevronDown, User, Settings, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import type { AdminPage } from "@/components/admin/AdminSidebar";
 import StatCard from "@/components/admin/StatCard";
@@ -41,8 +42,27 @@ const pageTitle: Record<AdminPage, string> = {
 };
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [activePage, setActivePage] = useState<AdminPage>("dashboard");
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
+
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
+    : user?.email?.slice(0, 2).toUpperCase() ?? "AD";
+
+  const formattedDate = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const formattedTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -50,23 +70,102 @@ const AdminDashboard = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="bg-card/80 backdrop-blur-sm border-b border-border px-6 h-16 flex items-center justify-between shrink-0">
+        <header className="bg-card border-b border-border px-6 h-16 flex items-center justify-between shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
             <h1 className="font-heading text-xl font-bold text-foreground">{pageTitle[activePage]}</h1>
             <span className="bg-dash-blue text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Admin</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-muted rounded-full px-4 py-2">
-              <Search size={14} className="text-muted-foreground" />
-              <input placeholder="Search..." className="bg-transparent text-sm outline-none w-36 text-foreground placeholder:text-muted-foreground" />
+
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Date & Time */}
+            <div className="hidden lg:flex items-center gap-2 text-muted-foreground bg-muted/60 rounded-xl px-3 py-2">
+              <Calendar size={14} />
+              <span className="text-xs font-medium">{formattedDate}</span>
+              <span className="text-xs text-muted-foreground/60">|</span>
+              <span className="text-xs font-semibold text-foreground">{formattedTime}</span>
             </div>
-            <button className="relative text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-muted">
-              <Bell size={18} />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-dash-pink text-white text-[9px] rounded-full flex items-center justify-center font-bold">3</span>
+
+            {/* Search */}
+            <div className="hidden md:flex items-center gap-2 bg-muted/60 rounded-xl px-3 py-2">
+              <Search size={14} className="text-muted-foreground" />
+              <input placeholder="Search..." className="bg-transparent text-sm outline-none w-32 text-foreground placeholder:text-muted-foreground" />
+            </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              title="Toggle theme"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <div className="hidden sm:flex items-center gap-2 bg-muted rounded-full px-4 py-2">
-              <div className="w-2 h-2 rounded-full bg-dash-green animate-pulse" />
-              <span className="text-xs text-muted-foreground font-medium">{user?.email}</span>
+
+            {/* Notifications */}
+            <button className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
+              <Bell size={18} />
+              <span className="absolute top-1 right-1 w-4 h-4 bg-destructive text-white text-[9px] rounded-full flex items-center justify-center font-bold">3</span>
+            </button>
+
+            {/* Profile dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-muted/60 transition-colors"
+              >
+                <Avatar className="h-8 w-8 border-2 border-primary/20">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">{initials}</AvatarFallback>
+                </Avatar>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-semibold text-foreground leading-tight truncate max-w-[120px]">
+                    {user?.user_metadata?.full_name || user?.email?.split("@")[0]}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground leading-tight">Administrator</p>
+                </div>
+                <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
+              </button>
+
+              <AnimatePresence>
+                {profileOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-12 z-50 w-56 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+                    >
+                      <div className="px-4 py-3 border-b border-border">
+                        <p className="text-sm font-semibold text-foreground truncate">{user?.user_metadata?.full_name || "Admin"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                      </div>
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setProfileOpen(false); setActivePage("settings"); }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                          <User size={15} className="text-muted-foreground" /> Edit Profile
+                        </button>
+                        <button
+                          onClick={() => { setProfileOpen(false); setActivePage("settings"); }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-foreground hover:bg-muted/60 transition-colors"
+                        >
+                          <Settings size={15} className="text-muted-foreground" /> Settings
+                        </button>
+                      </div>
+                      <div className="border-t border-border py-1">
+                        <button
+                          onClick={() => { setProfileOpen(false); signOut(); }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <LogOut size={15} /> Sign Out
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </header>
