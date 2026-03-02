@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, Settings, X, Plus } from "lucide-react";
+import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, X, Plus, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,17 @@ const getAvatarColor = (str: string) => {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 };
 
+const MODULES = ["Dashboard", "Projects", "Customers", "Payments", "Documents", "Invoices", "Expenses", "Reports", "Settings", "Roles", "Social Media", "Work Updates"];
+const PERMS = ["view", "add", "edit", "delete"] as const;
+
+const defaultPerms = (role: string): Record<string, Record<string, boolean>> => {
+  const all = Object.fromEntries(MODULES.map(m => [m, Object.fromEntries(PERMS.map(p => [p, true]))]));
+  if (role === "Admin") return all;
+  const limited = Object.fromEntries(MODULES.map(m => [m, Object.fromEntries(PERMS.map(p => [p, false]))]));
+  ["Dashboard", "Projects", "Payments", "Documents", "Work Updates"].forEach(m => { limited[m] = { view: true, add: false, edit: false, delete: false }; });
+  return limited;
+};
+
 const AdminRoles = () => {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +63,8 @@ const AdminRoles = () => {
   const [newRoleName, setNewRoleName] = useState("");
   const [newRoleDesc, setNewRoleDesc] = useState("");
   const [customRoles, setCustomRoles] = useState<{ name: string; desc: string }[]>([]);
+  const [expandedRole, setExpandedRole] = useState<string | null>(null);
+  const [rolePerms, setRolePerms] = useState<Record<string, Record<string, Record<string, boolean>>>>({});
 
   const fetchRoles = async () => {
     const [rolesRes, profilesRes] = await Promise.all([
@@ -147,6 +160,31 @@ const AdminRoles = () => {
     if (!confirm(`Delete role "${name}"?`)) return;
     setCustomRoles((prev) => prev.filter((r) => r.name !== name));
     toast.success("Role deleted");
+  };
+
+  const getPermsForRole = (roleName: string) => {
+    if (rolePerms[roleName]) return rolePerms[roleName];
+    return defaultPerms(roleName);
+  };
+
+  const countPerms = (roleName: string) => {
+    const p = getPermsForRole(roleName);
+    let total = 0;
+    Object.values(p).forEach(mod => Object.values(mod).forEach(v => { if (v) total++; }));
+    return total;
+  };
+
+  const togglePerm = (roleName: string, mod: string, perm: string) => {
+    const current = getPermsForRole(roleName);
+    const updated = { ...current, [mod]: { ...current[mod], [perm]: !current[mod][perm] } };
+    setRolePerms(prev => ({ ...prev, [roleName]: updated }));
+  };
+
+  const toggleAllModule = (roleName: string, mod: string) => {
+    const current = getPermsForRole(roleName);
+    const allChecked = PERMS.every(p => current[mod][p]);
+    const updated = { ...current, [mod]: Object.fromEntries(PERMS.map(p => [p, !allChecked])) };
+    setRolePerms(prev => ({ ...prev, [roleName]: updated }));
   };
 
   const allRolesDisplay = [
@@ -312,33 +350,89 @@ const AdminRoles = () => {
             </thead>
             <tbody>
               {allRolesDisplay.map((role) => {
-                const totalPerms = role.name === "Admin" ? "12/12" : role.name === "Customer" ? "5/12" : `${Math.floor(Math.random() * 8) + 3}/12`;
+                const permCount = countPerms(role.name);
+                const totalPossible = MODULES.length * PERMS.length;
+                const isExpanded = expandedRole === role.name;
                 return (
-                  <tr key={role.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-5 py-4">
-                      <span className={`font-semibold ${role.color}`}>{role.name}</span>
-                    </td>
-                    <td className="px-5 py-4 text-muted-foreground">{role.desc || "—"}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
-                          <Shield size={12} className="text-muted-foreground" />
+                  <React.Fragment key={role.name}>
+                    <tr className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                      <td className="px-5 py-4">
+                        <span className={`font-semibold ${role.color}`}>{role.name}</span>
+                      </td>
+                      <td className="px-5 py-4 text-muted-foreground">{role.desc || "—"}</td>
+                      <td className="px-5 py-4">
+                        <button onClick={() => setExpandedRole(isExpanded ? null : role.name)}
+                          className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer">
+                          <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                            <Shield size={12} className="text-muted-foreground" />
+                          </div>
+                          <span className="text-foreground font-medium text-sm">{permCount}/{totalPossible}</span>
+                          {isExpanded ? <ChevronUp size={14} className="text-muted-foreground" /> : <ChevronDown size={14} className="text-muted-foreground" />}
+                        </button>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                            <Pencil size={14} />
+                          </button>
+                          <button onClick={() => handleDeleteRole(role.name)}
+                            className="p-1.5 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <span className="text-foreground font-medium text-sm">{totalPerms}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                          <Pencil size={14} />
-                        </button>
-                        <button onClick={() => handleDeleteRole(role.name)}
-                          className="p-1.5 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={4} className="p-0">
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
+                              className="overflow-hidden">
+                              <div className="px-5 py-4 bg-muted/20 border-b border-border">
+                                <table className="w-full text-xs">
+                                  <thead>
+                                    <tr className="border-b border-border">
+                                      <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Module</th>
+                                      {PERMS.map(p => (
+                                        <th key={p} className="text-center py-2 px-3 font-semibold text-muted-foreground capitalize w-20">{p}</th>
+                                      ))}
+                                      <th className="text-center py-2 px-3 font-semibold text-muted-foreground w-20">All</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {MODULES.map(mod => {
+                                      const perms = getPermsForRole(role.name);
+                                      const modPerms = perms[mod] || {};
+                                      const allChecked = PERMS.every(p => modPerms[p]);
+                                      return (
+                                        <tr key={mod} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
+                                          <td className="py-2 px-3 font-medium text-foreground">{mod}</td>
+                                          {PERMS.map(p => (
+                                            <td key={p} className="text-center py-2 px-3">
+                                              <button onClick={() => togglePerm(role.name, mod, p)}
+                                                className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-colors ${modPerms[p] ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background hover:border-muted-foreground"}`}>
+                                                {modPerms[p] && <Check size={12} />}
+                                              </button>
+                                            </td>
+                                          ))}
+                                          <td className="text-center py-2 px-3">
+                                            <button onClick={() => toggleAllModule(role.name, mod)}
+                                              className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-colors ${allChecked ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background hover:border-muted-foreground"}`}>
+                                              {allChecked && <Check size={12} />}
+                                            </button>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
+                  </React.Fragment>
                 );
               })}
             </tbody>
