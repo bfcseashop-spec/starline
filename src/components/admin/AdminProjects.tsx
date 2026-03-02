@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2 } from "lucide-react";
+import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface Project {
@@ -26,6 +26,15 @@ interface CustomerOption {
 
 const statusOptions = ["planned", "in_progress", "completed", "on_hold"];
 
+type FilterStatus = "all" | "planned" | "in_progress" | "completed" | "on_hold";
+const filterLabels: Record<FilterStatus, string> = {
+  all: "All Projects",
+  planned: "Planned",
+  in_progress: "In Progress",
+  completed: "Completed",
+  on_hold: "On Hold",
+};
+
 const AdminProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
@@ -33,6 +42,9 @@ const AdminProjects = () => {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterStatus>("all");
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [form, setForm] = useState({
     user_id: "",
     project_name: "",
@@ -128,15 +140,78 @@ const AdminProjects = () => {
   const formatCurrency = (n: number) => `৳${n.toLocaleString()}`;
   const inputClass = "w-full bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow";
 
+  const filtered = projects.filter((p) => {
+    const q = search.toLowerCase();
+    const matchesSearch = !q || p.project_name.toLowerCase().includes(q) || (p.customer_name || "").toLowerCase().includes(q) || (p.location || "").toLowerCase().includes(q);
+    if (!matchesSearch) return false;
+    if (filter !== "all" && p.status !== filter) return false;
+    return true;
+  });
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-heading text-2xl font-bold text-foreground">Projects</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <h2 className="font-heading text-2xl font-bold text-foreground">Projects</h2>
+          <span className="bg-dash-orange text-white text-xs font-bold px-3 py-1.5 rounded-full">{filtered.length}</span>
+        </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-dash-blue text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
           <Plus size={16} /> Add Project
         </button>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex-1 relative">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by project name, customer, or location..."
+            className="w-full bg-card text-foreground rounded-xl pl-11 pr-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow"
+          />
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className="bg-card border border-border rounded-xl px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2 hover:bg-muted transition-colors min-w-[160px]"
+          >
+            <span className={`w-2 h-2 rounded-full ${filter === "all" ? "bg-dash-blue" : filter === "completed" ? "bg-dash-green" : filter === "in_progress" ? "bg-gold" : filter === "on_hold" ? "bg-destructive" : "bg-muted-foreground"}`} />
+            {filterLabels[filter]}
+            <ChevronDown size={14} className="ml-auto" />
+          </button>
+          {showFilterMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl z-30 overflow-hidden min-w-[180px]">
+              {(Object.keys(filterLabels) as FilterStatus[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => { setFilter(f); setShowFilterMenu(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors ${filter === f ? "bg-muted font-semibold text-foreground" : "text-muted-foreground"}`}
+                >
+                  {filterLabels[f]}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: "Total Projects", value: projects.length, color: "bg-dash-blue", icon: <HardHat size={16} /> },
+          { label: "In Progress", value: projects.filter((p) => p.status === "in_progress").length, color: "bg-dash-orange", icon: <HardHat size={16} /> },
+          { label: "Completed", value: projects.filter((p) => p.status === "completed").length, color: "bg-dash-green", icon: <HardHat size={16} /> },
+          { label: "Total Value", value: formatCurrency(projects.reduce((s, p) => s + p.total_amount, 0)), color: "bg-dash-purple", icon: <DollarSign size={16} /> },
+        ].map((stat, i) => (
+          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+            className={`${stat.color} rounded-2xl p-4 text-white shadow-lg`}>
+            <div className="flex items-center gap-2 text-white/70 text-xs font-medium mb-1">{stat.icon} {stat.label}</div>
+            <p className="font-heading text-xl font-bold">{stat.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* Form Modal */}
@@ -209,7 +284,7 @@ const AdminProjects = () => {
 
       {/* Project List */}
       <div className="space-y-3">
-        {projects.map((p, idx) => (
+        {filtered.map((p, idx) => (
           <motion.div
             key={p.id}
             initial={{ opacity: 0, y: 8 }}
@@ -244,10 +319,10 @@ const AdminProjects = () => {
             </div>
           </motion.div>
         ))}
-        {projects.length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center py-20 text-muted-foreground">
             <HardHat size={48} className="mx-auto mb-4 opacity-40" />
-            <p>No projects yet. Click "Add Project" to create one.</p>
+            <p>{search || filter !== "all" ? "No projects match your search/filter." : "No projects yet. Click \"Add Project\" to create one."}</p>
           </div>
         )}
       </div>
