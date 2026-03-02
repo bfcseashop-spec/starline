@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, Settings } from "lucide-react";
-import { motion } from "framer-motion";
+import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, Settings, X, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface UserRole {
   id: string;
@@ -40,6 +44,11 @@ const getAvatarColor = (str: string) => {
 const AdminRoles = () => {
   const [roles, setRoles] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateUser, setShowCreateUser] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [userForm, setUserForm] = useState({
+    email: "", password: "", full_name: "", phone: "", role: "customer" as "admin" | "customer",
+  });
 
   const fetchRoles = async () => {
     const [rolesRes, profilesRes] = await Promise.all([
@@ -61,6 +70,44 @@ const AdminRoles = () => {
   };
 
   useEffect(() => { fetchRoles(); }, []);
+
+  const handleCreateUser = async () => {
+    if (!userForm.email || !userForm.password || !userForm.full_name) {
+      toast.error("Email, password and full name are required");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("create-customer", {
+        body: {
+          email: userForm.email,
+          password: userForm.password,
+          full_name: userForm.full_name,
+          phone: userForm.phone,
+        },
+      });
+
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || res.error?.message || "Failed to create user");
+        setCreating(false);
+        return;
+      }
+
+      // If role should be admin, update the role
+      if (userForm.role === "admin" && res.data?.user_id) {
+        await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", res.data.user_id);
+      }
+
+      toast.success("User created successfully");
+      setShowCreateUser(false);
+      setUserForm({ email: "", password: "", full_name: "", phone: "", role: "customer" });
+      fetchRoles();
+    } catch (err) {
+      toast.error("Failed to create user");
+    }
+    setCreating(false);
+  };
 
   const handleChangeRole = async (userId: string, currentRole: string) => {
     const newR = currentRole === "admin" ? "customer" : "admin";
@@ -92,6 +139,9 @@ const AdminRoles = () => {
           <h2 className="font-heading text-2xl font-bold text-foreground">User Management</h2>
           <p className="text-sm text-muted-foreground">Manage users and assign roles</p>
         </div>
+        <Button onClick={() => setShowCreateUser(true)} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Plus size={16} /> Create User
+        </Button>
       </div>
 
       {/* Stat Cards */}
@@ -116,8 +166,8 @@ const AdminRoles = () => {
       </div>
 
       {/* User Management Section */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-1">
+      <div className="mb-4">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center">
             <Users size={16} className="text-blue-600" />
           </div>
@@ -187,8 +237,8 @@ const AdminRoles = () => {
       </div>
 
       {/* Roles Management Section */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
+      <div className="mb-4">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center">
             <Shield size={16} className="text-orange-600" />
           </div>
@@ -239,6 +289,75 @@ const AdminRoles = () => {
           </table>
         </div>
       </div>
+
+      {/* Create User Modal */}
+      <AnimatePresence>
+        {showCreateUser && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowCreateUser(false)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <UserPlus size={18} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-foreground">Create New User</h3>
+                    <p className="text-xs text-muted-foreground">Add a new user to the system</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowCreateUser(false)} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <Label className="text-xs font-semibold text-foreground">Full Name *</Label>
+                  <Input value={userForm.full_name} onChange={(e) => setUserForm({ ...userForm, full_name: e.target.value })}
+                    className="mt-1.5 bg-muted/50" placeholder="Enter full name" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-foreground">Email *</Label>
+                  <Input type="email" value={userForm.email} onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    className="mt-1.5 bg-muted/50" placeholder="user@example.com" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-foreground">Password *</Label>
+                  <Input type="password" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    className="mt-1.5 bg-muted/50" placeholder="Min 6 characters" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground">Phone</Label>
+                    <Input value={userForm.phone} onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                      className="mt-1.5 bg-muted/50" placeholder="+880..." />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground">Role</Label>
+                    <Select value={userForm.role} onValueChange={(v: "admin" | "customer") => setUserForm({ ...userForm, role: v })}>
+                      <SelectTrigger className="mt-1.5 bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+                <Button variant="outline" onClick={() => setShowCreateUser(false)}>Cancel</Button>
+                <Button onClick={handleCreateUser} disabled={creating} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                  {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                  Create User
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
