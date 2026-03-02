@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FileText, Loader2, Plus, Trash2, Download, Upload, Search, Filter,
-  FileCheck, FileSpreadsheet, File, X, Eye,
+  FileCheck, FileSpreadsheet, File, X, Eye, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +71,7 @@ const AdminDocuments = () => {
   const [formCategory, setFormCategory] = useState("general");
   const [formFiles, setFormFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, "pending" | "uploading" | "done" | "error">>({});
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -399,9 +400,9 @@ const AdminDocuments = () => {
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{new Date(doc.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
-                          <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="View">
+                          <button onClick={() => setPreviewDoc(doc)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Preview">
                             <Eye size={16} />
-                          </a>
+                          </button>
                           <a href={doc.file_url} download className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Download">
                             <Download size={16} />
                           </a>
@@ -415,6 +416,71 @@ const AdminDocuments = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Preview modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setPreviewDoc(null)}>
+          <div className="bg-card rounded-2xl border border-border w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText size={18} className="text-gold shrink-0" />
+                <span className="font-heading font-semibold text-foreground truncate">{previewDoc.file_name}</span>
+                <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full capitalize shrink-0">
+                  {categoryOptions.find((c) => c.value === previewDoc.category)?.label || previewDoc.category}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a href={previewDoc.file_url} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Open in new tab">
+                  <ExternalLink size={16} />
+                </a>
+                <a href={previewDoc.file_url} download className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Download">
+                  <Download size={16} />
+                </a>
+                <button onClick={() => setPreviewDoc(null)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center min-h-[400px]">
+              {previewDoc.file_type?.startsWith("image/") ? (
+                <img
+                  src={previewDoc.file_url}
+                  alt={previewDoc.file_name}
+                  className="max-w-full max-h-[75vh] object-contain"
+                />
+              ) : previewDoc.file_type === "application/pdf" ? (
+                <iframe
+                  src={previewDoc.file_url}
+                  title={previewDoc.file_name}
+                  className="w-full h-[75vh] border-0"
+                />
+              ) : (
+                <div className="text-center py-16 px-6">
+                  <FileText size={48} className="text-muted-foreground mx-auto mb-4" />
+                  <p className="text-foreground font-medium mb-2">Preview not available for this file type</p>
+                  <p className="text-muted-foreground text-sm mb-4">{previewDoc.file_name}</p>
+                  <a
+                    href={previewDoc.file_url}
+                    download
+                    className="inline-flex items-center gap-2 bg-gold-gradient text-accent-foreground px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <Download size={16} /> Download File
+                  </a>
+                </div>
+              )}
+            </div>
+            {/* Footer info */}
+            <div className="px-5 py-2.5 border-t border-border flex items-center gap-4 text-xs text-muted-foreground shrink-0">
+              <span>Customer: {getCustomerName(previewDoc.user_id)}</span>
+              <span>Project: {getProjectName(previewDoc.project_id)}</span>
+              <span>Size: {formatSize(previewDoc.file_size)}</span>
+              <span>Uploaded: {new Date(previewDoc.created_at).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
       )}
