@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Home, Users, FileText, BarChart3, Settings, 
   CreditCard, FolderOpen, Images, ClipboardList, LogOut, ChevronLeft, ChevronRight, Sparkles,
-  Shield, Landmark, Share2, Wallet,
+  Shield, Landmark, Share2, Wallet, PanelTop, Navigation,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 type AdminPage =
   | "dashboard" | "customers" | "projects" | "payments" | "images"
   | "work_updates" | "documents" | "settings"
-  | "roles" | "invoices" | "social_media" | "bank_statement" | "reports" | "expenses";
+  | "roles" | "invoices" | "social_media" | "bank_statement" | "reports" | "expenses"
+  | "hero_section" | "header_management";
 
 const navItems: { id: AdminPage; icon: typeof LayoutDashboard; label: string; gradient: string; section?: string }[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
@@ -25,6 +26,8 @@ const navItems: { id: AdminPage; icon: typeof LayoutDashboard; label: string; gr
   { id: "work_updates", icon: ClipboardList, label: "Work Updates", gradient: "bg-dash-teal" },
   { id: "documents", icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
   { id: "social_media", icon: Share2, label: "Social Media", gradient: "bg-dash-blue" },
+  { id: "hero_section", icon: PanelTop, label: "Hero Section", gradient: "bg-dash-orange" },
+  { id: "header_management", icon: Navigation, label: "Header", gradient: "bg-dash-green" },
   { id: "roles", icon: Shield, label: "Roles & Permissions", gradient: "bg-dash-pink" },
   { id: "settings", icon: Settings, label: "Settings", gradient: "bg-dash-teal" },
 ];
