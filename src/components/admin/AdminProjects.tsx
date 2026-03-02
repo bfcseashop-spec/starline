@@ -250,19 +250,39 @@ const AdminProjects = () => {
                   {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Total Amount</label>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Total Project Budget</label>
                   <input type="number" value={form.total_amount} onChange={(e) => setForm((f) => ({ ...f, total_amount: e.target.value }))} className={inputClass} placeholder="0" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Paid Amount</label>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Investment Amount</label>
                   <input type="number" value={form.paid_amount} onChange={(e) => setForm((f) => ({ ...f, paid_amount: e.target.value }))} className={inputClass} placeholder="0" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Monthly EMI</label>
-                  <input type="number" value={form.monthly_installment} onChange={(e) => setForm((f) => ({ ...f, monthly_installment: e.target.value }))} className={inputClass} placeholder="0" />
-                </div>
+              </div>
+              {/* Computed financial info */}
+              {(Number(form.total_amount) > 0 || Number(form.paid_amount) > 0) && (() => {
+                const total = Number(form.total_amount) || 0;
+                const paid = Number(form.paid_amount) || 0;
+                const remaining = Math.max(0, total - paid);
+                const overpaidAmt = Math.max(0, paid - total);
+                const isOver = paid > total;
+                return (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className={`rounded-xl p-3 text-center ${remaining > 0 ? "bg-destructive/10" : "bg-dash-green/10"}`}>
+                      <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>Remaining</p>
+                      <p className={`font-bold text-sm ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>৳{remaining.toLocaleString()}</p>
+                    </div>
+                    <div className={`rounded-xl p-3 text-center ${isOver ? "bg-dash-purple/10" : "bg-muted/50"}`}>
+                      <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${isOver ? "text-dash-purple" : "text-muted-foreground"}`}>Overpaid</p>
+                      <p className={`font-bold text-sm ${isOver ? "text-dash-purple" : "text-muted-foreground"}`}>৳{overpaidAmt.toLocaleString()}</p>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Monthly EMI</label>
+                <input type="number" value={form.monthly_installment} onChange={(e) => setForm((f) => ({ ...f, monthly_installment: e.target.value }))} className={inputClass} placeholder="0" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
