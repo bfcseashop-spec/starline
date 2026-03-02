@@ -54,7 +54,8 @@ const AdminCustomers = () => {
   // Modals
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "" });
+  const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
+  const [editProjects, setEditProjects] = useState<{ id: string; project_name: string; total_amount: number; paid_amount: number; monthly_installment: number }[]>([]);
   const [saving, setSaving] = useState(false);
 
   // Add customer modal
@@ -111,21 +112,64 @@ const AdminCustomers = () => {
   });
 
   // Edit handlers
-  const openEdit = (c: Customer) => {
-    setEditForm({ full_name: c.full_name || "", phone: c.phone || "", address: c.address || "" });
+  const openEdit = async (c: Customer) => {
+    setEditForm({ full_name: c.full_name || "", phone: c.phone || "", address: c.address || "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
     setEditCustomer(c);
+    const { data } = await supabase.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment").eq("user_id", c.user_id);
+    const projects = data || [];
+    setEditProjects(projects);
+    if (projects.length > 0) {
+      const p = projects[0];
+      setEditForm((f) => ({
+        ...f,
+        project_id: p.id,
+        project_name: p.project_name,
+        total_amount: String(p.total_amount),
+        paid_amount: String(p.paid_amount),
+        installment_amount: String(p.monthly_installment),
+        down_payment: "",
+      }));
+    }
+  };
+
+  const handleEditProjectChange = (projectId: string) => {
+    const p = editProjects.find((pr) => pr.id === projectId);
+    if (p) {
+      setEditForm((f) => ({
+        ...f,
+        project_id: p.id,
+        project_name: p.project_name,
+        total_amount: String(p.total_amount),
+        paid_amount: String(p.paid_amount),
+        installment_amount: String(p.monthly_installment),
+        down_payment: "",
+      }));
+    }
   };
 
   const handleEditSave = async () => {
     if (!editCustomer) return;
     setSaving(true);
+    // Update profile
     const { error } = await supabase.from("profiles").update({
       full_name: editForm.full_name.trim() || null,
       phone: editForm.phone.trim() || null,
       address: editForm.address.trim() || null,
     }).eq("user_id", editCustomer.user_id);
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // Update project if selected
+    if (editForm.project_id) {
+      const { error: projError } = await supabase.from("customer_projects").update({
+        project_name: editForm.project_name.trim(),
+        total_amount: Number(editForm.total_amount) || 0,
+        paid_amount: Number(editForm.paid_amount) || 0,
+        monthly_installment: Number(editForm.installment_amount) || 0,
+      }).eq("id", editForm.project_id);
+      if (projError) { setSaving(false); toast.error(projError.message); return; }
+    }
+
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
     toast.success("Customer updated!");
     setEditCustomer(null);
     fetchCustomers();
@@ -508,9 +552,9 @@ const AdminCustomers = () => {
                 <h3 className="font-heading text-lg font-bold text-foreground">Edit Customer</h3>
                 <button onClick={() => setEditCustomer(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Full Name</label>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Customer Name</label>
                   <input value={editForm.full_name} onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))} className={inputClass} />
                 </div>
                 <div>
@@ -521,6 +565,54 @@ const AdminCustomers = () => {
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Address</label>
                   <input value={editForm.address} onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))} className={inputClass} />
                 </div>
+
+                {/* Project Details Section */}
+                {editProjects.length > 0 && (
+                  <div className="border-t border-border pt-4 mt-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Project Details</p>
+                    <div className="space-y-4">
+                      {editProjects.length > 1 && (
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Select Project</label>
+                          <select value={editForm.project_id} onChange={(e) => handleEditProjectChange(e.target.value)} className={inputClass}>
+                            {editProjects.map((p) => (
+                              <option key={p.id} value={p.id}>{p.project_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name</label>
+                        <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Total Amount</label>
+                          <input type="number" value={editForm.total_amount} onChange={(e) => setEditForm((f) => ({ ...f, total_amount: e.target.value }))} className={inputClass} min="0" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Down Payment</label>
+                          <input type="number" value={editForm.down_payment} onChange={(e) => setEditForm((f) => ({ ...f, down_payment: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Paid Amount</label>
+                          <input type="number" value={editForm.paid_amount} onChange={(e) => setEditForm((f) => ({ ...f, paid_amount: e.target.value }))} className={inputClass} min="0" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Installment Amount</label>
+                          <input type="number" value={editForm.installment_amount} onChange={(e) => setEditForm((f) => ({ ...f, installment_amount: e.target.value }))} className={inputClass} min="0" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
+                        <input readOnly value={editForm.total_amount ? Math.max(0, Number(editForm.total_amount) - Number(editForm.paid_amount || 0)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <button onClick={handleEditSave} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
                   {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Changes
                 </button>
