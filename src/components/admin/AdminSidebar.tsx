@@ -68,14 +68,14 @@ const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
               key={item.id}
               onClick={() => onPageChange(item.id)}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 w-full text-left ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 w-full text-left ${
                 active
                   ? "bg-muted text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  : "text-foreground/80 hover:text-foreground hover:bg-muted/60"
               }`}
             >
-              <div className={`p-1.5 rounded-lg shrink-0 ${active ? item.gradient : ""}`}>
-                <item.icon size={16} className={active ? "text-white" : "text-foreground/70"} />
+              <div className={`p-1.5 rounded-lg shrink-0 ${item.gradient}`}>
+                <item.icon size={16} className="text-white" />
               </div>
               {!collapsed && <span className="truncate">{item.label}</span>}
             </button>
