@@ -391,34 +391,41 @@ const AdminRoles = () => {
                               <div className="px-5 py-4 bg-muted/20 border-b border-border">
                                 <table className="w-full text-xs">
                                   <thead>
-                                    <tr className="border-b border-border">
-                                      <th className="text-left py-2 px-3 font-semibold text-muted-foreground">Module</th>
-                                      {PERMS.map(p => (
-                                        <th key={p} className="text-center py-2 px-3 font-semibold text-muted-foreground capitalize w-20">{p}</th>
-                                      ))}
-                                      <th className="text-center py-2 px-3 font-semibold text-muted-foreground w-20">All</th>
+                                    <tr className="border-b-2 border-primary/20">
+                                      <th className="text-left py-2.5 px-3 font-bold text-foreground text-xs">Module</th>
+                                      <th className="text-center py-2.5 px-3 font-bold text-xs w-20"><span className="text-emerald-600">View</span></th>
+                                      <th className="text-center py-2.5 px-3 font-bold text-xs w-20"><span className="text-blue-600">Add</span></th>
+                                      <th className="text-center py-2.5 px-3 font-bold text-xs w-20"><span className="text-amber-600">Edit</span></th>
+                                      <th className="text-center py-2.5 px-3 font-bold text-xs w-20"><span className="text-rose-600">Delete</span></th>
+                                      <th className="text-center py-2.5 px-3 font-bold text-xs w-20"><span className="text-violet-600">All</span></th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {MODULES.map(mod => {
+                                    {MODULES.map((mod, idx) => {
                                       const perms = getPermsForRole(role.name);
                                       const modPerms = perms[mod] || {};
                                       const allChecked = PERMS.every(p => modPerms[p]);
+                                      const permColors: Record<string, { on: string; off: string }> = {
+                                        view: { on: "bg-emerald-500 border-emerald-500 text-white", off: "border-emerald-200 bg-emerald-50 hover:border-emerald-400 dark:border-emerald-800 dark:bg-emerald-950" },
+                                        add: { on: "bg-blue-500 border-blue-500 text-white", off: "border-blue-200 bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:bg-blue-950" },
+                                        edit: { on: "bg-amber-500 border-amber-500 text-white", off: "border-amber-200 bg-amber-50 hover:border-amber-400 dark:border-amber-800 dark:bg-amber-950" },
+                                        delete: { on: "bg-rose-500 border-rose-500 text-white", off: "border-rose-200 bg-rose-50 hover:border-rose-400 dark:border-rose-800 dark:bg-rose-950" },
+                                      };
                                       return (
-                                        <tr key={mod} className="border-b border-border/50 last:border-0 hover:bg-muted/30">
-                                          <td className="py-2 px-3 font-medium text-foreground">{mod}</td>
+                                        <tr key={mod} className={`border-b border-border/50 last:border-0 hover:bg-muted/40 transition-colors ${idx % 2 === 0 ? "bg-background/50" : ""}`}>
+                                          <td className="py-2.5 px-3 font-semibold text-foreground">{mod}</td>
                                           {PERMS.map(p => (
-                                            <td key={p} className="text-center py-2 px-3">
+                                            <td key={p} className="text-center py-2.5 px-3">
                                               <button onClick={() => togglePerm(role.name, mod, p)}
-                                                className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-colors ${modPerms[p] ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background hover:border-muted-foreground"}`}>
-                                                {modPerms[p] && <Check size={12} />}
+                                                className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-all duration-200 ${modPerms[p] ? permColors[p].on : permColors[p].off}`}>
+                                                {modPerms[p] && <Check size={12} strokeWidth={3} />}
                                               </button>
                                             </td>
                                           ))}
-                                          <td className="text-center py-2 px-3">
+                                          <td className="text-center py-2.5 px-3">
                                             <button onClick={() => toggleAllModule(role.name, mod)}
-                                              className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-colors ${allChecked ? "bg-primary border-primary text-primary-foreground" : "border-border bg-background hover:border-muted-foreground"}`}>
-                                              {allChecked && <Check size={12} />}
+                                              className={`w-5 h-5 rounded border inline-flex items-center justify-center transition-all duration-200 ${allChecked ? "bg-violet-500 border-violet-500 text-white" : "border-violet-200 bg-violet-50 hover:border-violet-400 dark:border-violet-800 dark:bg-violet-950"}`}>
+                                              {allChecked && <Check size={12} strokeWidth={3} />}
                                             </button>
                                           </td>
                                         </tr>
