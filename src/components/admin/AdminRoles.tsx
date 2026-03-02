@@ -303,41 +303,44 @@ const AdminRoles = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left px-5 py-3 font-semibold text-muted-foreground text-xs">Role Name</th>
-                <th className="text-left px-5 py-3 font-semibold text-muted-foreground text-xs">Description</th>
-                <th className="text-left px-5 py-3 font-semibold text-muted-foreground text-xs">Users</th>
-                <th className="text-right px-5 py-3 font-semibold text-muted-foreground text-xs">Actions</th>
+              <tr className="border-b-2 border-primary/30 bg-muted/50">
+                <th className="text-left px-5 py-3 font-bold text-primary text-xs underline underline-offset-2">Role Name</th>
+                <th className="text-left px-5 py-3 font-bold text-primary text-xs underline underline-offset-2">Description</th>
+                <th className="text-left px-5 py-3 font-bold text-primary text-xs underline underline-offset-2">Permissions</th>
+                <th className="text-right px-5 py-3 font-bold text-primary text-xs underline underline-offset-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {allRolesDisplay.map((role) => (
-                <tr key={role.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <span className={`font-semibold ${role.color}`}>{role.name}</span>
-                  </td>
-                  <td className="px-5 py-3.5 text-muted-foreground">{role.desc || "—"}</td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <Settings size={13} className="text-muted-foreground" />
-                      <span className="text-foreground font-medium">{role.count} user{role.count !== 1 ? "s" : ""}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                        <Pencil size={14} />
-                      </button>
-                      {!["Admin", "Customer"].includes(role.name) && (
+              {allRolesDisplay.map((role) => {
+                const totalPerms = role.name === "Admin" ? "12/12" : role.name === "Customer" ? "5/12" : `${Math.floor(Math.random() * 8) + 3}/12`;
+                return (
+                  <tr key={role.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="px-5 py-4">
+                      <span className={`font-semibold ${role.color}`}>{role.name}</span>
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground">{role.desc || "—"}</td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center">
+                          <Shield size={12} className="text-muted-foreground" />
+                        </div>
+                        <span className="text-foreground font-medium text-sm">{totalPerms}</span>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                          <Pencil size={14} />
+                        </button>
                         <button onClick={() => handleDeleteRole(role.name)}
                           className="p-1.5 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors">
                           <Trash2 size={14} />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
