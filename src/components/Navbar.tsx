@@ -219,10 +219,10 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
         className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
             ? "top-0 shadow-2xl shadow-black/20"
-            : `${showSocialBar ? "top-10" : "top-0"} backdrop-blur-md`
+            : `${showSocialBar ? "top-10" : "top-0"}`
         }`}
         style={{
-          backgroundColor: `${bgScrolled}${hexOpacity}`,
+          backgroundColor: bgScrolled,
         }}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
