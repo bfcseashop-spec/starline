@@ -284,7 +284,10 @@ const AdminProjects = () => {
 
       {/* Project List */}
       <div className="space-y-3">
-        {filtered.map((p, idx) => (
+        {filtered.map((p, idx) => {
+          const paidPct = p.total_amount > 0 ? Math.round((p.paid_amount / p.total_amount) * 100) : 0;
+          const due = Math.max(0, p.total_amount - p.paid_amount);
+          return (
           <motion.div
             key={p.id}
             initial={{ opacity: 0, y: 8 }}
@@ -293,12 +296,12 @@ const AdminProjects = () => {
             className="bg-card rounded-2xl border border-border p-5 shadow-sm"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-dash-orange flex items-center justify-center text-white">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-dash-orange flex items-center justify-center text-white shrink-0">
                   <HardHat size={22} />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{p.project_name}</h3>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">{p.project_name}</h3>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                     <span className="flex items-center gap-1 font-medium">👤 {p.customer_name}</span>
                     {p.location && <span className="flex items-center gap-1"><MapPin size={12} /> {p.location}</span>}
@@ -308,17 +311,35 @@ const AdminProjects = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right text-sm">
-                  <p className="text-muted-foreground text-xs">Total / Paid</p>
-                  <p className="font-bold text-foreground">{formatCurrency(p.total_amount)} / <span className="text-dash-green">{formatCurrency(p.paid_amount)}</span></p>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 text-sm">
+                  <div className="text-center px-2">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Total</p>
+                    <p className="font-bold text-foreground">{formatCurrency(p.total_amount)}</p>
+                  </div>
+                  <div className="text-center px-2 border-l border-border">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Paid</p>
+                    <p className="font-bold text-dash-green">{formatCurrency(p.paid_amount)}</p>
+                  </div>
+                  <div className="text-center px-2 border-l border-border">
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Due</p>
+                    <p className={`font-bold ${due > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(due)}</p>
+                  </div>
                 </div>
                 <button onClick={() => openEdit(p)} className="text-xs bg-muted hover:bg-muted/80 text-foreground px-3 py-2 rounded-lg font-medium transition-colors">Edit</button>
                 <button onClick={() => handleDelete(p.id)} className="text-xs text-destructive hover:bg-destructive/10 px-2 py-2 rounded-lg transition-colors"><Trash2 size={14} /></button>
               </div>
             </div>
+            {/* Progress bar */}
+            <div className="mt-3 flex items-center gap-3">
+              <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-dash-green to-dash-teal rounded-full transition-all" style={{ width: `${paidPct}%` }} />
+              </div>
+              <span className="text-xs font-semibold text-muted-foreground w-10 text-right">{paidPct}%</span>
+            </div>
           </motion.div>
-        ))}
+          );
+        })}
         {filtered.length === 0 && (
           <div className="text-center py-20 text-muted-foreground">
             <HardHat size={48} className="mx-auto mb-4 opacity-40" />
