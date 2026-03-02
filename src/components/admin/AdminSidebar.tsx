@@ -40,7 +40,7 @@ const AdminSidebar = ({ activePage, onPageChange }: AdminSidebarProps) => {
 
   return (
     <aside
-      className={`bg-sidebar-gradient border-r-0 flex flex-col h-screen sticky top-0 transition-all duration-300 ${
+      className={`bg-card border-r border-border flex flex-col h-screen sticky top-0 transition-all duration-300 ${
         collapsed ? "w-[68px]" : "w-60"
       }`}
     >
