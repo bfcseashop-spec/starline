@@ -468,16 +468,23 @@ const AdminCustomers = () => {
 // View Customer Modal with per-project breakdown
 const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Customer | null; onClose: () => void; formatCurrency: (n: number) => string }) => {
   const [projects, setProjects] = useState<ViewProject[]>([]);
+  const [payments, setPayments] = useState<{ id: string; amount: number; payment_date: string; payment_method: string; status: string; reference_no: string | null; notes: string | null; project_name?: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!customer) return;
     setLoading(true);
-    supabase.from("customer_projects")
-      .select("id, project_name, total_amount, paid_amount, monthly_installment, status")
-      .eq("user_id", customer.user_id)
-      .order("project_name")
-      .then(({ data }) => { setProjects((data || []) as ViewProject[]); setLoading(false); });
+    Promise.all([
+      supabase.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment, status").eq("user_id", customer.user_id).order("project_name"),
+      supabase.from("payments").select("id, amount, payment_date, payment_method, status, reference_no, notes, project_id").eq("user_id", customer.user_id).order("payment_date", { ascending: false }),
+    ]).then(([projRes, payRes]) => {
+      const projs = (projRes.data || []) as ViewProject[];
+      const projMap: Record<string, string> = {};
+      projs.forEach((p) => { projMap[p.id] = p.project_name; });
+      setProjects(projs);
+      setPayments((payRes.data || []).map((pay: any) => ({ ...pay, project_name: projMap[pay.project_id] || "—" })));
+      setLoading(false);
+    });
   }, [customer]);
 
   if (!customer) return null;
@@ -572,6 +579,39 @@ const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Cu
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Payment History */}
+          <div className="mt-5">
+            <h4 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2"><DollarSign size={15} /> Payment History</h4>
+            {loading ? (
+              <div className="flex justify-center py-4"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
+            ) : payments.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No payments recorded.</p>
+            ) : (
+              <div className="space-y-2">
+                {payments.map((pay) => (
+                  <div key={pay.id} className="flex items-center gap-3 bg-muted/50 rounded-xl p-3 border border-border">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${pay.status === "completed" ? "bg-dash-green/15 text-dash-green" : "bg-dash-orange/15 text-dash-orange"}`}>
+                      <DollarSign size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-foreground text-sm">{formatCurrency(pay.amount)}</p>
+                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${pay.status === "completed" ? "bg-dash-green/15 text-dash-green" : "bg-dash-orange/15 text-dash-orange"}`}>{pay.status}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                        <span>{pay.payment_date}</span>
+                        <span className="bg-muted px-1.5 py-0.5 rounded text-[10px]">{pay.payment_method.replace("_", " ")}</span>
+                        <span className="truncate max-w-[120px]">📁 {pay.project_name}</span>
+                        {pay.reference_no && <span>Ref: {pay.reference_no}</span>}
+                      </div>
+                      {pay.notes && <p className="text-[11px] text-muted-foreground mt-1 truncate">{pay.notes}</p>}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
