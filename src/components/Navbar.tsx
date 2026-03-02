@@ -159,6 +159,7 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
   const bgScrolled = hc?.bg_color_scrolled || "#1a1a2e";
   const bgOpacity = hc?.bg_opacity ?? 80;
   const logoSize = hc?.logo_size || "default";
+  const navFontColor = hc?.nav_font_color || "#ffffff";
 
   const logoSizeClass: Record<string, string> = {
     small: "w-7 h-7",
@@ -248,7 +249,10 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
               <a
                 key={link.id}
                 href={link.href}
-                className="text-sm font-medium text-white/70 hover:text-white px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
+                className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
+                style={{ color: navFontColor, opacity: 0.85 }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "0.85")}
               >
                 {link.label}
               </a>
@@ -293,7 +297,7 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
             >
               <div className="px-6 py-5 flex flex-col gap-3">
                 {visibleNavItems.map((link) => (
-                  <a key={link.id} href={link.href} onClick={() => setOpen(false)} className="text-white/70 hover:text-white transition-colors text-sm py-2 border-b border-white/5">
+                  <a key={link.id} href={link.href} onClick={() => setOpen(false)} className="transition-colors text-sm py-2 border-b border-white/5" style={{ color: navFontColor, opacity: 0.85 }}>
                     {link.label}
                   </a>
                 ))}
