@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   FileText, Loader2, Plus, Trash2, Download, Upload, Search, Filter,
-  FileCheck, FileSpreadsheet, File, X, Eye, ExternalLink,
+  FileCheck, FileSpreadsheet, File, X, Eye, ExternalLink, Pencil, Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,10 @@ const AdminDocuments = () => {
   const [formFiles, setFormFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, "pending" | "uploading" | "done" | "error">>({});
   const [previewDoc, setPreviewDoc] = useState<Document | null>(null);
+  const [editDoc, setEditDoc] = useState<Document | null>(null);
+  const [editCategory, setEditCategory] = useState("");
+  const [editProjectId, setEditProjectId] = useState("");
+  const [editFileName, setEditFileName] = useState("");
 
   const fetchData = async () => {
     setLoading(true);
@@ -189,6 +193,37 @@ const AdminDocuments = () => {
     else {
       toast.success("Document deleted");
       fetchData();
+    }
+  };
+
+  const openEdit = (doc: Document) => {
+    setEditDoc(doc);
+    setEditCategory(doc.category || "general");
+    setEditProjectId(doc.project_id || "");
+    setEditFileName(doc.file_name);
+  };
+
+  const handleEditSave = async () => {
+    if (!editDoc) return;
+    const { error } = await supabase.from("documents").update({
+      category: editCategory,
+      project_id: editProjectId || null,
+      file_name: editFileName,
+    }).eq("id", editDoc.id);
+    if (error) toast.error("Update failed: " + error.message);
+    else {
+      toast.success("Document updated");
+      setEditDoc(null);
+      fetchData();
+    }
+  };
+
+  const handlePrint = (doc: Document) => {
+    const printWindow = window.open(doc.file_url, "_blank");
+    if (printWindow) {
+      printWindow.addEventListener("load", () => {
+        printWindow.print();
+      });
     }
   };
 
@@ -400,8 +435,14 @@ const AdminDocuments = () => {
                       <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{new Date(doc.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
+                          <button onClick={() => openEdit(doc)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Edit">
+                            <Pencil size={16} />
+                          </button>
                           <button onClick={() => setPreviewDoc(doc)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Preview">
                             <Eye size={16} />
+                          </button>
+                          <button onClick={() => handlePrint(doc)} className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Print">
+                            <Printer size={16} />
                           </button>
                           <a href={doc.file_url} download className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-gold transition-colors" title="Download">
                             <Download size={16} />
@@ -416,6 +457,54 @@ const AdminDocuments = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editDoc && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setEditDoc(null)}>
+          <div className="bg-card rounded-2xl border border-border p-6 w-full max-w-md shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading text-lg font-bold text-foreground">Edit Document</h3>
+              <button onClick={() => setEditDoc(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">File Name</label>
+              <Input value={editFileName} onChange={(e) => setEditFileName(e.target.value)} className="bg-muted border-border" />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Category</label>
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-foreground"
+              >
+                {categoryOptions.map((c) => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1 block">Project</label>
+              <select
+                value={editProjectId}
+                onChange={(e) => setEditProjectId(e.target.value)}
+                className="w-full bg-muted border border-border rounded-lg px-3 py-2.5 text-sm text-foreground"
+              >
+                <option value="">No project</option>
+                {projects.filter((p) => p.user_id === editDoc.user_id).map((p) => (
+                  <option key={p.id} value={p.id}>{p.project_name}</option>
+                ))}
+              </select>
+            </div>
+
+            <Button onClick={handleEditSave} className="w-full bg-gold-gradient text-accent-foreground hover:opacity-90 gap-2">
+              <Pencil size={16} /> Update Document
+            </Button>
           </div>
         </div>
       )}
