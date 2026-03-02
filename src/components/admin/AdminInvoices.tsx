@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   FileText, Loader2, Printer, Search, Plus, X, Save, Receipt,
   User, Building2, Calendar, CreditCard, Hash, StickyNote,
+  Eye, Pencil, Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,10 @@ const AdminInvoices = () => {
   const [search, setSearch] = useState("");
   const [invoiceSettings, setInvoiceSettings] = useState<InvoiceSettings>({ prefix: "INV-", next_number: "1001" });
   const [showCreate, setShowCreate] = useState(false);
+  const [viewPayment, setViewPayment] = useState<Payment | null>(null);
+  const [editPayment, setEditPayment] = useState<Payment | null>(null);
+  const [deletePayment, setDeletePayment] = useState<Payment | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [slipForm, setSlipForm] = useState({
     user_id: "",
@@ -187,6 +192,38 @@ const AdminInvoices = () => {
     resetSlipForm();
     fetchData();
   };
+  const handleEditSlip = async () => {
+    if (!editPayment) return;
+    if (!slipForm.amount || Number(slipForm.amount) <= 0) { toast.error("Please enter a valid amount"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("payments").update({
+      user_id: slipForm.user_id,
+      project_id: slipForm.project_id || null,
+      amount: Number(slipForm.amount),
+      payment_method: slipForm.payment_method,
+      payment_date: slipForm.payment_date,
+      reference_no: slipForm.reference_no || null,
+      notes: slipForm.notes || null,
+      status: slipForm.status,
+    }).eq("id", editPayment.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Payment updated successfully!");
+    setEditPayment(null);
+    resetSlipForm();
+    fetchData();
+  };
+
+  const handleDeletePayment = async () => {
+    if (!deletePayment) return;
+    setDeleting(true);
+    const { error } = await supabase.from("payments").delete().eq("id", deletePayment.id);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Payment deleted successfully!");
+    setDeletePayment(null);
+    fetchData();
+  };
 
   const filtered = payments.filter(p => {
     const q = search.toLowerCase();
@@ -285,9 +322,29 @@ const AdminInvoices = () => {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button variant="outline" size="sm" onClick={() => generateInvoicePdf(p)} className="gap-1.5 text-xs h-8">
-                        <Printer size={13} /> PDF
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-500/15" title="View"
+                        onClick={() => setViewPayment(p)}>
+                        <Eye size={14} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-500/15" title="Edit"
+                        onClick={() => {
+                          setEditPayment(p);
+                          setSlipForm({
+                            user_id: p.user_id, project_id: p.project_id || "", amount: String(p.amount),
+                            payment_method: p.payment_method, payment_date: p.payment_date,
+                            reference_no: p.reference_no || "", notes: p.notes || "", status: p.status,
+                          });
+                        }}>
+                        <Pencil size={14} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-500/15" title="Print"
+                        onClick={() => generateInvoicePdf(p)}>
+                        <Printer size={14} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:bg-red-100 dark:hover:bg-red-500/15" title="Delete"
+                        onClick={() => setDeletePayment(p)}>
+                        <Trash2 size={14} />
                       </Button>
                     </div>
                   </td>
@@ -466,6 +523,150 @@ const AdminInvoices = () => {
                 <Button onClick={handleCreateSlip} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Create & Generate PDF
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* View Payment Modal */}
+      <AnimatePresence>
+        {viewPayment && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setViewPayment(null)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-500/15 flex items-center justify-center">
+                    <Eye size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-foreground">Payment Details</h3>
+                    <p className="text-xs text-muted-foreground">{invoiceSettings.prefix}{(viewPayment.reference_no || viewPayment.id.slice(0, 8)).toUpperCase()}</p>
+                  </div>
+                </div>
+                <button onClick={() => setViewPayment(null)} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"><X size={18} /></button>
+              </div>
+              <div className="p-6 space-y-3">
+                {[
+                  { label: "Customer", value: viewPayment.customer_name },
+                  { label: "Project", value: viewPayment.project_name },
+                  { label: "Amount", value: `৳${viewPayment.amount.toLocaleString()}` },
+                  { label: "Date", value: new Date(viewPayment.payment_date).toLocaleDateString() },
+                  { label: "Method", value: paymentMethods.find(m => m.id === viewPayment.payment_method)?.label || viewPayment.payment_method },
+                  { label: "Status", value: viewPayment.status.charAt(0).toUpperCase() + viewPayment.status.slice(1) },
+                  { label: "Reference", value: viewPayment.reference_no || "—" },
+                  { label: "Notes", value: viewPayment.notes || "—" },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{item.label}:</span>
+                    <span className="font-medium text-foreground text-right max-w-[60%]">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-border">
+                <Button variant="outline" onClick={() => setViewPayment(null)}>Close</Button>
+                <Button variant="outline" className="gap-2" onClick={() => { generateInvoicePdf(viewPayment); }}>
+                  <Printer size={14} /> Print
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Payment Modal */}
+      <AnimatePresence>
+        {editPayment && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => { setEditPayment(null); resetSlipForm(); }}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-card z-10 rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center">
+                    <Pencil size={20} className="text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-lg font-bold text-foreground">Edit Payment</h3>
+                    <p className="text-xs text-muted-foreground">{invoiceSettings.prefix}{(editPayment.reference_no || editPayment.id.slice(0, 8)).toUpperCase()}</p>
+                  </div>
+                </div>
+                <button onClick={() => { setEditPayment(null); resetSlipForm(); }} className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"><X size={18} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground mb-1.5 block">Amount (৳) *</Label>
+                    <Input type="number" value={slipForm.amount} onChange={e => setSlipForm({ ...slipForm, amount: e.target.value })} className="bg-muted/50" />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground mb-1.5 block">Date *</Label>
+                    <Input type="date" value={slipForm.payment_date} onChange={e => setSlipForm({ ...slipForm, payment_date: e.target.value })} className="bg-muted/50" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground mb-1.5 block">Payment Method</Label>
+                    <Select value={slipForm.payment_method} onValueChange={v => setSlipForm({ ...slipForm, payment_method: v })}>
+                      <SelectTrigger className="bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map(m => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-foreground mb-1.5 block">Status</Label>
+                    <Select value={slipForm.status} onValueChange={v => setSlipForm({ ...slipForm, status: v })}>
+                      <SelectTrigger className="bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-foreground mb-1.5 block">Reference / Transaction ID</Label>
+                  <Input value={slipForm.reference_no} onChange={e => setSlipForm({ ...slipForm, reference_no: e.target.value })} className="bg-muted/50" />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-foreground mb-1.5 block">Notes</Label>
+                  <Textarea value={slipForm.notes} onChange={e => setSlipForm({ ...slipForm, notes: e.target.value })} className="bg-muted/50" rows={3} />
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-3 p-6 border-t border-border sticky bottom-0 bg-card rounded-b-2xl">
+                <Button variant="outline" onClick={() => { setEditPayment(null); resetSlipForm(); }}>Cancel</Button>
+                <Button onClick={handleEditSlip} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Save Changes
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deletePayment && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDeletePayment(null)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-card rounded-2xl border border-border shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+              <div className="p-6 text-center">
+                <div className="w-14 h-14 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center mx-auto mb-4">
+                  <Trash2 size={24} className="text-red-600" />
+                </div>
+                <h3 className="font-heading text-lg font-bold text-foreground mb-2">Delete Payment?</h3>
+                <p className="text-sm text-muted-foreground">
+                  This will permanently delete payment <strong>{invoiceSettings.prefix}{(deletePayment.reference_no || deletePayment.id.slice(0, 8)).toUpperCase()}</strong> for ৳{deletePayment.amount.toLocaleString()}. This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 p-6 border-t border-border">
+                <Button variant="outline" onClick={() => setDeletePayment(null)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleDeletePayment} disabled={deleting} className="gap-2">
+                  {deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                  Delete
                 </Button>
               </div>
             </motion.div>
