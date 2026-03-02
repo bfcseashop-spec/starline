@@ -31,6 +31,8 @@ interface HeaderSettings {
   header_style: string;
   sticky: boolean;
   nav_font_color: string;
+  slogan: string;
+  slogan_color: string;
 }
 
 const defaults: HeaderSettings = {
@@ -50,6 +52,8 @@ const defaults: HeaderSettings = {
   header_style: "default",
   sticky: true,
   nav_font_color: "#ffffff",
+  slogan: "",
+  slogan_color: "#c9a55a",
 };
 
 const SectionCard = ({ icon: Icon, title, children, iconColor = "text-primary" }: { icon: any; title: string; children: React.ReactNode; iconColor?: string }) => (
@@ -191,9 +195,14 @@ const AdminHeaderManagement = () => {
               {logoUrl && (
                 <img src={logoUrl} alt="Logo" className={`${logoSizeClass[form.logo_size] || "w-9 h-9"} rounded-xl object-contain`} />
               )}
-              <span className="font-heading text-base font-bold text-white">
-                Starline<span className="text-gold"> Ltd.</span>
-              </span>
+              <div className="flex flex-col">
+                <span className="font-heading text-base font-bold text-white">
+                  Starline<span className="text-gold"> Ltd.</span>
+                </span>
+                {form.slogan && (
+                  <span className="text-[10px] uppercase tracking-widest" style={{ color: form.slogan_color || "#c9a55a" }}>{form.slogan}</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1">
               {form.nav_items.filter(n => n.visible).map(n => (
@@ -290,6 +299,17 @@ const AdminHeaderManagement = () => {
                 <SelectItem value="xlarge">Extra Large (64px)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Slogan / Tagline</Label>
+            <Input value={form.slogan} onChange={e => setForm({ ...form, slogan: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="e.g. Premium Real Estate in Bangladesh" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Slogan Color</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              <input type="color" value={form.slogan_color} onChange={e => setForm({ ...form, slogan_color: e.target.value })} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
+              <Input value={form.slogan_color} onChange={e => setForm({ ...form, slogan_color: e.target.value })} className="flex-1 bg-muted/50" />
+            </div>
           </div>
         </SectionCard>
 

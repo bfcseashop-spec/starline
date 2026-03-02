@@ -54,6 +54,8 @@ export interface HeaderConfig {
   header_style: string;
   sticky: boolean;
   nav_font_color: string;
+  slogan: string;
+  slogan_color: string;
 }
 
 const DEFAULT_HEADER: HeaderConfig = {
@@ -73,6 +75,8 @@ const DEFAULT_HEADER: HeaderConfig = {
   header_style: "default",
   sticky: true,
   nav_font_color: "#ffffff",
+  slogan: "",
+  slogan_color: "#c9a55a",
 };
 
 const DEFAULT_SYSTEM: SystemSettings = {
