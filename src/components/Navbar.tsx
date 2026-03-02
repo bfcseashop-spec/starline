@@ -222,7 +222,7 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
             : `${showSocialBar ? "top-10" : "top-0"} backdrop-blur-md`
         }`}
         style={{
-          backgroundColor: scrolled ? `${bgScrolled}${hexOpacity}` : "rgba(0,0,0,0.2)",
+          backgroundColor: `${bgScrolled}${hexOpacity}`,
         }}
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
