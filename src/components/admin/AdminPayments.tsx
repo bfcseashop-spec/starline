@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "sonner";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
@@ -191,58 +190,7 @@ const AdminPayments = () => {
   };
 
   const handlePrint = (p: Payment) => {
-    const doc = new jsPDF();
-    const navy = [15, 23, 42];
-    const gold = [212, 175, 55];
-
-    // Header
-    doc.setFillColor(navy[0], navy[1], navy[2]);
-    doc.rect(0, 0, 210, 40, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Payment Receipt", 15, 22);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Starline Builder's Ltd", 15, 32);
-    doc.setTextColor(gold[0], gold[1], gold[2]);
-    doc.text(`Receipt #${(p.reference_no || p.id.slice(0, 8)).toUpperCase()}`, 195, 22, { align: "right" });
-    doc.text(`Date: ${new Date(p.payment_date).toLocaleDateString()}`, 195, 32, { align: "right" });
-
-    // Details
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(11);
-    let y = 55;
-    const details = [
-      ["Customer", p.customer_name || "Unknown"],
-      ["Project", p.project_name || "—"],
-      ["Amount", `৳${p.amount.toLocaleString()}`],
-      ["Method", p.payment_method.replace("_", " ")],
-      ["Status", p.status],
-      ["Reference", p.reference_no || "—"],
-    ];
-    if (p.notes) details.push(["Notes", p.notes]);
-
-    details.forEach(([label, value]) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(label + ":", 15, y);
-      doc.setFont("helvetica", "normal");
-      doc.text(value, 70, y);
-      y += 10;
-    });
-
-    // Footer
-    doc.setDrawColor(gold[0], gold[1], gold[2]);
-    doc.setLineWidth(0.5);
-    doc.line(15, y + 5, 195, y + 5);
-    doc.setFontSize(9);
-    doc.setTextColor(130, 130, 130);
-    doc.text("This is a computer-generated receipt.", 105, y + 15, { align: "center" });
-
-    const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
-    const win = window.open(url);
-    if (win) win.onload = () => win.print();
+    generateInvoicePdf(p);
   };
 
   const formatCurrency = (n: number) => `৳${n.toLocaleString()}`;
