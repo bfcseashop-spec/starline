@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-type AdminPage = "dashboard" | "customers" | "projects" | "payments" | "images" | "documents" | "settings";
+type AdminPage = "dashboard" | "customers" | "projects" | "payments" | "images" | "work_updates" | "documents" | "settings";
 
 const navItems = [
   { id: "dashboard" as AdminPage, icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
@@ -14,6 +14,7 @@ const navItems = [
   { id: "projects" as AdminPage, icon: Home, label: "Projects", gradient: "bg-dash-orange" },
   { id: "payments" as AdminPage, icon: CreditCard, label: "Payments", gradient: "bg-dash-teal" },
   { id: "images" as AdminPage, icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
+  { id: "work_updates" as AdminPage, icon: ClipboardList, label: "Work Updates", gradient: "bg-dash-teal" },
   { id: "documents" as AdminPage, icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
   { id: "settings" as AdminPage, icon: Settings, label: "Settings", gradient: "bg-dash-teal" },
 ];
