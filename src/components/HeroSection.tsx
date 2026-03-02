@@ -2,12 +2,27 @@ import { motion } from "framer-motion";
 import { Search, MapPin } from "lucide-react";
 import heroImage from "@/assets/hero-skyline.jpg";
 
-const HeroSection = () => {
+interface Props {
+  bannerTitle?: string;
+  bannerSubtitle?: string;
+  bannerImageUrl?: string;
+}
+
+const HeroSection = ({ bannerTitle, bannerSubtitle, bannerImageUrl }: Props) => {
+  const bgImage = bannerImageUrl || heroImage;
+  const title = bannerTitle || "Find Your Dream";
+  const subtitle = bannerSubtitle || "Discover exceptional properties in the world's most sought-after locations. Your next chapter begins here.";
+
+  // Split title into lines for the gradient effect on last word
+  const words = title.split(" ");
+  const lastWord = words.pop();
+  const firstPart = words.join(" ");
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={heroImage} alt="Luxury city skyline at dusk" className="w-full h-full object-cover" />
+        <img src={bgImage} alt="Hero banner" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-navy-overlay" />
       </div>
 
@@ -27,9 +42,9 @@ const HeroSection = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="font-heading text-5xl md:text-7xl font-bold text-primary-foreground leading-tight mb-6"
         >
-          Find Your Dream
-          <br />
-          <span className="text-gradient-gold">Property</span>
+          {firstPart}
+          {firstPart && <br />}
+          <span className="text-gradient-gold">{lastWord}</span>
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -37,7 +52,7 @@ const HeroSection = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-primary-foreground/60 text-lg md:text-xl max-w-2xl mx-auto mb-10"
         >
-          Discover exceptional properties in the world's most sought-after locations. Your next chapter begins here.
+          {subtitle}
         </motion.p>
 
         {/* Search bar */}
