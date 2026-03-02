@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Menu, X, LogIn, LayoutDashboard, ExternalLink, Users, QrCode, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import type { CompanySettings, SocialLinks } from "@/hooks/useSiteSettings";
+import type { CompanySettings, SocialLinks, SocialPlatforms } from "@/hooks/useSiteSettings";
 
 const navLinks = [
   { label: "Home", href: "#" },
@@ -31,15 +31,128 @@ const socialDefs = [
   { key: "youtube" as const, label: "YouTube", icon: (
     <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
   )},
+  { key: "twitter" as const, label: "Twitter / X", icon: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+  )},
+  { key: "linkedin" as const, label: "LinkedIn", icon: (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+  )},
+  { key: "website" as const, label: "Website", icon: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+  )},
 ];
 
 interface Props {
   company?: CompanySettings;
   headerStyle?: string;
   social?: SocialLinks;
+  socialPlatforms?: SocialPlatforms;
 }
 
-const Navbar = ({ company, headerStyle, social }: Props) => {
+/* ── Popover for a single social platform ── */
+const SocialPopover = ({
+  platformKey,
+  label,
+  icon,
+  config,
+  simpleLink,
+}: {
+  platformKey: string;
+  label: string;
+  icon: React.ReactNode;
+  config?: { link: string; group_link: string; qr_code_url: string; phone: string };
+  simpleLink?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const link = config?.link || simpleLink || "";
+  const group = config?.group_link || "";
+  const qr = config?.qr_code_url || "";
+  const phone = config?.phone || "";
+  const hasMultiple = [link, group, qr, phone].filter(Boolean).length > 1;
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // If only a simple link, just render a normal anchor
+  if (!hasMultiple && link) {
+    return (
+      <a href={link} target="_blank" rel="noopener noreferrer" title={label}
+        className="text-white/40 hover:text-gold p-1.5 rounded-md hover:bg-white/5 transition-all">
+        {icon}
+      </a>
+    );
+  }
+
+  if (!link && !group && !qr && !phone) return null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        title={label}
+        className="text-white/40 hover:text-gold p-1.5 rounded-md hover:bg-white/5 transition-all"
+      >
+        {icon}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-2xl overflow-hidden z-[70]"
+          >
+            <div className="px-3 py-2.5 border-b border-border bg-muted/50">
+              <p className="text-xs font-bold text-foreground">{label}</p>
+            </div>
+            <div className="p-1.5 space-y-0.5">
+              {link && (
+                <a href={link} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
+                  <ExternalLink size={14} className="text-primary shrink-0" />
+                  <span className="truncate">Profile Link</span>
+                </a>
+              )}
+              {group && (
+                <a href={group} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
+                  <Users size={14} className="text-emerald-500 shrink-0" />
+                  <span className="truncate">Group / Channel</span>
+                </a>
+              )}
+              {phone && (
+                <a href={`tel:${phone}`} onClick={() => setOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors">
+                  <Phone size={14} className="text-amber-500 shrink-0" />
+                  <span className="truncate">{phone}</span>
+                </a>
+              )}
+              {qr && (
+                <button onClick={() => { window.open(qr, "_blank"); setOpen(false); }}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors w-full text-left">
+                  <QrCode size={14} className="text-violet-500 shrink-0" />
+                  <span className="truncate">View QR Code</span>
+                </button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const Navbar = ({ company, headerStyle, social, socialPlatforms }: Props) => {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, role } = useAuth();
@@ -54,7 +167,14 @@ const Navbar = ({ company, headerStyle, social }: Props) => {
   const brandName = company?.name || "Starline Builder's";
   const logoUrl = company?.logo_url;
   const isMinimal = headerStyle === "minimal";
-  const activeSocials = socialDefs.filter((s) => social?.[s.key]);
+
+  // Build active socials from socialPlatforms (rich) or fall back to social (simple links)
+  const activeSocials = socialDefs.filter((s) => {
+    const cfg = socialPlatforms?.[s.key];
+    if (cfg && (cfg.link || cfg.group_link || cfg.qr_code_url || cfg.phone)) return true;
+    if (social && (social as any)[s.key]) return true;
+    return false;
+  });
 
   return (
     <>
@@ -67,16 +187,14 @@ const Navbar = ({ company, headerStyle, social }: Props) => {
             <p className="text-white/40 text-xs hidden sm:block">Welcome to Starline Builder's Ltd.</p>
             <div className="flex items-center gap-1 ml-auto">
               {activeSocials.map((s) => (
-                <a
-                  key={s.label}
-                  href={social?.[s.key] || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={s.label}
-                  className="text-white/40 hover:text-gold p-1.5 rounded-md hover:bg-white/5 transition-all"
-                >
-                  {s.icon}
-                </a>
+                <SocialPopover
+                  key={s.key}
+                  platformKey={s.key}
+                  label={s.label}
+                  icon={s.icon}
+                  config={socialPlatforms?.[s.key]}
+                  simpleLink={(social as any)?.[s.key]}
+                />
               ))}
             </div>
           </div>
@@ -164,9 +282,14 @@ const Navbar = ({ company, headerStyle, social }: Props) => {
                 {/* Social icons in mobile */}
                 <div className="flex items-center gap-2 py-3">
                   {activeSocials.map((s) => (
-                    <a key={s.label} href={social?.[s.key] || "#"} target="_blank" rel="noopener noreferrer" title={s.label} className="text-white/40 hover:text-gold p-2 rounded-lg hover:bg-white/5 transition-all">
-                      {s.icon}
-                    </a>
+                    <SocialPopover
+                      key={s.key}
+                      platformKey={s.key}
+                      label={s.label}
+                      icon={s.icon}
+                      config={socialPlatforms?.[s.key]}
+                      simpleLink={(social as any)?.[s.key]}
+                    />
                   ))}
                 </div>
 
