@@ -271,6 +271,51 @@ const AdminBankStatement = () => {
         </div>
       </div>
 
+      {/* Recent Transactions Table */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm mb-6 overflow-hidden">
+        <div className="p-5 pb-0">
+          <h3 className="text-lg font-heading font-bold text-foreground">Recent Transactions</h3>
+          <p className="text-sm text-muted-foreground mb-4">Individual payment entries for the selected period</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted">
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Date</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground">Customer</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden sm:table-cell">Method</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden md:table-cell">Reference</th>
+                <th className="text-left px-5 py-3 font-medium text-muted-foreground hidden lg:table-cell">Notes</th>
+                <th className="text-right px-5 py-3 font-medium text-muted-foreground">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {payments.map((p) => {
+                const meta = METHOD_META[p.payment_method] || METHOD_META.other;
+                const Icon = meta.icon;
+                return (
+                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                    <td className="px-5 py-3 text-foreground text-xs whitespace-nowrap">{new Date(p.payment_date).toLocaleDateString()}</td>
+                    <td className="px-5 py-3 text-foreground font-medium">{p.customer_name}</td>
+                    <td className="px-5 py-3 hidden sm:table-cell">
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${meta.textColor}`}>
+                        <Icon size={12} /> {meta.label}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-muted-foreground text-xs hidden md:table-cell">{p.reference_no || "—"}</td>
+                    <td className="px-5 py-3 text-muted-foreground text-xs hidden lg:table-cell truncate max-w-[180px]">{p.notes || "—"}</td>
+                    <td className="px-5 py-3 text-right font-bold text-foreground whitespace-nowrap">৳{Number(p.amount).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+              {payments.length === 0 && (
+                <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">No transactions in this period.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Add Manual Amount Modal */}
       <AnimatePresence>
         {showManual && (
