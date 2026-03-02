@@ -283,60 +283,92 @@ const AdminProjects = () => {
       )}
 
       {/* Project List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filtered.map((p, idx) => {
-          const paidPct = p.total_amount > 0 ? Math.round((p.paid_amount / p.total_amount) * 100) : 0;
-          const due = Math.max(0, p.total_amount - p.paid_amount);
+          const paidPct = p.total_amount > 0 ? Math.min(100, Math.round((p.paid_amount / p.total_amount) * 100)) : 0;
+          const remaining = Math.max(0, p.total_amount - p.paid_amount);
+          const overpaid = Math.max(0, p.paid_amount - p.total_amount);
+          const isOverpaid = p.paid_amount > p.total_amount;
           return (
           <motion.div
             key={p.id}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.03 }}
-            className="bg-card rounded-2xl border border-border p-5 shadow-sm"
+            className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Top row: Info + Actions */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-dash-orange flex items-center justify-center text-white shrink-0">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 ${
+                  p.status === "completed" ? "bg-dash-green" : p.status === "in_progress" ? "bg-dash-orange" : p.status === "on_hold" ? "bg-destructive" : "bg-dash-blue"
+                }`}>
                   <HardHat size={22} />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{p.project_name}</h3>
+                  <h3 className="font-semibold text-foreground text-base truncate">{p.project_name}</h3>
                   <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                     <span className="flex items-center gap-1 font-medium">👤 {p.customer_name}</span>
                     {p.location && <span className="flex items-center gap-1"><MapPin size={12} /> {p.location}</span>}
-                    <span className={`capitalize font-medium ${p.status === "completed" ? "text-dash-green" : p.status === "in_progress" ? "text-gold" : "text-muted-foreground"}`}>
+                    <span className={`capitalize font-semibold px-2 py-0.5 rounded-full text-[10px] uppercase ${
+                      p.status === "completed" ? "bg-dash-green/15 text-dash-green"
+                      : p.status === "in_progress" ? "bg-gold/15 text-gold"
+                      : p.status === "on_hold" ? "bg-destructive/15 text-destructive"
+                      : "bg-dash-blue/15 text-dash-blue"
+                    }`}>
                       {p.status.replace("_", " ")}
                     </span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="text-center px-2">
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Total</p>
-                    <p className="font-bold text-foreground">{formatCurrency(p.total_amount)}</p>
-                  </div>
-                  <div className="text-center px-2 border-l border-border">
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Paid</p>
-                    <p className="font-bold text-dash-green">{formatCurrency(p.paid_amount)}</p>
-                  </div>
-                  <div className="text-center px-2 border-l border-border">
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Due</p>
-                    <p className={`font-bold ${due > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(due)}</p>
-                  </div>
-                </div>
-                <button onClick={() => openEdit(p)} className="text-xs bg-muted hover:bg-muted/80 text-foreground px-3 py-2 rounded-lg font-medium transition-colors">Edit</button>
-                <button onClick={() => handleDelete(p.id)} className="text-xs text-destructive hover:bg-destructive/10 px-2 py-2 rounded-lg transition-colors"><Trash2 size={14} /></button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => openEdit(p)} className="text-xs bg-muted hover:bg-muted/80 text-foreground px-4 py-2 rounded-lg font-medium transition-colors">Edit</button>
+                <button onClick={() => handleDelete(p.id)} className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"><Trash2 size={15} /></button>
               </div>
             </div>
+
+            {/* Financial breakdown */}
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-muted/50 rounded-xl p-3 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Total Budget</p>
+                <p className="font-bold text-foreground text-sm">{formatCurrency(p.total_amount)}</p>
+              </div>
+              <div className="bg-dash-green/10 rounded-xl p-3 text-center">
+                <p className="text-[10px] uppercase tracking-wider text-dash-green font-semibold mb-1">Investment</p>
+                <p className="font-bold text-dash-green text-sm">{formatCurrency(p.paid_amount)}</p>
+              </div>
+              <div className={`rounded-xl p-3 text-center ${remaining > 0 ? "bg-destructive/10" : "bg-dash-green/10"}`}>
+                <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>Remaining</p>
+                <p className={`font-bold text-sm ${remaining > 0 ? "text-destructive" : "text-dash-green"}`}>{formatCurrency(remaining)}</p>
+              </div>
+              <div className={`rounded-xl p-3 text-center ${isOverpaid ? "bg-dash-purple/10" : "bg-muted/50"}`}>
+                <p className={`text-[10px] uppercase tracking-wider font-semibold mb-1 ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>Overpaid</p>
+                <p className={`font-bold text-sm ${isOverpaid ? "text-dash-purple" : "text-muted-foreground"}`}>{formatCurrency(overpaid)}</p>
+              </div>
+            </div>
+
             {/* Progress bar */}
             <div className="mt-3 flex items-center gap-3">
               <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-dash-green to-dash-teal rounded-full transition-all" style={{ width: `${paidPct}%` }} />
+                <div className={`h-full rounded-full transition-all ${isOverpaid ? "bg-gradient-to-r from-dash-purple to-dash-purple" : "bg-gradient-to-r from-dash-green to-dash-teal"}`} style={{ width: `${paidPct}%` }} />
               </div>
-              <span className="text-xs font-semibold text-muted-foreground w-10 text-right">{paidPct}%</span>
+              <span className="text-xs font-bold text-muted-foreground w-10 text-right">{paidPct}%</span>
             </div>
+
+            {/* Monthly EMI + Dates */}
+            {(p.monthly_installment > 0 || p.start_date || p.expected_completion) && (
+              <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                {p.monthly_installment > 0 && (
+                  <span className="flex items-center gap-1"><DollarSign size={12} /> EMI: <strong className="text-foreground">{formatCurrency(p.monthly_installment)}</strong>/mo</span>
+                )}
+                {p.start_date && (
+                  <span className="flex items-center gap-1"><Calendar size={12} /> Start: {new Date(p.start_date).toLocaleDateString()}</span>
+                )}
+                {p.expected_completion && (
+                  <span className="flex items-center gap-1"><Calendar size={12} /> Due: {new Date(p.expected_completion).toLocaleDateString()}</span>
+                )}
+              </div>
+            )}
           </motion.div>
           );
         })}
