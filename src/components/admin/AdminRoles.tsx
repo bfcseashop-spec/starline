@@ -49,6 +49,9 @@ const AdminRoles = () => {
   const [userForm, setUserForm] = useState({
     email: "", password: "", full_name: "", phone: "", role: "customer" as "admin" | "customer",
   });
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRoleDesc, setNewRoleDesc] = useState("");
+  const [customRoles, setCustomRoles] = useState<{ name: string; desc: string }[]>([]);
 
   const fetchRoles = async () => {
     const [rolesRes, profilesRes] = await Promise.all([
@@ -128,6 +131,29 @@ const AdminRoles = () => {
 
   const adminCount = roles.filter((r) => r.role === "admin").length;
   const customerCount = roles.filter((r) => r.role === "customer").length;
+
+  const handleCreateRole = () => {
+    if (!newRoleName.trim()) { toast.error("Role name is required"); return; }
+    if (customRoles.some((r) => r.name.toLowerCase() === newRoleName.trim().toLowerCase()) ||
+        ["admin", "customer"].includes(newRoleName.trim().toLowerCase())) {
+      toast.error("Role already exists"); return;
+    }
+    setCustomRoles((prev) => [...prev, { name: newRoleName.trim(), desc: newRoleDesc.trim() }]);
+    toast.success(`Role "${newRoleName.trim()}" created`);
+    setNewRoleName(""); setNewRoleDesc("");
+  };
+
+  const handleDeleteRole = (name: string) => {
+    if (!confirm(`Delete role "${name}"?`)) return;
+    setCustomRoles((prev) => prev.filter((r) => r.name !== name));
+    toast.success("Role deleted");
+  };
+
+  const allRolesDisplay = [
+    { name: "Admin", desc: "Full system access", count: adminCount, color: "text-orange-700 dark:text-orange-400" },
+    { name: "Customer", desc: "Customer portal access", count: customerCount, color: "text-blue-700 dark:text-blue-400" },
+    ...customRoles.map((r) => ({ name: r.name, desc: r.desc, count: 0, color: "text-violet-700 dark:text-violet-400" })),
+  ];
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" size={32} /></div>;
 
@@ -239,16 +265,40 @@ const AdminRoles = () => {
       {/* Roles Management Section */}
       <div className="mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-500/15 flex items-center justify-center">
-            <Shield size={16} className="text-orange-600" />
+          <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/15 flex items-center justify-center">
+            <Shield size={16} className="text-violet-600" />
           </div>
           <div>
-            <h3 className="font-heading text-base font-bold text-foreground">Roles Overview</h3>
-            <p className="text-xs text-muted-foreground">System roles and user distribution</p>
+            <h3 className="font-heading text-base font-bold text-foreground">Roles Management</h3>
+            <p className="text-xs text-muted-foreground">Create and manage user roles</p>
           </div>
         </div>
       </div>
 
+      {/* Create New Role Form */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">
+        <h4 className="font-heading text-sm font-bold text-foreground mb-4">Create New Role</h4>
+        <div className="space-y-4">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Role Name *</Label>
+            <Input placeholder="Enter role name" className="mt-1.5 bg-muted/50"
+              value={newRoleName} onChange={(e) => setNewRoleName(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Description</Label>
+            <Textarea placeholder="Enter role description" className="mt-1.5 bg-muted/50" rows={3}
+              value={newRoleDesc} onChange={(e) => setNewRoleDesc(e.target.value)} />
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="outline" size="sm" onClick={() => { setNewRoleName(""); setNewRoleDesc(""); }}>Cancel</Button>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2" onClick={handleCreateRole}>
+              Create Role
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Roles Table */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -261,15 +311,12 @@ const AdminRoles = () => {
               </tr>
             </thead>
             <tbody>
-              {[
-                { name: "Admin", desc: "Full system access", count: adminCount, color: "text-orange-700 dark:text-orange-400" },
-                { name: "Customer", desc: "Customer portal access", count: customerCount, color: "text-blue-700 dark:text-blue-400" },
-              ].map((role) => (
+              {allRolesDisplay.map((role) => (
                 <tr key={role.name} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="px-5 py-3.5">
                     <span className={`font-semibold ${role.color}`}>{role.name}</span>
                   </td>
-                  <td className="px-5 py-3.5 text-muted-foreground">{role.desc}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{role.desc || "—"}</td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
                       <Settings size={13} className="text-muted-foreground" />
@@ -281,6 +328,12 @@ const AdminRoles = () => {
                       <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                         <Pencil size={14} />
                       </button>
+                      {!["Admin", "Customer"].includes(role.name) && (
+                        <button onClick={() => handleDeleteRole(role.name)}
+                          className="p-1.5 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
