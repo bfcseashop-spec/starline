@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Admin access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { email, password, full_name, phone, address, project_name, total_amount, down_payment, installment_amount } = await req.json();
+    const { email, password, full_name, phone, address, project_name, total_amount, down_payment, paid_amount, installment_amount } = await req.json();
 
     // Validate inputs
     if (!email || typeof email !== "string" || email.length > 255) {
@@ -67,13 +67,15 @@ Deno.serve(async (req) => {
     if (project_name && typeof project_name === "string" && project_name.trim()) {
       const totalAmt = Number(total_amount) || 0;
       const downPay = Number(down_payment) || 0;
+      const paidAmt = Number(paid_amount) || 0;
+      const totalPaid = downPay + paidAmt;
       const installmentAmt = Number(installment_amount) || 0;
 
       await supabase.from("customer_projects").insert({
         user_id: newUser.user.id,
         project_name: project_name.trim(),
         total_amount: totalAmt,
-        paid_amount: downPay,
+        paid_amount: totalPaid,
         monthly_installment: installmentAmt,
         status: "in_progress",
       });
@@ -86,6 +88,16 @@ Deno.serve(async (req) => {
           payment_method: "cash",
           status: "completed",
           notes: "Down payment",
+        });
+      }
+      // Record paid amount as a separate payment entry if > 0
+      if (paidAmt > 0) {
+        await supabase.from("payments").insert({
+          user_id: newUser.user.id,
+          amount: paidAmt,
+          payment_method: "cash",
+          status: "completed",
+          notes: "Initial payment",
         });
       }
     }

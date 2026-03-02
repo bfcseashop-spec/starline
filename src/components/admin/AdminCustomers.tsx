@@ -60,7 +60,7 @@ const AdminCustomers = () => {
 
   // Add customer modal
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" });
+  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
 
   // Add amount modal
   const [amountCustomer, setAmountCustomer] = useState<Customer | null>(null);
@@ -228,6 +228,7 @@ const AdminCustomers = () => {
         project_name: addForm.project_name || null,
         total_amount: addForm.total_amount ? Number(addForm.total_amount) : null,
         down_payment: addForm.down_payment ? Number(addForm.down_payment) : null,
+        paid_amount: addForm.paid_amount ? Number(addForm.paid_amount) : null,
         installment_amount: addForm.installment_amount ? Number(addForm.installment_amount) : null,
       },
     });
@@ -235,7 +236,7 @@ const AdminCustomers = () => {
     if (error || data?.error) { toast.error(data?.error || error?.message || "Failed to create customer"); return; }
     toast.success("Customer created!");
     setShowAddCustomer(false);
-    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" });
+    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
     fetchCustomers();
   };
 
@@ -259,7 +260,7 @@ const AdminCustomers = () => {
           <button onClick={() => setView("grid")} className={`p-2 rounded-lg transition-colors ${view === "grid" ? "bg-dash-blue text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
             <LayoutGrid size={18} />
           </button>
-          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", installment_amount: "" }); setShowAddCustomer(true); }}
+          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" }); setShowAddCustomer(true); }}
             className="bg-dash-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
             <UserPlus size={16} /> Add Customer
           </button>
@@ -519,13 +520,17 @@ const AdminCustomers = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Paid Amount</label>
+                        <input type="number" value={addForm.paid_amount} onChange={(e) => setAddForm((f) => ({ ...f, paid_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
+                      </div>
+                      <div>
                         <label className="text-sm font-medium text-foreground mb-1.5 block">Installment Amount</label>
                         <input type="number" value={addForm.installment_amount} onChange={(e) => setAddForm((f) => ({ ...f, installment_amount: e.target.value }))} className={inputClass} placeholder="0" min="0" />
                       </div>
-                      <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
-                        <input readOnly value={addForm.total_amount && addForm.down_payment ? Math.max(0, Number(addForm.total_amount) - Number(addForm.down_payment)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
-                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
+                      <input readOnly value={addForm.total_amount ? Math.max(0, Number(addForm.total_amount) - (Number(addForm.down_payment) || 0) - (Number(addForm.paid_amount) || 0)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
                     </div>
                   </div>
                 </div>
