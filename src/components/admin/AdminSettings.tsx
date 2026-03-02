@@ -23,6 +23,10 @@ const CURRENCIES = [
 ];
 
 const BANKS = [
+  { id: "bkash", name: "bKash", icon: "📱" },
+  { id: "nagad", name: "Nagad", icon: "📱" },
+  { id: "rocket", name: "Rocket (DBBL)", icon: "📱" },
+  { id: "upay", name: "Upay", icon: "📱" },
   { id: "ibbl", name: "Islami Bank Bangladesh (IBBL)", icon: "🏦" },
   { id: "city", name: "City Bank", icon: "🏦" },
   { id: "brac", name: "BRAC Bank", icon: "🏦" },
