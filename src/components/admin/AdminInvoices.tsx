@@ -123,6 +123,34 @@ const AdminInvoices = () => {
     setShowCreate(false);
   };
 
+  const buildSlipPaymentData = (): Payment | null => {
+    if (!slipForm.user_id || !slipForm.amount || Number(slipForm.amount) <= 0) return null;
+    const customerName = profiles.find(p => p.user_id === slipForm.user_id)?.full_name || "Unknown";
+    const projectName = slipForm.project_id
+      ? projects.find(p => p.id === slipForm.project_id)?.project_name || "—"
+      : "—";
+    return {
+      id: crypto.randomUUID(),
+      user_id: slipForm.user_id,
+      project_id: slipForm.project_id || null,
+      amount: Number(slipForm.amount),
+      payment_method: slipForm.payment_method,
+      payment_date: slipForm.payment_date,
+      status: slipForm.status,
+      reference_no: slipForm.reference_no || null,
+      notes: slipForm.notes || null,
+      image_url: null,
+      customer_name: customerName,
+      project_name: projectName,
+    };
+  };
+
+  const handlePrintPreview = () => {
+    const paymentData = buildSlipPaymentData();
+    if (!paymentData) { toast.error("Please fill in customer and amount first"); return; }
+    generateInvoicePdf(paymentData);
+  };
+
   const handleCreateSlip = async () => {
     if (!slipForm.user_id) { toast.error("Please select a customer"); return; }
     if (!slipForm.amount || Number(slipForm.amount) <= 0) { toast.error("Please enter a valid amount"); return; }
@@ -144,7 +172,6 @@ const AdminInvoices = () => {
 
     toast.success("Payment slip created successfully!");
 
-    // Build payment data for PDF
     const customerName = profiles.find(p => p.user_id === slipForm.user_id)?.full_name || "Unknown";
     const projectName = slipForm.project_id
       ? projects.find(p => p.id === slipForm.project_id)?.project_name || "—"
@@ -156,11 +183,7 @@ const AdminInvoices = () => {
       project_name: projectName,
     };
 
-    // Ask if they want to generate PDF immediately
-    if (confirm("Payment slip created! Generate PDF now?")) {
-      generateInvoicePdf(pdfPayment);
-    }
-
+    generateInvoicePdf(pdfPayment);
     resetSlipForm();
     fetchData();
   };
@@ -437,6 +460,9 @@ const AdminInvoices = () => {
               {/* Modal Footer */}
               <div className="flex items-center justify-end gap-3 p-6 border-t border-border sticky bottom-0 bg-card rounded-b-2xl">
                 <Button variant="outline" onClick={resetSlipForm}>Cancel</Button>
+                <Button variant="outline" onClick={handlePrintPreview} className="gap-2">
+                  <Printer size={14} /> Print Preview
+                </Button>
                 <Button onClick={handleCreateSlip} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Create & Generate PDF
