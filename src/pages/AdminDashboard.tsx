@@ -13,6 +13,7 @@ import AdminCustomers from "@/components/admin/AdminCustomers";
 import AdminProjects from "@/components/admin/AdminProjects";
 import AdminPayments from "@/components/admin/AdminPayments";
 import AdminImages from "@/components/admin/AdminImages";
+import AdminWorkUpdates from "@/components/admin/AdminWorkUpdates";
 
 const pageTitle: Record<AdminPage, string> = {
   dashboard: "Dashboard",
@@ -20,6 +21,7 @@ const pageTitle: Record<AdminPage, string> = {
   projects: "Projects",
   payments: "Payments",
   images: "Project Images",
+  work_updates: "Work Updates",
   documents: "Documents",
   settings: "Settings",
 };
@@ -63,6 +65,7 @@ const AdminDashboard = () => {
             {activePage === "projects" && <AdminProjects />}
             {activePage === "payments" && <AdminPayments />}
             {activePage === "images" && <AdminImages />}
+            {activePage === "work_updates" && <AdminWorkUpdates />}
             {activePage === "documents" && <ComingSoon label="Documents" />}
             {activePage === "settings" && <ComingSoon label="Settings" />}
           </motion.div>
