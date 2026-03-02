@@ -31,6 +31,14 @@ export default {
           DEFAULT: "hsl(var(--navy))",
           light: "hsl(var(--navy-light))",
         },
+        dash: {
+          blue: "hsl(var(--dash-blue))",
+          green: "hsl(var(--dash-green))",
+          orange: "hsl(var(--dash-orange))",
+          purple: "hsl(var(--dash-purple))",
+          pink: "hsl(var(--dash-pink))",
+          teal: "hsl(var(--dash-teal))",
+        },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

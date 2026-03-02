@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote } from "lucide-react";
+import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { motion } from "framer-motion";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerProfile from "@/components/customer/CustomerProfile";
 import CustomerProjects from "@/components/customer/CustomerProjects";
@@ -12,8 +13,18 @@ import CustomerPaymentMethods from "@/components/customer/CustomerPaymentMethods
 
 type Tab = "overview" | "profile" | "projects" | "payments" | "documents" | "pay";
 
+const pageTitle: Record<Tab, string> = {
+  overview: "Overview",
+  projects: "My Building",
+  payments: "Payments",
+  documents: "Documents",
+  pay: "Make Payment",
+  profile: "Profile",
+};
+
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const { user } = useAuth();
 
   return (
     <SidebarProvider>
@@ -21,25 +32,35 @@ const CustomerDashboard = () => {
         <CustomerSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b border-border px-4 bg-card">
-            <SidebarTrigger className="mr-4" />
-            <h2 className="font-heading text-lg font-semibold text-foreground truncate">
-              {activeTab === "overview" && "Overview"}
-              {activeTab === "projects" && "My Building"}
-              {activeTab === "payments" && "Payments"}
-              {activeTab === "documents" && "Documents"}
-              {activeTab === "pay" && "Make Payment"}
-              {activeTab === "profile" && "Profile"}
-            </h2>
+          <header className="h-16 flex items-center justify-between border-b border-border px-6 bg-card/80 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <div>
+                <h2 className="font-heading text-xl font-bold text-foreground">{pageTitle[activeTab]}</h2>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 bg-muted rounded-full px-4 py-2">
+                <div className="w-2 h-2 rounded-full bg-dash-green animate-pulse" />
+                <span className="text-xs text-muted-foreground font-medium">{user?.email}</span>
+              </div>
+            </div>
           </header>
 
-          <main className="flex-1 p-4 sm:p-6 overflow-auto">
-            {activeTab === "overview" && <OverviewTab onNavigate={setActiveTab} />}
-            {activeTab === "profile" && <CustomerProfile />}
-            {activeTab === "projects" && <CustomerProjects />}
-            {activeTab === "payments" && <CustomerPayments />}
-            {activeTab === "documents" && <CustomerDocuments />}
-            {activeTab === "pay" && <CustomerPaymentMethods />}
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === "overview" && <OverviewTab onNavigate={setActiveTab} />}
+              {activeTab === "profile" && <CustomerProfile />}
+              {activeTab === "projects" && <CustomerProjects />}
+              {activeTab === "payments" && <CustomerPayments />}
+              {activeTab === "documents" && <CustomerDocuments />}
+              {activeTab === "pay" && <CustomerPaymentMethods />}
+            </motion.div>
           </main>
         </div>
       </div>
@@ -87,62 +108,94 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT", maximumFractionDigits: 0 }).format(amount);
 
+  const progressPercent = financials.totalAmount > 0 ? Math.round((financials.paidAmount / financials.totalAmount) * 100) : 0;
+
   const statCards = [
-    { label: "Total Amount", value: formatCurrency(financials.totalAmount), icon: Wallet, color: "bg-primary/10 text-primary" },
-    { label: "Paid Amount", value: formatCurrency(financials.paidAmount), icon: BadgeDollarSign, color: "bg-green-500/10 text-green-600" },
-    { label: "Remaining Balance", value: formatCurrency(financials.remainingBalance), icon: TrendingDown, color: "bg-destructive/10 text-destructive" },
-    { label: "Monthly Installment", value: formatCurrency(financials.monthlyInstallment), icon: CalendarClock, color: "bg-accent/20 text-accent-foreground" },
+    { label: "Total Amount", value: formatCurrency(financials.totalAmount), icon: Wallet, gradient: "bg-dash-blue", iconBg: "bg-white/20" },
+    { label: "Paid Amount", value: formatCurrency(financials.paidAmount), icon: BadgeDollarSign, gradient: "bg-dash-green", iconBg: "bg-white/20" },
+    { label: "Remaining Balance", value: formatCurrency(financials.remainingBalance), icon: TrendingDown, gradient: "bg-dash-orange", iconBg: "bg-white/20" },
+    { label: "Monthly EMI", value: formatCurrency(financials.monthlyInstallment), icon: CalendarClock, gradient: "bg-dash-purple", iconBg: "bg-white/20" },
   ];
 
   const navCards = [
-    { icon: HardHat, label: "My Building", desc: "View building progress & work updates", tab: "projects" as Tab },
-    { icon: CreditCard, label: "Payments", desc: "Total, paid, due amounts & history", tab: "payments" as Tab },
-    { icon: FileText, label: "Documents", desc: "Contracts, receipts & agreements", tab: "documents" as Tab },
-    { icon: Banknote, label: "Make Payment", desc: "Bank accounts & payment options", tab: "pay" as Tab },
-    { icon: User, label: "Profile", desc: "Edit your personal information", tab: "profile" as Tab },
-    { icon: Clock, label: "Work Updates", desc: "Latest construction progress", tab: "projects" as Tab },
+    { icon: HardHat, label: "My Building", desc: "View building progress & work updates", tab: "projects" as Tab, gradient: "bg-dash-orange", color: "text-dash-orange" },
+    { icon: CreditCard, label: "Payments", desc: "Total, paid, due amounts & history", tab: "payments" as Tab, gradient: "bg-dash-green", color: "text-dash-green" },
+    { icon: FileText, label: "Documents", desc: "Contracts, receipts & agreements", tab: "documents" as Tab, gradient: "bg-dash-purple", color: "text-dash-purple" },
+    { icon: Banknote, label: "Make Payment", desc: "Bank accounts & payment options", tab: "pay" as Tab, gradient: "bg-dash-teal", color: "text-dash-teal" },
+    { icon: User, label: "Profile", desc: "Edit your personal information", tab: "profile" as Tab, gradient: "bg-dash-pink", color: "text-dash-pink" },
+    { icon: Clock, label: "Work Updates", desc: "Latest construction progress", tab: "projects" as Tab, gradient: "bg-dash-blue", color: "text-dash-blue" },
   ];
 
   return (
     <div>
-      <h1 className="font-heading text-3xl font-bold text-foreground mb-2">Welcome Back!</h1>
-      <p className="text-muted-foreground mb-6">Track your building progress, payments, and documents.</p>
+      {/* Welcome Banner */}
+      <div className="rounded-2xl bg-gold-gradient p-6 sm:p-8 mb-8 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zm20.97 0l9.315 9.314-1.414 1.414L34.828 0h2.83zM22.344 0L13.03 9.314l1.414 1.414L25.172 0h-2.83zM32 0l12.142 12.142-1.414 1.414L30 .828 17.272 13.556l-1.414-1.414L28 0h4z\' fill=\'%23000\' fill-opacity=\'.08\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' }} />
+        <div className="relative">
+          <h1 className="font-heading text-2xl sm:text-3xl font-bold text-accent-foreground mb-1">Welcome Back! 👋</h1>
+          <p className="text-accent-foreground/70 text-sm sm:text-base">Track your building progress, payments, and documents.</p>
 
-      {/* Financial Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {statCards.map((stat) => (
-          <div key={stat.label} className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className={`p-2 rounded-lg ${stat.color}`}>
-                <stat.icon size={20} />
+          {/* Progress indicator */}
+          {!loadingFinancials && financials.totalAmount > 0 && (
+            <div className="mt-5 max-w-md">
+              <div className="flex justify-between text-xs text-accent-foreground/70 mb-1.5">
+                <span>Payment Progress</span>
+                <span className="font-bold text-accent-foreground">{progressPercent}%</span>
+              </div>
+              <div className="w-full bg-accent-foreground/20 rounded-full h-3">
+                <div className="bg-accent-foreground h-3 rounded-full transition-all shadow-sm" style={{ width: `${progressPercent}%` }} />
               </div>
             </div>
-            <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">{stat.label}</p>
-            <p className="font-heading text-xl font-bold text-foreground mt-1">
-              {loadingFinancials ? "..." : stat.value}
-            </p>
-          </div>
+          )}
+        </div>
+      </div>
+
+      {/* Financial Summary Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {statCards.map((stat, idx) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.08, duration: 0.3 }}
+            className={`${stat.gradient} rounded-2xl p-5 text-white shadow-lg relative overflow-hidden`}
+          >
+            <div className="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-white/10" />
+            <div className="absolute -right-1 -bottom-5 w-14 h-14 rounded-full bg-white/5" />
+            <div className="relative">
+              <div className={`${stat.iconBg} w-10 h-10 rounded-xl flex items-center justify-center mb-3`}>
+                <stat.icon size={20} />
+              </div>
+              <p className="text-white/70 text-xs font-medium uppercase tracking-wider">{stat.label}</p>
+              <p className="font-heading text-xl font-bold mt-1">
+                {loadingFinancials ? "..." : stat.value}
+              </p>
+            </div>
+          </motion.div>
         ))}
       </div>
 
       {/* Quick Navigation */}
-      <h2 className="font-heading text-lg font-semibold text-foreground mb-4">Quick Access</h2>
+      <h2 className="font-heading text-xl font-bold text-foreground mb-4">Quick Access</h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {navCards.map((card) => (
-          <button
+        {navCards.map((card, idx) => (
+          <motion.button
             key={card.label + card.tab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + idx * 0.06, duration: 0.25 }}
             onClick={() => onNavigate(card.tab)}
-            className="bg-card rounded-xl border border-border p-6 hover:border-gold/40 transition-colors text-left group"
+            className="bg-card rounded-2xl border border-border p-5 hover:shadow-lg hover:border-transparent hover:scale-[1.02] transition-all duration-200 text-left group"
           >
-            <card.icon size={28} className="text-gold mb-4" />
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-heading text-lg font-semibold text-card-foreground mb-1">{card.label}</h3>
-                <p className="text-muted-foreground text-sm">{card.desc}</p>
+            <div className="flex items-start justify-between mb-3">
+              <div className={`${card.gradient} p-2.5 rounded-xl text-white`}>
+                <card.icon size={22} />
               </div>
-              <ChevronRight size={18} className="text-muted-foreground group-hover:text-gold transition-colors" />
+              <ArrowUpRight size={16} className="text-muted-foreground/40 group-hover:text-foreground transition-colors" />
             </div>
-          </button>
+            <h3 className="font-heading text-base font-semibold text-card-foreground mb-0.5">{card.label}</h3>
+            <p className="text-muted-foreground text-sm">{card.desc}</p>
+          </motion.button>
         ))}
       </div>
     </div>
