@@ -225,9 +225,26 @@ export async function generateInvoicePdf(payment: PaymentData) {
   doc.setTextColor(130, 130, 130);
   doc.text(invoice.footer_note || "This is a computer-generated receipt.", pageW / 2, y, { align: "center" });
 
-  // Open in new tab for printing
-  const blob = doc.output("blob");
-  const url = URL.createObjectURL(blob);
-  const win = window.open(url);
-  if (win) win.onload = () => win.print();
+  // Save as download and also open print dialog via iframe
+  const invoiceFileName = `${invoiceNo}.pdf`;
+  doc.save(invoiceFileName);
+
+  // Also try to open print dialog
+  try {
+    const blob = doc.output("blob");
+    const url = URL.createObjectURL(blob);
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    iframe.onload = () => {
+      iframe.contentWindow?.print();
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    };
+  } catch {
+    // Print fallback failed, but download still works
+  }
 }
