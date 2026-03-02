@@ -375,6 +375,33 @@ const AdminSettings = () => {
     );
   };
 
+  /* ---- Social Media Links Tab ---- */
+  const SocialTab = () => {
+    const social = settings.social_links || {};
+    const [form, setForm] = useState({
+      facebook: social.facebook || "", instagram: social.instagram || "",
+      tiktok: social.tiktok || "", whatsapp: social.whatsapp || "",
+      telegram: social.telegram || "", youtube: social.youtube || "",
+    });
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <SectionCard icon={Globe} title="Social Media Links" iconColor="text-blue-600">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {([["facebook", "Facebook", "https://facebook.com/..."], ["instagram", "Instagram", "https://instagram.com/..."], ["tiktok", "TikTok", "https://tiktok.com/@..."], ["whatsapp", "WhatsApp", "https://wa.me/..."], ["telegram", "Telegram", "https://t.me/..."], ["youtube", "YouTube", "https://youtube.com/..."]] as const).map(([key, label, ph]) => (
+              <div key={key}>
+                <Label className="text-xs font-semibold text-foreground">{label}</Label>
+                <Input value={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="mt-1.5 bg-muted/50" placeholder={ph} />
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+        <Button onClick={() => saveSetting("social_links", form)} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Save size={14} /> Save Changes
+        </Button>
+      </div>
+    );
+  };
+
   /* ---- System / Landing Page Settings ---- */
   const SystemTab = () => {
     const sys = settings.system || {};
@@ -508,6 +535,9 @@ const AdminSettings = () => {
         <TabsTrigger value="system" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
           <Settings2 size={15} /> System
         </TabsTrigger>
+        <TabsTrigger value="social" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Globe size={15} /> Social Links
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="company" className="mt-6"><CompanyInfoTab /></TabsContent>
@@ -515,6 +545,7 @@ const AdminSettings = () => {
       <TabsContent value="currency" className="mt-6"><CurrencyTab /></TabsContent>
       <TabsContent value="bank" className="mt-6"><BankTab /></TabsContent>
       <TabsContent value="system" className="mt-6"><SystemTab /></TabsContent>
+      <TabsContent value="social" className="mt-6"><SocialTab /></TabsContent>
     </Tabs>
   );
 };
