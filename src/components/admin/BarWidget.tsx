@@ -7,22 +7,22 @@ interface BarWidgetProps {
 }
 
 const BarWidget = ({ title, data, barColor = "hsl(42, 80%, 65%)" }: BarWidgetProps) => (
-  <div className="bg-card rounded-xl border border-border p-5 h-full">
+  <div className="bg-card rounded-2xl border border-border p-5 h-full shadow-sm">
     <h3 className="text-sm font-semibold text-card-foreground mb-4">{title}</h3>
     <ResponsiveContainer width="100%" height={140}>
       <BarChart data={data}>
-        <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(220, 10%, 45%)" axisLine={false} tickLine={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
         <YAxis hide />
         <Tooltip
           contentStyle={{
-            background: "hsl(220, 30%, 12%)",
-            border: "1px solid hsl(220, 30%, 20%)",
-            borderRadius: "8px",
-            color: "hsl(220, 15%, 92%)",
+            background: "hsl(var(--card))",
+            border: "1px solid hsl(var(--border))",
+            borderRadius: "12px",
+            color: "hsl(var(--card-foreground))",
             fontSize: 12,
           }}
         />
-        <Bar dataKey="value" fill={barColor} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="value" fill={barColor} radius={[6, 6, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   </div>
