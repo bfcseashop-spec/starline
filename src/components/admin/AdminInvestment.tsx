@@ -732,25 +732,76 @@ const SharesTab = ({ shares, investors, investments, contributions, categories, 
 
       {/* Share Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit Capital" : "Add Capital"}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Plus size={16} /> {editing ? "Edit Capital" : "Add Capital"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
             <div>
-              <label className="text-sm font-medium text-foreground">Investment *</label>
+              <label className="text-sm font-semibold text-foreground">Investment *</label>
               <Select value={form.investment_id} onValueChange={(v) => setForm({ ...form, investment_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select investment" /></SelectTrigger>
-                <SelectContent>{investments.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue placeholder="Select investment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {investments.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.name} ({fmt(Number(i.total_capital))})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Investor *</label>
+              <label className="text-sm font-semibold text-foreground">Investor Name *</label>
               <Select value={form.investor_id} onValueChange={(v) => setForm({ ...form, investor_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select investor" /></SelectTrigger>
-                <SelectContent>{investors.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="mt-1.5">
+                  <SelectValue placeholder="Type name..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {investors.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ backgroundColor: i.avatar_color || "#3b82f6" }}>
+                          {i.name.charAt(0).toUpperCase()}
+                        </span>
+                        {i.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
+              {form.investor_id && (
+                <Input
+                  className="mt-2"
+                  value={investorMap.get(form.investor_id)?.name || ""}
+                  placeholder="Enter investor name"
+                  readOnly
+                />
+              )}
             </div>
-            <div><label className="text-sm font-medium text-foreground">Share %</label><Input type="number" value={form.share_percent} onChange={(e) => setForm({ ...form, share_percent: e.target.value })} /></div>
-            <div><label className="text-sm font-medium text-foreground">Capital Amount (BDT)</label><Input type="number" value={form.capital_amount} onChange={(e) => setForm({ ...form, capital_amount: e.target.value })} /></div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Capital Amount (BDT) *</label>
+              <Input
+                type="number"
+                className="mt-1.5"
+                value={form.capital_amount}
+                onChange={(e) => setForm({ ...form, capital_amount: e.target.value })}
+                placeholder="Enter capital amount"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-foreground">Share Percentage (%) *</label>
+              <Input
+                type="number"
+                className="mt-1.5"
+                value={form.share_percent}
+                onChange={(e) => setForm({ ...form, share_percent: e.target.value })}
+                placeholder="Enter share percentage"
+              />
+            </div>
             <Button onClick={save} className="w-full">{editing ? "Update Capital" : "Add Capital"}</Button>
           </div>
         </DialogContent>
