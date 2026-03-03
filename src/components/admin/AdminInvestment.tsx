@@ -265,7 +265,7 @@ const AdminInvestment = () => {
           <p className="font-heading text-xl font-bold text-foreground">{fmt(investments.reduce((s, i) => s + Number(i.total_capital), 0))}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById("contributions-section")?.scrollIntoView({ behavior: "smooth" })}>
           <div className="flex items-center justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-emerald-500/10"><DollarSign size={18} className="text-emerald-600" /></div>
             <span className="text-xs text-muted-foreground font-medium">{contributions.length} records</span>
@@ -274,7 +274,7 @@ const AdminInvestment = () => {
           <p className="font-heading text-xl font-bold text-foreground">{fmt(totalContributed)}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById("contributions-section")?.scrollIntoView({ behavior: "smooth" })}>
           <div className="flex items-center justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-emerald-500/10"><CheckCircle size={18} className="text-emerald-600" /></div>
             {totalCapital > 0 && <span className="text-emerald-600 text-xs font-bold flex items-center gap-0.5"><ArrowUpRight size={14} />{Math.round((totalContributed / totalCapital) * 100)}%</span>}
@@ -283,7 +283,7 @@ const AdminInvestment = () => {
           <p className="font-heading text-xl font-bold text-emerald-600">{fmt(totalContributed)}</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm cursor-pointer hover:shadow-md transition-shadow" onClick={() => document.getElementById("capital-section")?.scrollIntoView({ behavior: "smooth" })}>
           <div className="flex items-center justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-amber-500/10"><AlertTriangle size={18} className="text-amber-600" /></div>
             {totalCapital > 0 && <span className="text-amber-600 text-xs font-bold flex items-center gap-0.5"><ArrowDownRight size={14} />{Math.round((remaining / totalCapital) * 100)}%</span>}
@@ -294,7 +294,7 @@ const AdminInvestment = () => {
       </div>
 
       {/* ═══ CAPITAL & SHARE ═══ */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+      <div id="capital-section" className="bg-card rounded-2xl border border-border shadow-sm p-5">
         <div className="flex items-center justify-between mb-5">
           <div>
             <h3 className="text-base font-bold text-foreground uppercase tracking-wide">Capital & Share</h3>
@@ -377,7 +377,7 @@ const AdminInvestment = () => {
       </div>
 
       {/* ═══ CONTRIBUTIONS TABLE ═══ */}
-      <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+      <div id="contributions-section" className="bg-card rounded-2xl border border-border shadow-sm p-5">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
             <FileText size={18} className="text-foreground" />
