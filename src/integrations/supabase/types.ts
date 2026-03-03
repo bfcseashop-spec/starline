@@ -311,6 +311,7 @@ export type Database = {
       investors: {
         Row: {
           avatar_color: string | null
+          avatar_url: string | null
           created_at: string
           email: string | null
           id: string
@@ -319,6 +320,7 @@ export type Database = {
         }
         Insert: {
           avatar_color?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -327,6 +329,7 @@ export type Database = {
         }
         Update: {
           avatar_color?: string | null
+          avatar_url?: string | null
           created_at?: string
           email?: string | null
           id?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.investors ADD COLUMN avatar_url text DEFAULT NULL;
