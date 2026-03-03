@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,8 +37,8 @@ const BANKS = [
 ];
 
 /* ---- Reusable Section Card ---- */
-const SectionCard = ({ icon: Icon, title, children, iconColor = "text-primary" }: { icon: any; title: string; children: React.ReactNode; iconColor?: string }) => (
-  <div className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
+const SectionCard = React.forwardRef<HTMLDivElement, { icon: any; title: string; children: React.ReactNode; iconColor?: string }>(({ icon: Icon, title, children, iconColor = "text-primary" }, ref) => (
+  <div ref={ref} className="bg-card rounded-2xl border border-border shadow-sm p-6 space-y-5">
     <div className="flex items-center gap-3">
       <div className={`w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center ${iconColor}`}>
         <Icon size={16} />
@@ -47,7 +47,8 @@ const SectionCard = ({ icon: Icon, title, children, iconColor = "text-primary" }
     </div>
     {children}
   </div>
-);
+));
+SectionCard.displayName = "SectionCard";
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState<SettingsMap>({});
@@ -569,11 +570,11 @@ const AdminSettings = () => {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="company" className="mt-6"><CompanyInfoTab /></TabsContent>
-      <TabsContent value="invoice" className="mt-6"><InvoiceTab /></TabsContent>
-      <TabsContent value="currency" className="mt-6"><CurrencyTab /></TabsContent>
-      <TabsContent value="bank" className="mt-6"><BankTab /></TabsContent>
-      <TabsContent value="system" className="mt-6"><SystemTab /></TabsContent>
+      <TabsContent value="company" className="mt-6"><div><CompanyInfoTab /></div></TabsContent>
+      <TabsContent value="invoice" className="mt-6"><div><InvoiceTab /></div></TabsContent>
+      <TabsContent value="currency" className="mt-6"><div><CurrencyTab /></div></TabsContent>
+      <TabsContent value="bank" className="mt-6"><div><BankTab /></div></TabsContent>
+      <TabsContent value="system" className="mt-6"><div><SystemTab /></div></TabsContent>
       
     </Tabs>
   );
