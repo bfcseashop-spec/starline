@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Clock, Bell } from "lucide-react";
+import { Clock, Bell, Play } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { ComingSoonProject } from "@/hooks/useSiteSettings";
@@ -14,9 +14,18 @@ interface Props {
   projects?: ComingSoonProject[];
 }
 
+const getEmbedUrl = (url: string) => {
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return url;
+};
+
 const ComingSoon = ({ projects }: Props) => {
   const list = projects && projects.length > 0 ? projects : defaultProjects;
   const [notified, setNotified] = useState<Set<number>>(new Set());
+  const [playingVideo, setPlayingVideo] = useState<number | null>(null);
 
   const notify = (i: number) => {
     setNotified((prev) => new Set(prev).add(i));
@@ -48,27 +57,66 @@ const ComingSoon = ({ projects }: Props) => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card rounded-2xl border border-border p-6 hover:shadow-xl transition-shadow group"
+              className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow group"
             >
-              <div className="flex items-center justify-between mb-4">
-                <span className="bg-gold/10 text-gold text-xs font-bold px-3 py-1 rounded-full">{project.eta}</span>
-                <span className="text-xs text-muted-foreground font-medium">{project.type}</span>
+              {/* Image / Video */}
+              {(project.image_url || project.video_url) && (
+                <div className="relative h-48 bg-muted">
+                  {playingVideo === i && project.video_url ? (
+                    <iframe
+                      src={getEmbedUrl(project.video_url)}
+                      className="w-full h-full"
+                      allow="autoplay; encrypted-media"
+                      allowFullScreen
+                    />
+                  ) : project.image_url ? (
+                    <>
+                      <img src={project.image_url} alt={project.title} className="w-full h-full object-cover" />
+                      {project.video_url && (
+                        <button
+                          onClick={() => setPlayingVideo(i)}
+                          className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                            <Play size={20} className="text-navy ml-0.5" />
+                          </div>
+                        </button>
+                      )}
+                    </>
+                  ) : project.video_url ? (
+                    <button
+                      onClick={() => setPlayingVideo(i)}
+                      className="w-full h-full flex items-center justify-center bg-navy/10 hover:bg-navy/20 transition-colors"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center">
+                        <Play size={20} className="text-gold ml-0.5" />
+                      </div>
+                    </button>
+                  ) : null}
+                </div>
+              )}
+
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="bg-gold/10 text-gold text-xs font-bold px-3 py-1 rounded-full">{project.eta}</span>
+                  <span className="text-xs text-muted-foreground font-medium">{project.type}</span>
+                </div>
+                <h3 className="font-heading text-xl font-bold text-foreground mb-1">{project.title}</h3>
+                <p className="text-muted-foreground text-sm mb-1">{project.location}</p>
+                <p className="text-gold text-sm font-semibold mb-5">{project.units}</p>
+                <button
+                  onClick={() => notify(i)}
+                  disabled={notified.has(i)}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    notified.has(i)
+                      ? "bg-muted text-muted-foreground cursor-default"
+                      : "bg-navy text-white hover:bg-navy-light"
+                  }`}
+                >
+                  <Bell size={15} />
+                  {notified.has(i) ? "Notified" : "Notify Me"}
+                </button>
               </div>
-              <h3 className="font-heading text-xl font-bold text-foreground mb-1">{project.title}</h3>
-              <p className="text-muted-foreground text-sm mb-1">{project.location}</p>
-              <p className="text-gold text-sm font-semibold mb-5">{project.units}</p>
-              <button
-                onClick={() => notify(i)}
-                disabled={notified.has(i)}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-                  notified.has(i)
-                    ? "bg-muted text-muted-foreground cursor-default"
-                    : "bg-navy text-white hover:bg-navy-light"
-                }`}
-              >
-                <Bell size={15} />
-                {notified.has(i) ? "Notified" : "Notify Me"}
-              </button>
             </motion.div>
           ))}
         </div>

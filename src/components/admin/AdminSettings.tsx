@@ -563,11 +563,12 @@ const AdminSettings = () => {
 
   /* ---- Coming Soon Tab ---- */
   const ComingSoonTab = () => {
-    const items: { title: string; location: string; type: string; units: string; eta: string }[] = settings.coming_soon?.items || [];
+    const items: { title: string; location: string; type: string; units: string; eta: string; image_url: string; video_url: string }[] = settings.coming_soon?.items || [];
     const [list, setList] = useState(items);
     const [editing, setEditing] = useState<number | null>(null);
-    const blank = { title: "", location: "", type: "", units: "", eta: "" };
+    const blank = { title: "", location: "", type: "", units: "", eta: "", image_url: "", video_url: "" };
     const [form, setForm] = useState(blank);
+    const imageInputRef = useRef<HTMLInputElement>(null);
 
     const startEdit = (i: number) => { setEditing(i); setForm(list[i]); };
     const startAdd = () => { setEditing(-1); setForm(blank); };
@@ -591,9 +592,12 @@ const AdminSettings = () => {
                   <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === 0} onClick={() => setList(moveItem(list, i, i - 1))}><ArrowUp size={12} /></Button>
                   <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === list.length - 1} onClick={() => setList(moveItem(list, i, i + 1))}><ArrowDown size={12} /></Button>
                 </div>
-                <div>
-                  <p className="font-medium text-sm text-foreground">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.location} · {item.type} · {item.units} · {item.eta}</p>
+                <div className="flex items-center gap-2">
+                  {(item as any).image_url && <img src={(item as any).image_url} alt="" className="w-8 h-8 rounded object-cover" />}
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.location} · {item.type} · {item.units} · {item.eta}</p>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -610,6 +614,24 @@ const AdminSettings = () => {
                 <div><Label className="text-xs font-semibold">Type</Label><Input value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. Residential Tower" /></div>
                 <div><Label className="text-xs font-semibold">Units</Label><Input value={form.units} onChange={(e) => setForm({ ...form, units: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. 120 Units" /></div>
                 <div><Label className="text-xs font-semibold">ETA</Label><Input value={form.eta} onChange={(e) => setForm({ ...form, eta: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. Q3 2026" /></div>
+                <div>
+                  <Label className="text-xs font-semibold">Image</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {form.image_url && <img src={form.image_url} alt="" className="w-12 h-12 rounded object-cover border border-border" />}
+                    <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} className="gap-1.5 text-xs"><Upload size={12} /> Upload Image</Button>
+                    {form.image_url && <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, image_url: "" })} className="text-destructive text-xs"><X size={12} /></Button>}
+                    <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const url = await uploadFile(file, "coming-soon");
+                      if (url) setForm({ ...form, image_url: url });
+                    }} />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">Video URL (YouTube, Vimeo, or direct link)</Label>
+                <Input value={form.video_url} onChange={(e) => setForm({ ...form, video_url: e.target.value })} className="mt-1 bg-muted/50" placeholder="https://youtube.com/watch?v=..." />
               </div>
               <div className="flex gap-2">
                 <Button size="sm" onClick={save} className="gap-1"><Save size={12} /> {editing === -1 ? "Add" : "Update"}</Button>

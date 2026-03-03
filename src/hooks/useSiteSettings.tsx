@@ -46,6 +46,8 @@ export interface ComingSoonProject {
   type: string;
   units: string;
   eta: string;
+  image_url?: string;
+  video_url?: string;
 }
 
 export interface WhyUsReason {
