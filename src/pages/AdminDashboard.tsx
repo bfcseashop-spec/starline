@@ -76,10 +76,10 @@ const AdminDashboard = () => {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
-        <header className="bg-card border-b border-border px-6 h-16 flex items-center justify-between shrink-0 shadow-sm">
-          <div className="flex items-center gap-3">
-            <h1 className="font-heading text-xl font-bold text-foreground">{pageTitle[activePage]}</h1>
-            <span className="bg-dash-blue text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Admin</span>
+        <header className="bg-card border-b border-border px-4 lg:px-6 h-16 flex items-center justify-between shrink-0 shadow-sm">
+          <div className="flex items-center gap-3 pl-12 lg:pl-0">
+            <h1 className="font-heading text-lg lg:text-xl font-bold text-foreground">{pageTitle[activePage]}</h1>
+            <span className="bg-dash-blue text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider hidden sm:inline">Admin</span>
           </div>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -177,7 +177,7 @@ const AdminDashboard = () => {
         </header>
 
         {/* Content */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
           <motion.div key={activePage} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
             {activePage === "dashboard" && <DashboardContent />}
             {activePage === "customers" && <AdminCustomers />}
