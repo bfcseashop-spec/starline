@@ -12,7 +12,7 @@ import {
   Building2, Upload, Save, Palette, FileText, Landmark, DollarSign, Settings2,
   Globe, Image as ImageIcon, Type, LayoutDashboard, Sparkles, X, Hash, Printer, Info,
   Clock, Shield, Award, Users, HeartHandshake, BarChart3, Trash2, Plus, GripVertical,
-  Pencil
+  Pencil, ArrowUp, ArrowDown
 } from "lucide-react";
 
 type SettingsMap = Record<string, Record<string, any>>;
@@ -552,6 +552,15 @@ const AdminSettings = () => {
     );
   };
 
+  /* ---- Reorder helper ---- */
+  const moveItem = <T,>(arr: T[], from: number, to: number): T[] => {
+    if (to < 0 || to >= arr.length) return arr;
+    const next = [...arr];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    return next;
+  };
+
   /* ---- Coming Soon Tab ---- */
   const ComingSoonTab = () => {
     const items: { title: string; location: string; type: string; units: string; eta: string }[] = settings.coming_soon?.items || [];
@@ -577,9 +586,15 @@ const AdminSettings = () => {
           {list.length === 0 && <p className="text-sm text-muted-foreground">No projects added yet.</p>}
           {list.map((item, i) => (
             <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
-              <div>
-                <p className="font-medium text-sm text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.location} · {item.type} · {item.units} · {item.eta}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === 0} onClick={() => setList(moveItem(list, i, i - 1))}><ArrowUp size={12} /></Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === list.length - 1} onClick={() => setList(moveItem(list, i, i + 1))}><ArrowDown size={12} /></Button>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-foreground">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.location} · {item.type} · {item.units} · {item.eta}</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
@@ -638,9 +653,15 @@ const AdminSettings = () => {
           {list.length === 0 && <p className="text-sm text-muted-foreground">No reasons added yet. Default content will be shown.</p>}
           {list.map((item, i) => (
             <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
-              <div>
-                <p className="font-medium text-sm text-foreground">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === 0} onClick={() => setList(moveItem(list, i, i - 1))}><ArrowUp size={12} /></Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === list.length - 1} onClick={() => setList(moveItem(list, i, i + 1))}><ArrowDown size={12} /></Button>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-foreground">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
@@ -701,9 +722,15 @@ const AdminSettings = () => {
           {list.length === 0 && <p className="text-sm text-muted-foreground">No stats added yet. Default content will be shown.</p>}
           {list.map((item, i) => (
             <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
-              <div>
-                <p className="font-medium text-sm text-foreground">{item.value}</p>
-                <p className="text-xs text-muted-foreground">{item.label}</p>
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === 0} onClick={() => setList(moveItem(list, i, i - 1))}><ArrowUp size={12} /></Button>
+                  <Button variant="ghost" size="icon" className="h-5 w-5" disabled={i === list.length - 1} onClick={() => setList(moveItem(list, i, i + 1))}><ArrowDown size={12} /></Button>
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-foreground">{item.value}</p>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
