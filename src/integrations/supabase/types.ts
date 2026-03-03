@@ -14,6 +14,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      contributions: {
+        Row: {
+          amount: number
+          category_id: string | null
+          contribution_date: string
+          created_at: string
+          id: string
+          investment_id: string
+          investor_id: string
+          note: string | null
+          slip_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category_id?: string | null
+          contribution_date?: string
+          created_at?: string
+          id?: string
+          investment_id: string
+          investor_id: string
+          note?: string | null
+          slip_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          contribution_date?: string
+          created_at?: string
+          id?: string
+          investment_id?: string
+          investor_id?: string
+          note?: string | null
+          slip_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contributions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "investment_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contributions_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contributions_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_projects: {
         Row: {
           building_image_url: string | null
@@ -151,6 +212,126 @@ export type Database = {
           title?: string
           updated_at?: string
           vendor?: string | null
+        }
+        Relationships: []
+      }
+      investment_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      investment_shares: {
+        Row: {
+          capital_amount: number
+          created_at: string
+          id: string
+          investment_id: string
+          investor_id: string
+          share_percent: number
+        }
+        Insert: {
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          investment_id: string
+          investor_id: string
+          share_percent?: number
+        }
+        Update: {
+          capital_amount?: number
+          created_at?: string
+          id?: string
+          investment_id?: string
+          investor_id?: string
+          share_percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_shares_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_shares_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investments: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          total_capital: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          total_capital?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          total_capital?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      investors: {
+        Row: {
+          avatar_color: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          avatar_color?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          avatar_color?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
         }
         Relationships: []
       }
