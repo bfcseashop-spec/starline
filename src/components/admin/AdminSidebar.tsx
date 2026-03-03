@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   LayoutDashboard, Home, Users, FileText, BarChart3, Settings, 
   CreditCard, FolderOpen, Images, ClipboardList, LogOut, ChevronLeft, ChevronRight, Sparkles,
-  Shield, Landmark, Share2, Wallet, PanelTop, Navigation,
+  Shield, Landmark, Share2, Wallet, PanelTop, Navigation, TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,7 +11,7 @@ type AdminPage =
   | "dashboard" | "customers" | "projects" | "payments" | "images"
   | "work_updates" | "documents" | "settings"
   | "roles" | "invoices" | "social_media" | "bank_statement" | "reports" | "expenses"
-  | "hero_section" | "header_management";
+  | "hero_section" | "header_management" | "investment";
 
 const navItems: { id: AdminPage; icon: typeof LayoutDashboard; label: string; gradient: string; section?: string }[] = [
   { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
@@ -20,6 +20,7 @@ const navItems: { id: AdminPage; icon: typeof LayoutDashboard; label: string; gr
   { id: "payments", icon: CreditCard, label: "Payments", gradient: "bg-dash-teal" },
   { id: "invoices", icon: FileText, label: "Create Invoice", gradient: "bg-dash-purple" },
   { id: "expenses", icon: Wallet, label: "Expenses", gradient: "bg-dash-orange" },
+  { id: "investment", icon: TrendingUp, label: "Investment", gradient: "bg-dash-green" },
   { id: "bank_statement", icon: Landmark, label: "Bank Statement", gradient: "bg-dash-teal" },
   { id: "reports", icon: BarChart3, label: "Reports", gradient: "bg-dash-purple" },
   { id: "images", icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
