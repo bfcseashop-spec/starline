@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "sonner";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
-  Search, ChevronDown, DollarSign, Upload, ImageIcon,
+  Search, ChevronDown, DollarSign, Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -14,6 +14,7 @@ interface Payment {
   project_id: string | null;
   amount: number;
   payment_method: string;
+  payment_type: string;
   payment_date: string;
   status: string;
   reference_no: string | null;
@@ -26,7 +27,28 @@ interface Payment {
 interface CustomerOption { user_id: string; full_name: string | null; }
 interface ProjectOption { id: string; project_name: string; user_id: string; }
 
-const methodOptions = ["bank_transfer", "cash", "cheque", "online", "other"];
+const paymentTypeOptions = ["down_payment", "installment", "advance", "due", "booking", "other"];
+const paymentTypeLabels: Record<string, string> = {
+  down_payment: "Down Payment",
+  installment: "Installment",
+  advance: "Advance",
+  due: "Due",
+  booking: "Booking",
+  other: "Other",
+};
+
+const methodOptions = ["bank_transfer", "cash", "cheque", "online", "bkash", "nagad", "rocket", "other"];
+const methodLabels: Record<string, string> = {
+  bank_transfer: "Bank Transfer",
+  cash: "Cash",
+  cheque: "Cheque",
+  online: "Online",
+  bkash: "bKash",
+  nagad: "Nagad",
+  rocket: "Rocket",
+  other: "Other",
+};
+
 const statusOptions = ["completed", "pending", "failed", "refunded"];
 
 type FilterStatus = "all" | "completed" | "pending" | "failed" | "refunded";
@@ -40,6 +62,7 @@ const filterLabels: Record<FilterStatus, string> = {
 
 const emptyForm = {
   user_id: "", project_id: "", amount: "", payment_method: "bank_transfer",
+  payment_type: "installment",
   payment_date: new Date().toISOString().split("T")[0], status: "completed", reference_no: "", notes: "", image_url: "",
 };
 
@@ -51,13 +74,11 @@ const AdminPayments = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
 
-  // Modals
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [viewPayment, setViewPayment] = useState<Payment | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
 
-  // Search & Filter
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
@@ -122,11 +143,7 @@ const AdminPayments = () => {
     toast.success("Image uploaded!");
   };
 
-  const openAdd = () => {
-    setForm({ ...emptyForm });
-    setEditId(null);
-    setShowForm(true);
-  };
+  const openAdd = () => { setForm({ ...emptyForm }); setEditId(null); setShowForm(true); };
 
   const openEdit = (p: Payment) => {
     setForm({
@@ -134,6 +151,7 @@ const AdminPayments = () => {
       project_id: p.project_id || "",
       amount: String(p.amount),
       payment_method: p.payment_method,
+      payment_type: p.payment_type || "installment",
       payment_date: p.payment_date,
       status: p.status,
       reference_no: p.reference_no || "",
@@ -153,6 +171,7 @@ const AdminPayments = () => {
       project_id: form.project_id || null,
       amount: Number(form.amount),
       payment_method: form.payment_method,
+      payment_type: form.payment_type,
       payment_date: form.payment_date,
       status: form.status,
       reference_no: form.reference_no.trim() || null,
@@ -165,7 +184,6 @@ const AdminPayments = () => {
       ({ error } = await supabase.from("payments").update(payload).eq("id", editId));
     } else {
       ({ error } = await supabase.from("payments").insert(payload));
-      // Update paid_amount on the project for new completed payments
       if (!error && form.project_id && form.status === "completed") {
         const { data: proj } = await supabase.from("customer_projects").select("paid_amount").eq("id", form.project_id).maybeSingle();
         if (proj) {
@@ -189,9 +207,7 @@ const AdminPayments = () => {
     fetchData();
   };
 
-  const handlePrint = (p: Payment) => {
-    generateInvoicePdf(p);
-  };
+  const handlePrint = (p: Payment) => { generateInvoicePdf(p); };
 
   const formatCurrency = (n: number) => `৳${n.toLocaleString()}`;
   const inputClass = "w-full bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow";
@@ -215,18 +231,12 @@ const AdminPayments = () => {
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex-1 relative">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by customer, project, or reference..."
-            className="w-full bg-card text-foreground rounded-xl pl-11 pr-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow"
-          />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by customer, project, or reference..."
+            className="w-full bg-card text-foreground rounded-xl pl-11 pr-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow" />
         </div>
         <div className="relative">
-          <button
-            onClick={() => setShowFilterMenu(!showFilterMenu)}
-            className="bg-card border border-border rounded-xl px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2 hover:bg-muted transition-colors min-w-[160px]"
-          >
+          <button onClick={() => setShowFilterMenu(!showFilterMenu)}
+            className="bg-card border border-border rounded-xl px-4 py-3 text-sm font-medium text-foreground flex items-center gap-2 hover:bg-muted transition-colors min-w-[160px]">
             <span className={`w-2 h-2 rounded-full ${filter === "all" ? "bg-dash-blue" : filter === "completed" ? "bg-dash-green" : filter === "pending" ? "bg-gold" : "bg-destructive"}`} />
             {filterLabels[filter]}
             <ChevronDown size={14} className="ml-auto" />
@@ -234,11 +244,8 @@ const AdminPayments = () => {
           {showFilterMenu && (
             <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl z-30 overflow-hidden min-w-[180px]">
               {(Object.keys(filterLabels) as FilterStatus[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => { setFilter(f); setShowFilterMenu(false); }}
-                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors ${filter === f ? "bg-muted font-semibold text-foreground" : "text-muted-foreground"}`}
-                >
+                <button key={f} onClick={() => { setFilter(f); setShowFilterMenu(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted transition-colors ${filter === f ? "bg-muted font-semibold text-foreground" : "text-muted-foreground"}`}>
                   {filterLabels[f]}
                 </button>
               ))}
@@ -263,58 +270,68 @@ const AdminPayments = () => {
         ))}
       </div>
 
-      {/* Payment List */}
-      <div className="space-y-3">
-        {filtered.map((p, idx) => (
-          <motion.div
-            key={p.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.03 }}
-            className="bg-card rounded-2xl border border-border p-5 shadow-sm hover:shadow-md transition-shadow"
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white shrink-0 ${
-                  p.status === "completed" ? "bg-dash-green" : p.status === "pending" ? "bg-dash-orange" : "bg-destructive"
-                }`}>
-                  <DollarSign size={20} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground text-base">{formatCurrency(p.amount)}</h3>
-                    <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+      {/* Payment Table */}
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/60">
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Date</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Customer</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden md:table-cell">Project</th>
+                <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Amount</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden lg:table-cell">Type</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden lg:table-cell">Pay By</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden xl:table-cell">Ref / TXN</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">Status</th>
+                <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => (
+                <tr key={p.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                    {new Date(p.payment_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  </td>
+                  <td className="px-4 py-3 text-foreground font-medium">{p.customer_name}</td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell max-w-[180px] truncate">{p.project_name}</td>
+                  <td className="px-4 py-3 text-foreground font-bold text-right whitespace-nowrap">{formatCurrency(p.amount)}</td>
+                  <td className="px-4 py-3 hidden lg:table-cell">
+                    <span className="bg-accent text-accent-foreground text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap">
+                      {paymentTypeLabels[p.payment_type] || p.payment_type || "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell whitespace-nowrap">
+                    {methodLabels[p.payment_method] || p.payment_method}
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground hidden xl:table-cell font-mono text-xs">{p.reference_no || "—"}</td>
+                  <td className="px-4 py-3 hidden sm:table-cell">
+                    <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
                       p.status === "completed" ? "bg-dash-green/15 text-dash-green"
                       : p.status === "pending" ? "bg-gold/15 text-gold"
-                      : "bg-destructive/15 text-destructive"
+                      : p.status === "failed" ? "bg-destructive/15 text-destructive"
+                      : "bg-muted text-muted-foreground"
                     }`}>{p.status}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
-                    <span className="font-medium">👤 {p.customer_name}</span>
-                    <span>📁 {p.project_name}</span>
-                    <span>{new Date(p.payment_date).toLocaleDateString()}</span>
-                    <span className="bg-muted px-2 py-0.5 rounded-full capitalize">{p.payment_method.replace("_", " ")}</span>
-                    {p.reference_no && <span className="text-[11px]">Ref: {p.reference_no}</span>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button onClick={() => setViewPayment(p)} title="View" className="p-2 rounded-lg bg-dash-blue/10 text-dash-blue hover:bg-dash-blue/20 transition-colors"><Eye size={15} /></button>
-                <button onClick={() => openEdit(p)} title="Edit" className="p-2 rounded-lg bg-dash-orange/10 text-dash-orange hover:bg-dash-orange/20 transition-colors"><Pencil size={15} /></button>
-                <button onClick={() => handlePrint(p)} title="Print Receipt" className="p-2 rounded-lg bg-dash-purple/10 text-dash-purple hover:bg-dash-purple/20 transition-colors"><Printer size={15} /></button>
-                <button onClick={() => handleDelete(p)} title="Delete" className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"><Trash2 size={15} /></button>
-              </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => setViewPayment(p)} title="View" className="p-1.5 rounded-lg hover:bg-dash-blue/10 text-dash-blue transition-colors"><Eye size={15} /></button>
+                      <button onClick={() => openEdit(p)} title="Edit" className="p-1.5 rounded-lg hover:bg-dash-orange/10 text-dash-orange transition-colors"><Pencil size={15} /></button>
+                      <button onClick={() => handlePrint(p)} title="Print" className="p-1.5 rounded-lg hover:bg-dash-purple/10 text-dash-purple transition-colors"><Printer size={15} /></button>
+                      <button onClick={() => handleDelete(p)} title="Delete" className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive transition-colors"><Trash2 size={15} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <div className="text-center py-20 text-muted-foreground">
+              <CreditCard size={48} className="mx-auto mb-4 opacity-40" />
+              <p>{search || filter !== "all" ? "No payments match your search/filter." : "No payments recorded yet."}</p>
             </div>
-          </motion.div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="text-center py-20 text-muted-foreground">
-            <CreditCard size={48} className="mx-auto mb-4 opacity-40" />
-            <p>{search || filter !== "all" ? "No payments match your search/filter." : "No payments recorded yet."}</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ADD/EDIT MODAL */}
@@ -353,27 +370,35 @@ const AdminPayments = () => {
                     <input type="number" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className={inputClass} placeholder="0" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Method</label>
-                    <select value={form.payment_method} onChange={(e) => setForm((f) => ({ ...f, payment_method: e.target.value }))} className={inputClass}>
-                      {methodOptions.map((m) => <option key={m} value={m}>{m.replace("_", " ")}</option>)}
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Payment Type</label>
+                    <select value={form.payment_type} onChange={(e) => setForm((f) => ({ ...f, payment_type: e.target.value }))} className={inputClass}>
+                      {paymentTypeOptions.map((t) => <option key={t} value={t}>{paymentTypeLabels[t]}</option>)}
                     </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Pay By</label>
+                    <select value={form.payment_method} onChange={(e) => setForm((f) => ({ ...f, payment_method: e.target.value }))} className={inputClass}>
+                      {methodOptions.map((m) => <option key={m} value={m}>{methodLabels[m]}</option>)}
+                    </select>
+                  </div>
+                  <div>
                     <label className="text-sm font-medium text-foreground mb-1.5 block">Date</label>
                     <input type="date" value={form.payment_date} onChange={(e) => setForm((f) => ({ ...f, payment_date: e.target.value }))} className={inputClass} />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium text-foreground mb-1.5 block">Status</label>
                     <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} className={inputClass}>
-                      {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {statusOptions.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
                     </select>
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Reference No.</label>
-                  <input value={form.reference_no} onChange={(e) => setForm((f) => ({ ...f, reference_no: e.target.value }))} className={inputClass} placeholder="TXN-2026-XXX" maxLength={50} />
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Ref / TXN ID</label>
+                    <input value={form.reference_no} onChange={(e) => setForm((f) => ({ ...f, reference_no: e.target.value }))} className={inputClass} placeholder="TXN-2026-XXX" maxLength={50} />
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Notes</label>
@@ -385,11 +410,8 @@ const AdminPayments = () => {
                   {form.image_url ? (
                     <div className="relative rounded-xl overflow-hidden border border-border">
                       <img src={form.image_url} alt="Payment" className="w-full h-40 object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
-                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-80 transition-opacity"
-                      >
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+                        className="absolute top-2 right-2 bg-destructive text-destructive-foreground rounded-full p-1 hover:opacity-80 transition-opacity">
                         <X size={14} />
                       </button>
                     </div>
@@ -444,8 +466,9 @@ const AdminPayments = () => {
                   { label: "Customer", value: viewPayment.customer_name },
                   { label: "Project", value: viewPayment.project_name },
                   { label: "Date", value: new Date(viewPayment.payment_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) },
-                  { label: "Method", value: viewPayment.payment_method.replace("_", " ") },
-                  { label: "Reference", value: viewPayment.reference_no || "—" },
+                  { label: "Payment Type", value: paymentTypeLabels[viewPayment.payment_type] || viewPayment.payment_type },
+                  { label: "Pay By", value: methodLabels[viewPayment.payment_method] || viewPayment.payment_method },
+                  { label: "Ref / TXN", value: viewPayment.reference_no || "—" },
                   { label: "Notes", value: viewPayment.notes || "—" },
                 ].map((item, i) => (
                   <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
