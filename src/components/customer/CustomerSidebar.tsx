@@ -14,10 +14,10 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-type Tab = "overview" | "projects" | "payments" | "documents" | "pay" | "profile";
+type Tab = "home" | "overview" | "projects" | "payments" | "documents" | "pay" | "profile";
 
 const menuItems = [
-  { id: "overview" as Tab, label: "Overview", icon: Home, gradient: "bg-dash-blue" },
+  { id: "home" as Tab, label: "Home", icon: Home, gradient: "bg-dash-blue" },
   { id: "projects" as Tab, label: "My Building", icon: HardHat, gradient: "bg-dash-orange" },
   { id: "payments" as Tab, label: "Payments", icon: CreditCard, gradient: "bg-dash-green" },
   { id: "documents" as Tab, label: "Documents", icon: FileText, gradient: "bg-dash-purple" },
@@ -54,24 +54,6 @@ const CustomerSidebar = ({ activeTab, onTabChange }: CustomerSidebarProps) => {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        {/* Home link to landing page */}
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Home">
-                  <Link to="/" className="rounded-xl h-11 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200">
-                    <div className="p-1.5 rounded-lg">
-                      <Home className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium">Home</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
