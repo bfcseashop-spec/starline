@@ -1,5 +1,5 @@
 import { MapPin, Mail, Phone, ArrowUpRight } from "lucide-react";
-import type { CompanySettings, SocialLinks } from "@/hooks/useSiteSettings";
+import type { CompanySettings, SocialLinks, FooterContent } from "@/hooks/useSiteSettings";
 
 const socialLabels: { key: keyof SocialLinks; label: string }[] = [
   { key: "facebook", label: "Facebook" },
@@ -13,11 +13,17 @@ const socialLabels: { key: keyof SocialLinks; label: string }[] = [
 interface Props {
   company?: CompanySettings;
   social?: SocialLinks;
+  content?: FooterContent;
 }
 
-const Footer = ({ company, social }: Props) => {
+const Footer = ({ company, social, content }: Props) => {
   const brandName = company?.name || "Starline Builder's";
   const activeSocials = socialLabels.filter((s) => social?.[s.key]);
+  const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
+  const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
+  const quickLinks = content?.quick_links
+    ? content.quick_links.split(",").map((l) => l.trim()).filter(Boolean)
+    : ["Properties", "About Us", "Services", "Contact", "Careers"];
 
   return (
     <footer id="contact" className="bg-navy">
@@ -32,9 +38,7 @@ const Footer = ({ company, social }: Props) => {
                 <>{brandName}<span className="text-gold">.</span></>
               )}
             </h3>
-            <p className="text-white/40 max-w-md text-sm leading-relaxed mb-6">
-              Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.
-            </p>
+            <p className="text-white/40 max-w-md text-sm leading-relaxed mb-6">{description}</p>
             {activeSocials.length > 0 && (
               <div className="flex gap-3">
                 {activeSocials.map((s) => (
@@ -50,7 +54,7 @@ const Footer = ({ company, social }: Props) => {
           <div>
             <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Quick Links</h4>
             <ul className="space-y-3">
-              {["Properties", "About Us", "Services", "Contact", "Careers"].map((l) => (
+              {quickLinks.map((l) => (
                 <li key={l}>
                   <a href="#" className="text-white/40 hover:text-white text-sm transition-colors">{l}</a>
                 </li>
@@ -70,7 +74,7 @@ const Footer = ({ company, social }: Props) => {
         </div>
 
         <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-white/25 text-xs">© 2026 {brandName} All rights reserved.</p>
+          <p className="text-white/25 text-xs">{copyright}</p>
           <div className="flex gap-6">
             {["Privacy Policy", "Terms of Service"].map((l) => (
               <a key={l} href="#" className="text-white/25 hover:text-white/50 text-xs transition-colors">{l}</a>

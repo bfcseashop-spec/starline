@@ -2,14 +2,20 @@ import { motion } from "framer-motion";
 import { Clock, Bell } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import type { ComingSoonProject } from "@/hooks/useSiteSettings";
 
-const upcomingProjects = [
+const defaultProjects: ComingSoonProject[] = [
   { title: "Starline Heights", location: "Downtown Metro", type: "Residential Tower", units: "120 Units", eta: "Q3 2026" },
   { title: "Emerald Business Park", location: "Tech Corridor", type: "Commercial Complex", units: "45 Offices", eta: "Q4 2026" },
   { title: "Sunset Villas", location: "Coastal Road", type: "Luxury Villas", units: "24 Villas", eta: "Q1 2027" },
 ];
 
-const ComingSoon = () => {
+interface Props {
+  projects?: ComingSoonProject[];
+}
+
+const ComingSoon = ({ projects }: Props) => {
+  const list = projects && projects.length > 0 ? projects : defaultProjects;
   const [notified, setNotified] = useState<Set<number>>(new Set());
 
   const notify = (i: number) => {
@@ -35,9 +41,9 @@ const ComingSoon = () => {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {upcomingProjects.map((project, i) => (
+          {list.map((project, i) => (
             <motion.div
-              key={project.title}
+              key={project.title + i}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

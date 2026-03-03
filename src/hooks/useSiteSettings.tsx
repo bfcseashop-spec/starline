@@ -40,6 +40,31 @@ export interface PlatformConfig {
   phone: string;
 }
 
+export interface ComingSoonProject {
+  title: string;
+  location: string;
+  type: string;
+  units: string;
+  eta: string;
+}
+
+export interface WhyUsReason {
+  title: string;
+  desc: string;
+  iconName: string;
+}
+
+export interface StatItem {
+  value: string;
+  label: string;
+}
+
+export interface FooterContent {
+  description: string;
+  copyright: string;
+  quick_links: string;
+}
+
 export type SocialPlatforms = Record<string, PlatformConfig>;
 
 export interface HeaderConfig {
@@ -117,6 +142,10 @@ export const useSiteSettings = () => {
   const [social, setSocial] = useState<SocialLinks>(DEFAULT_SOCIAL);
   const [socialPlatforms, setSocialPlatforms] = useState<SocialPlatforms>({});
   const [headerConfig, setHeaderConfig] = useState<HeaderConfig>(DEFAULT_HEADER);
+  const [comingSoon, setComingSoon] = useState<ComingSoonProject[]>([]);
+  const [whyUsReasons, setWhyUsReasons] = useState<WhyUsReason[]>([]);
+  const [statsItems, setStatsItems] = useState<StatItem[]>([]);
+  const [footerContent, setFooterContent] = useState<FooterContent>({ description: "", copyright: "", quick_links: "" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -129,6 +158,10 @@ export const useSiteSettings = () => {
           if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
           if (r.setting_key === "social_platforms") setSocialPlatforms(r.setting_value || {});
           if (r.setting_key === "header_config") setHeaderConfig({ ...DEFAULT_HEADER, ...r.setting_value });
+          if (r.setting_key === "coming_soon") setComingSoon(r.setting_value?.items || []);
+          if (r.setting_key === "why_us_reasons") setWhyUsReasons(r.setting_value?.items || []);
+          if (r.setting_key === "stats_items") setStatsItems(r.setting_value?.items || []);
+          if (r.setting_key === "footer_content") setFooterContent(r.setting_value || { description: "", copyright: "", quick_links: "" });
         });
       }
       setLoading(false);
@@ -136,5 +169,5 @@ export const useSiteSettings = () => {
     fetch();
   }, []);
 
-  return { system, company, social, socialPlatforms, headerConfig, loading };
+  return { system, company, social, socialPlatforms, headerConfig, comingSoon, whyUsReasons, statsItems, footerContent, loading };
 };

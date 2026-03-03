@@ -19,7 +19,7 @@ const defaultFilters: Filters = {
 
 const Index = () => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const { system, company, social, socialPlatforms, headerConfig, loading } = useSiteSettings();
+  const { system, company, social, socialPlatforms, headerConfig, comingSoon, whyUsReasons, statsItems, footerContent, loading } = useSiteSettings();
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,11 +52,11 @@ const Index = () => {
         <PropertySummary />
         {(system as any).show_search !== false && <PropertySearch onFilter={setFilters} />}
         {system.show_featured && <FeaturedProperties filters={filters} />}
-        {system.show_stats && <StatsSection />}
-        <ComingSoon />
-        {(system as any).show_why_us !== false && <WhyStarline />}
+        {system.show_stats && <StatsSection items={statsItems} />}
+        <ComingSoon projects={comingSoon} />
+        {(system as any).show_why_us !== false && <WhyStarline reasons={whyUsReasons} />}
       </main>
-      <Footer company={company} social={social} />
+      <Footer company={company} social={social} content={footerContent} />
     </div>
   );
 };

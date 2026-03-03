@@ -10,7 +10,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Building2, Upload, Save, Palette, FileText, Landmark, DollarSign, Settings2,
-  Globe, Image as ImageIcon, Type, LayoutDashboard, Sparkles, X, Hash, Printer, Info
+  Globe, Image as ImageIcon, Type, LayoutDashboard, Sparkles, X, Hash, Printer, Info,
+  Clock, Shield, Award, Users, HeartHandshake, BarChart3, Trash2, Plus, GripVertical,
+  Pencil
 } from "lucide-react";
 
 type SettingsMap = Record<string, Record<string, any>>;
@@ -550,14 +552,226 @@ const AdminSettings = () => {
     );
   };
 
+  /* ---- Coming Soon Tab ---- */
+  const ComingSoonTab = () => {
+    const items: { title: string; location: string; type: string; units: string; eta: string }[] = settings.coming_soon?.items || [];
+    const [list, setList] = useState(items);
+    const [editing, setEditing] = useState<number | null>(null);
+    const blank = { title: "", location: "", type: "", units: "", eta: "" };
+    const [form, setForm] = useState(blank);
+
+    const startEdit = (i: number) => { setEditing(i); setForm(list[i]); };
+    const startAdd = () => { setEditing(-1); setForm(blank); };
+    const cancel = () => { setEditing(null); setForm(blank); };
+    const save = () => {
+      const next = [...list];
+      if (editing === -1) next.push(form); else if (editing !== null) next[editing] = form;
+      setList(next); setEditing(null); setForm(blank);
+    };
+    const remove = (i: number) => { setList(list.filter((_, idx) => idx !== i)); };
+    const persist = () => saveSetting("coming_soon", { items: list });
+
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <SectionCard icon={Clock} title="Coming Soon Projects" iconColor="text-orange-600">
+          {list.length === 0 && <p className="text-sm text-muted-foreground">No projects added yet.</p>}
+          {list.map((item, i) => (
+            <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
+              <div>
+                <p className="font-medium text-sm text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.location} · {item.type} · {item.units} · {item.eta}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(i)} className="text-destructive"><Trash2 size={14} /></Button>
+              </div>
+            </div>
+          ))}
+          {editing !== null && (
+            <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs font-semibold">Project Name</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 bg-muted/50" /></div>
+                <div><Label className="text-xs font-semibold">Location</Label><Input value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} className="mt-1 bg-muted/50" /></div>
+                <div><Label className="text-xs font-semibold">Type</Label><Input value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. Residential Tower" /></div>
+                <div><Label className="text-xs font-semibold">Units</Label><Input value={form.units} onChange={(e) => setForm({ ...form, units: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. 120 Units" /></div>
+                <div><Label className="text-xs font-semibold">ETA</Label><Input value={form.eta} onChange={(e) => setForm({ ...form, eta: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. Q3 2026" /></div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={save} className="gap-1"><Save size={12} /> {editing === -1 ? "Add" : "Update"}</Button>
+                <Button size="sm" variant="outline" onClick={cancel}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {editing === null && (
+            <Button variant="outline" size="sm" onClick={startAdd} className="gap-1.5"><Plus size={14} /> Add Project</Button>
+          )}
+        </SectionCard>
+        <Button onClick={persist} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"><Save size={14} /> Save Changes</Button>
+      </div>
+    );
+  };
+
+  /* ---- Why Us Tab ---- */
+  const WhyUsTab = () => {
+    const items: { title: string; desc: string; iconName: string }[] = settings.why_us_reasons?.items || [];
+    const [list, setList] = useState(items);
+    const [editing, setEditing] = useState<number | null>(null);
+    const blank = { title: "", desc: "", iconName: "Shield" };
+    const [form, setForm] = useState(blank);
+
+    const ICON_OPTIONS = ["Shield", "Award", "Users", "Clock", "Sparkles", "HeartHandshake"];
+
+    const startEdit = (i: number) => { setEditing(i); setForm(list[i]); };
+    const startAdd = () => { setEditing(-1); setForm(blank); };
+    const cancel = () => { setEditing(null); setForm(blank); };
+    const save = () => {
+      const next = [...list];
+      if (editing === -1) next.push(form); else if (editing !== null) next[editing] = form;
+      setList(next); setEditing(null); setForm(blank);
+    };
+    const remove = (i: number) => { setList(list.filter((_, idx) => idx !== i)); };
+    const persist = () => saveSetting("why_us_reasons", { items: list });
+
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <SectionCard icon={Shield} title="Why Choose Us — Reasons" iconColor="text-blue-600">
+          {list.length === 0 && <p className="text-sm text-muted-foreground">No reasons added yet. Default content will be shown.</p>}
+          {list.map((item, i) => (
+            <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
+              <div>
+                <p className="font-medium text-sm text-foreground">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.desc}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(i)} className="text-destructive"><Trash2 size={14} /></Button>
+              </div>
+            </div>
+          ))}
+          {editing !== null && (
+            <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div><Label className="text-xs font-semibold">Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="mt-1 bg-muted/50" /></div>
+              <div><Label className="text-xs font-semibold">Description</Label><Textarea value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} className="mt-1 bg-muted/50" rows={2} /></div>
+              <div>
+                <Label className="text-xs font-semibold">Icon</Label>
+                <Select value={form.iconName} onValueChange={(v) => setForm({ ...form, iconName: v })}>
+                  <SelectTrigger className="mt-1 w-48 bg-muted/50"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {ICON_OPTIONS.map((ic) => <SelectItem key={ic} value={ic}>{ic}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={save} className="gap-1"><Save size={12} /> {editing === -1 ? "Add" : "Update"}</Button>
+                <Button size="sm" variant="outline" onClick={cancel}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {editing === null && (
+            <Button variant="outline" size="sm" onClick={startAdd} className="gap-1.5"><Plus size={14} /> Add Reason</Button>
+          )}
+        </SectionCard>
+        <Button onClick={persist} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"><Save size={14} /> Save Changes</Button>
+      </div>
+    );
+  };
+
+  /* ---- Stats Tab ---- */
+  const StatsTab = () => {
+    const items: { value: string; label: string }[] = settings.stats_items?.items || [];
+    const [list, setList] = useState(items);
+    const [editing, setEditing] = useState<number | null>(null);
+    const blank = { value: "", label: "" };
+    const [form, setForm] = useState(blank);
+
+    const startEdit = (i: number) => { setEditing(i); setForm(list[i]); };
+    const startAdd = () => { setEditing(-1); setForm(blank); };
+    const cancel = () => { setEditing(null); setForm(blank); };
+    const save = () => {
+      const next = [...list];
+      if (editing === -1) next.push(form); else if (editing !== null) next[editing] = form;
+      setList(next); setEditing(null); setForm(blank);
+    };
+    const remove = (i: number) => { setList(list.filter((_, idx) => idx !== i)); };
+    const persist = () => saveSetting("stats_items", { items: list });
+
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <SectionCard icon={BarChart3} title="Stats / Counters" iconColor="text-emerald-600">
+          {list.length === 0 && <p className="text-sm text-muted-foreground">No stats added yet. Default content will be shown.</p>}
+          {list.map((item, i) => (
+            <div key={i} className="flex items-center justify-between rounded-xl border border-border p-4">
+              <div>
+                <p className="font-medium text-sm text-foreground">{item.value}</p>
+                <p className="text-xs text-muted-foreground">{item.label}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" size="icon" onClick={() => startEdit(i)}><Pencil size={14} /></Button>
+                <Button variant="ghost" size="icon" onClick={() => remove(i)} className="text-destructive"><Trash2 size={14} /></Button>
+              </div>
+            </div>
+          ))}
+          {editing !== null && (
+            <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs font-semibold">Value</Label><Input value={form.value} onChange={(e) => setForm({ ...form, value: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. 2,500+" /></div>
+                <div><Label className="text-xs font-semibold">Label</Label><Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} className="mt-1 bg-muted/50" placeholder="e.g. Properties Sold" /></div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={save} className="gap-1"><Save size={12} /> {editing === -1 ? "Add" : "Update"}</Button>
+                <Button size="sm" variant="outline" onClick={cancel}>Cancel</Button>
+              </div>
+            </div>
+          )}
+          {editing === null && (
+            <Button variant="outline" size="sm" onClick={startAdd} className="gap-1.5"><Plus size={14} /> Add Stat</Button>
+          )}
+        </SectionCard>
+        <Button onClick={persist} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"><Save size={14} /> Save Changes</Button>
+      </div>
+    );
+  };
+
+  /* ---- Footer Content Tab ---- */
+  const FooterTab = () => {
+    const ft = settings.footer_content || {};
+    const [form, setForm] = useState({
+      description: ft.description || "",
+      copyright: ft.copyright || "",
+      quick_links: ft.quick_links || "Properties,About Us,Services,Contact,Careers",
+    });
+    const persist = () => saveSetting("footer_content", form);
+
+    return (
+      <div className="space-y-6 max-w-2xl">
+        <SectionCard icon={Type} title="Footer Content" iconColor="text-purple-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Footer Description</Label>
+            <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="mt-1.5 bg-muted/50" rows={3} placeholder="Premium construction and real estate services..." />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Copyright Text</Label>
+            <Input value={form.copyright} onChange={(e) => setForm({ ...form, copyright: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="© 2026 Starline Builder's Ltd. All rights reserved." />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Quick Links (comma-separated)</Label>
+            <Input value={form.quick_links} onChange={(e) => setForm({ ...form, quick_links: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="Properties,About Us,Services,Contact" />
+            <p className="text-xs text-muted-foreground mt-1">Separate link labels with commas</p>
+          </div>
+        </SectionCard>
+        <Button onClick={persist} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2"><Save size={14} /> Save Changes</Button>
+      </div>
+    );
+  };
+
   return (
     <Tabs defaultValue="company" className="w-full">
-      <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 w-full justify-start">
+      <TabsList className="bg-transparent border-b border-border rounded-none p-0 h-auto gap-0 w-full justify-start flex-wrap">
         <TabsTrigger value="company" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
-          <Building2 size={15} /> Company Details
+          <Building2 size={15} /> Company
         </TabsTrigger>
         <TabsTrigger value="invoice" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
-          <FileText size={15} /> Invoice Settings
+          <FileText size={15} /> Invoice
         </TabsTrigger>
         <TabsTrigger value="currency" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
           <DollarSign size={15} /> Currency
@@ -568,6 +782,18 @@ const AdminSettings = () => {
         <TabsTrigger value="system" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
           <Settings2 size={15} /> System
         </TabsTrigger>
+        <TabsTrigger value="coming_soon" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Clock size={15} /> Coming Soon
+        </TabsTrigger>
+        <TabsTrigger value="why_us" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Shield size={15} /> Why Us
+        </TabsTrigger>
+        <TabsTrigger value="stats" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <BarChart3 size={15} /> Stats
+        </TabsTrigger>
+        <TabsTrigger value="footer" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none gap-1.5 text-sm px-4 pb-3 pt-2 text-muted-foreground data-[state=active]:text-foreground">
+          <Type size={15} /> Footer
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="company" className="mt-6"><div><CompanyInfoTab /></div></TabsContent>
@@ -575,7 +801,10 @@ const AdminSettings = () => {
       <TabsContent value="currency" className="mt-6"><div><CurrencyTab /></div></TabsContent>
       <TabsContent value="bank" className="mt-6"><div><BankTab /></div></TabsContent>
       <TabsContent value="system" className="mt-6"><div><SystemTab /></div></TabsContent>
-      
+      <TabsContent value="coming_soon" className="mt-6"><div><ComingSoonTab /></div></TabsContent>
+      <TabsContent value="why_us" className="mt-6"><div><WhyUsTab /></div></TabsContent>
+      <TabsContent value="stats" className="mt-6"><div><StatsTab /></div></TabsContent>
+      <TabsContent value="footer" className="mt-6"><div><FooterTab /></div></TabsContent>
     </Tabs>
   );
 };
