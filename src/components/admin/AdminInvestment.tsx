@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   TrendingUp, DollarSign, Users, FolderOpen, Plus, Trash2, Edit2, Search,
-  ArrowUpRight, X, Upload, Eye, ChevronDown, PieChart,
+  ArrowUpRight, X, Upload, Eye, ChevronDown, PieChart, Download, LayoutGrid, List, Calendar, FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -106,7 +106,7 @@ const AdminInvestment = () => {
             <InvestorsTab investors={investors} shares={shares} investments={investments} search={search} setSearch={setSearch} onRefresh={fetchAll} />
           )}
           {tab === "shares" && (
-            <SharesTab shares={shares} investors={investors} investments={investments} search={search} setSearch={setSearch} onRefresh={fetchAll} />
+            <SharesTab shares={shares} investors={investors} investments={investments} contributions={contributions} categories={categories} search={search} setSearch={setSearch} onRefresh={fetchAll} />
           )}
           {tab === "categories" && (
             <CategoriesTab categories={categories} contributions={contributions} search={search} setSearch={setSearch} onRefresh={fetchAll} />
@@ -412,16 +412,24 @@ const InvestorsTab = ({ investors, shares, investments, search, setSearch, onRef
 /* ═══════════════════════════════════════════════════════════════
    CAPITAL & SHARE TAB
    ═══════════════════════════════════════════════════════════════ */
-const SharesTab = ({ shares, investors, investments, search, setSearch, onRefresh }: {
-  shares: InvestmentShare[]; investors: Investor[]; investments: Investment[];
+const SharesTab = ({ shares, investors, investments, contributions, categories, search, setSearch, onRefresh }: {
+  shares: InvestmentShare[]; investors: Investor[]; investments: Investment[]; contributions: Contribution[]; categories: InvestmentCategory[];
   search: string; setSearch: (s: string) => void; onRefresh: () => void;
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<InvestmentShare | null>(null);
   const [form, setForm] = useState({ investment_id: "", investor_id: "", share_percent: "", capital_amount: "" });
+  // Contribution dialog
+  const [contribDialog, setContribDialog] = useState(false);
+  const [contribForm, setContribForm] = useState({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "" });
+  // Filters
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [investorFilter, setInvestorFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
 
   const investorMap = new Map(investors.map((i) => [i.id, i]));
   const investmentMap = new Map(investments.map((i) => [i.id, i]));
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
   const openNew = () => { setEditing(null); setForm({ investment_id: "", investor_id: "", share_percent: "", capital_amount: "" }); setDialogOpen(true); };
   const openEdit = (s: InvestmentShare) => {
@@ -458,85 +466,274 @@ const SharesTab = ({ shares, investors, investments, search, setSearch, onRefres
     else { toast.success("Deleted"); onRefresh(); }
   };
 
-  const filtered = shares.filter((s) => {
-    const investor = investorMap.get(s.investor_id);
-    const investment = investmentMap.get(s.investment_id);
+  // Contribution CRUD
+  const openNewContrib = () => {
+    setContribForm({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "" });
+    setContribDialog(true);
+  };
+  const saveContrib = async () => {
+    if (!contribForm.investment_id || !contribForm.investor_id) { toast.error("Investment and Investor are required"); return; }
+    const { error } = await supabase.from("contributions").insert({
+      investment_id: contribForm.investment_id,
+      investor_id: contribForm.investor_id,
+      category_id: contribForm.category_id || null,
+      amount: Number(contribForm.amount) || 0,
+      contribution_date: contribForm.contribution_date,
+      note: contribForm.note || null,
+    });
+    if (error) toast.error(error.message);
+    else { toast.success("Transaction recorded"); setContribDialog(false); onRefresh(); }
+  };
+  const removeContrib = async (id: string) => {
+    if (!confirm("Delete this transaction?")) return;
+    const { error } = await supabase.from("contributions").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Deleted"); onRefresh(); }
+  };
+
+  // Filtered contributions
+  const filteredContribs = contributions.filter((c) => {
+    const investor = investorMap.get(c.investor_id);
+    const investment = investmentMap.get(c.investment_id);
     const q = search.toLowerCase();
-    return (investor?.name || "").toLowerCase().includes(q) || (investment?.name || "").toLowerCase().includes(q);
+    const matchSearch = (investor?.name || "").toLowerCase().includes(q) || (investment?.name || "").toLowerCase().includes(q) || (c.note || "").toLowerCase().includes(q);
+    const matchMonth = monthFilter === "all" || c.contribution_date.startsWith(monthFilter);
+    const matchInvestor = investorFilter === "all" || c.investor_id === investorFilter;
+    return matchSearch && matchMonth && matchInvestor;
   });
 
-  // Group by investment for summary
-  const totalShareCapital = shares.reduce((sum, s) => sum + Number(s.capital_amount), 0);
+  // Get unique months from contributions
+  const months = [...new Set(contributions.map((c) => c.contribution_date.slice(0, 7)))].sort().reverse();
 
   return (
     <>
-      <p className="text-sm text-muted-foreground mb-4">Investor shares per investment — create, edit, or remove below</p>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search shares..." className="pl-9" />
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h3 className="text-lg font-bold text-foreground uppercase tracking-wide">Capital & Share</h3>
+          <p className="text-sm text-muted-foreground">Investor shares per investment — create, edit, or remove below</p>
         </div>
-        <Button onClick={openNew} className="gap-2"><Plus size={16} /> Add Share</Button>
+        <Button onClick={openNew} className="gap-2"><Plus size={16} /> Add Capital</Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-muted/30">
-              <th className="text-left px-4 py-3 font-semibold text-foreground">Investor</th>
-              <th className="text-left px-4 py-3 font-semibold text-foreground">Investment</th>
-              <th className="text-right px-4 py-3 font-semibold text-foreground">Share %</th>
-              <th className="text-right px-4 py-3 font-semibold text-foreground">Capital Amount</th>
-              <th className="text-center px-4 py-3 font-semibold text-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-12 text-muted-foreground">{shares.length === 0 ? "No shares assigned yet. Click 'Add Share' to get started." : "No results."}</td></tr>
-            ) : filtered.map((s) => {
-              const investor = investorMap.get(s.investor_id);
-              const investment = investmentMap.get(s.investment_id);
-              return (
-                <tr key={s.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-7 w-7">
-                        <AvatarFallback style={{ backgroundColor: investor?.avatar_color || "#3b82f6" }} className="text-white text-[10px] font-bold">
-                          {investor?.name?.slice(0, 2).toUpperCase() || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium text-foreground">{investor?.name || "Unknown"}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-foreground">{investment?.name || "Unknown"}</td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="inline-block text-xs font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{s.share_percent}%</span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-foreground">{fmt(Number(s.capital_amount))}</td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Edit2 size={14} /></button>
-                      <button onClick={() => remove(s.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={14} /></button>
-                    </div>
-                  </td>
+      {/* Investor Share Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+        {shares.length === 0 ? (
+          <p className="col-span-full text-center py-12 text-muted-foreground">No shares assigned yet. Click "Add Capital" to get started.</p>
+        ) : shares.map((s) => {
+          const investor = investorMap.get(s.investor_id);
+          const investment = investmentMap.get(s.investment_id);
+          const initials = investor?.name?.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?";
+          const capitalAmount = Number(s.capital_amount);
+          const paid = contributions
+            .filter((c) => c.investor_id === s.investor_id && c.investment_id === s.investment_id)
+            .reduce((sum, c) => sum + Number(c.amount), 0);
+          const dueInvestment = Math.max(capitalAmount - paid, 0);
+          const progress = capitalAmount > 0 ? Math.min(Math.round((paid / capitalAmount) * 100), 100) : 0;
+
+          return (
+            <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-5 hover:shadow-lg transition-shadow">
+              {/* Top row: Avatar, name, share badge, investment, status, actions */}
+              <div className="flex items-start gap-3 mb-4">
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback style={{ backgroundColor: investor?.avatar_color || "#3b82f6" }} className="text-white text-sm font-bold">{initials}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-foreground text-base">{investor?.name || "Unknown"}</p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">{s.share_percent}% share</span>
+                    <span className="text-xs text-muted-foreground truncate">{investment?.name || "Unknown"}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-md border ${dueInvestment > 0 ? "border-amber-400/50 text-amber-600 bg-amber-50" : "border-emerald-400/50 text-emerald-600 bg-emerald-50"}`}>
+                    {dueInvestment > 0 ? "Due" : "Paid"}
+                  </span>
+                  <button onClick={() => openEdit(s)} className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Edit2 size={15} /></button>
+                  <button onClick={() => remove(s.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive/70 hover:text-destructive transition-colors"><Trash2 size={15} /></button>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground font-medium">Payment Progress</span>
+                  <span className="font-bold text-foreground">{progress}%</span>
+                </div>
+                <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${progress}%`,
+                      background: progress >= 90 ? "hsl(var(--chart-2))" : "hsl(var(--primary))",
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Financial breakdown */}
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-3 border-t border-border">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Capital Amount</p>
+                  <p className="text-sm font-bold text-foreground">{fmt(capitalAmount)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Paid</p>
+                  <p className="text-sm font-bold text-emerald-600">{fmt(paid)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Due Investment</p>
+                  <p className="text-sm font-bold text-amber-600">{fmt(dueInvestment)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Payable Amount</p>
+                  <p className="text-sm font-bold text-amber-600">{fmt(dueInvestment)}</p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* ── Contributions Section ── */}
+      <div className="border-t border-border pt-6">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <FileText size={18} className="text-foreground" />
+            <div>
+              <h4 className="font-bold text-foreground">Contributions</h4>
+              <p className="text-xs text-muted-foreground">Payment history for all investments</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Month filter */}
+            <div className="flex items-center gap-1.5 text-xs">
+              <Calendar size={14} className="text-muted-foreground" />
+              <span className="text-muted-foreground font-medium">Filter by Month</span>
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All months</SelectItem>
+                  {months.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Search */}
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by investor, invest..." className="pl-8 h-8 text-xs w-[170px]" />
+            </div>
+            {/* Investor filter */}
+            <Select value={investorFilter} onValueChange={setInvestorFilter}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="All Investors" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Investors</SelectItem>
+                {investors.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {/* View toggles */}
+            <div className="flex border border-border rounded-md overflow-hidden">
+              <button onClick={() => setViewMode("table")} className={`p-1.5 ${viewMode === "table" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}><List size={14} /></button>
+              <button onClick={() => setViewMode("grid")} className={`p-1.5 ${viewMode === "grid" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}><LayoutGrid size={14} /></button>
+            </div>
+            {/* Export */}
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs"><Download size={14} /> Export</Button>
+            {/* Add */}
+            <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={openNewContrib}><Plus size={14} /> Add</Button>
+          </div>
+        </div>
+
+        {/* Contributions Table */}
+        {viewMode === "table" ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Date</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Investment</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Investor</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Category</th>
+                  <th className="text-right px-4 py-3 font-semibold text-foreground">Amount</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Slip</th>
+                  <th className="text-left px-4 py-3 font-semibold text-foreground">Note</th>
+                  <th className="text-center px-4 py-3 font-semibold text-foreground">Actions</th>
                 </tr>
+              </thead>
+              <tbody>
+                {filteredContribs.length === 0 ? (
+                  <tr><td colSpan={8} className="text-center py-12 text-muted-foreground">{contributions.length === 0 ? "No contributions yet." : "No results."}</td></tr>
+                ) : filteredContribs.map((c) => {
+                  const investor = investorMap.get(c.investor_id);
+                  const investment = investmentMap.get(c.investment_id);
+                  const category = c.category_id ? categoryMap.get(c.category_id) : null;
+                  return (
+                    <tr key={c.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 text-foreground whitespace-nowrap">{c.contribution_date}</td>
+                      <td className="px-4 py-3 text-foreground">{investment?.name || "Unknown"}</td>
+                      <td className="px-4 py-3 text-foreground">{investor?.name || "Unknown"}</td>
+                      <td className="px-4 py-3">
+                        {category ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: `${category.color || "#6b7280"}20`, color: category.color || "#6b7280" }}>
+                            {category.name}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-foreground">{fmt(Number(c.amount))}</td>
+                      <td className="px-4 py-3">
+                        {c.slip_url ? (
+                          <a href={c.slip_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1"><FileText size={12} /> 1</a>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground max-w-[180px] truncate">{c.note || "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Eye size={14} /></button>
+                          <button className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><Edit2 size={14} /></button>
+                          <button onClick={() => removeContrib(c.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={14} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filteredContribs.length === 0 ? (
+              <p className="col-span-full text-center py-12 text-muted-foreground">No contributions found.</p>
+            ) : filteredContribs.map((c) => {
+              const investor = investorMap.get(c.investor_id);
+              const investment = investmentMap.get(c.investment_id);
+              const category = c.category_id ? categoryMap.get(c.category_id) : null;
+              return (
+                <div key={c.id} className="bg-muted/30 rounded-xl border border-border p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-muted-foreground">{c.contribution_date}</span>
+                    <span className="font-bold text-foreground">{fmt(Number(c.amount))}</span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground">{investor?.name || "Unknown"}</p>
+                  <p className="text-xs text-muted-foreground">{investment?.name || "Unknown"}</p>
+                  {category && (
+                    <span className="inline-block mt-2 text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${category.color || "#6b7280"}20`, color: category.color || "#6b7280" }}>
+                      {category.name}
+                    </span>
+                  )}
+                  {c.note && <p className="text-xs text-muted-foreground mt-2 truncate">{c.note}</p>}
+                  <div className="flex justify-end mt-3 gap-1">
+                    <button onClick={() => removeContrib(c.id)} className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"><Trash2 size={13} /></button>
+                  </div>
+                </div>
               );
             })}
-            {filtered.length > 0 && (
-              <tr className="bg-muted/50">
-                <td colSpan={3} className="px-4 py-3 text-right font-semibold text-foreground">Total Capital</td>
-                <td className="px-4 py-3 text-right font-bold text-foreground">{fmt(totalShareCapital)}</td>
-                <td />
-              </tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
 
+      {/* Share Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editing ? "Edit Share" : "Add Share"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Edit Capital" : "Add Capital"}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground">Investment *</label>
@@ -554,7 +751,41 @@ const SharesTab = ({ shares, investors, investments, search, setSearch, onRefres
             </div>
             <div><label className="text-sm font-medium text-foreground">Share %</label><Input type="number" value={form.share_percent} onChange={(e) => setForm({ ...form, share_percent: e.target.value })} /></div>
             <div><label className="text-sm font-medium text-foreground">Capital Amount (BDT)</label><Input type="number" value={form.capital_amount} onChange={(e) => setForm({ ...form, capital_amount: e.target.value })} /></div>
-            <Button onClick={save} className="w-full">{editing ? "Update Share" : "Add Share"}</Button>
+            <Button onClick={save} className="w-full">{editing ? "Update Capital" : "Add Capital"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Contribution Dialog */}
+      <Dialog open={contribDialog} onOpenChange={setContribDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Record Contribution</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">Investment *</label>
+              <Select value={contribForm.investment_id} onValueChange={(v) => setContribForm({ ...contribForm, investment_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select investment" /></SelectTrigger>
+                <SelectContent>{investments.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Investor *</label>
+              <Select value={contribForm.investor_id} onValueChange={(v) => setContribForm({ ...contribForm, investor_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select investor" /></SelectTrigger>
+                <SelectContent>{investors.map((i) => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Category</label>
+              <Select value={contribForm.category_id} onValueChange={(v) => setContribForm({ ...contribForm, category_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select category (optional)" /></SelectTrigger>
+                <SelectContent>{categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><label className="text-sm font-medium text-foreground">Amount (BDT) *</label><Input type="number" value={contribForm.amount} onChange={(e) => setContribForm({ ...contribForm, amount: e.target.value })} /></div>
+            <div><label className="text-sm font-medium text-foreground">Date</label><Input type="date" value={contribForm.contribution_date} onChange={(e) => setContribForm({ ...contribForm, contribution_date: e.target.value })} /></div>
+            <div><label className="text-sm font-medium text-foreground">Note</label><Textarea value={contribForm.note} onChange={(e) => setContribForm({ ...contribForm, note: e.target.value })} rows={2} /></div>
+            <Button onClick={saveContrib} className="w-full">Record Contribution</Button>
           </div>
         </DialogContent>
       </Dialog>
