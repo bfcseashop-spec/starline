@@ -221,10 +221,19 @@ const AdminInvestment = () => {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="p-2.5 rounded-xl bg-primary/10"><TrendingUp size={18} className="text-primary" /></div>
-            <button className="p-1 rounded hover:bg-muted text-muted-foreground"><Edit2 size={13} /></button>
+            <button onClick={() => {
+              if (investments.length === 1) {
+                const inv = investments[0];
+                setInvestmentEditing(inv);
+                setInvestmentForm({ name: inv.name, description: inv.description || "", total_capital: String(inv.total_capital), status: inv.status });
+                setInvestmentDialog(true);
+              } else {
+                openNewInvestment();
+              }
+            }} className="p-1 rounded hover:bg-muted text-muted-foreground"><Edit2 size={13} /></button>
           </div>
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Total Capital</p>
-          <p className="font-heading text-xl font-bold text-foreground">{fmt(totalCapital)}</p>
+          <p className="font-heading text-xl font-bold text-foreground">{fmt(investments.reduce((s, i) => s + Number(i.total_capital), 0))}</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
