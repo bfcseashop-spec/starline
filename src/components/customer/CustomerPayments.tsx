@@ -47,17 +47,34 @@ const CustomerPayments = () => {
   const [loading, setLoading] = useState(true);
   const [viewSlip, setViewSlip] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPayments = async () => {
     if (!user) return;
-    supabase
+    const { data } = await supabase
       .from("payments")
       .select("*")
       .eq("user_id", user.id)
-      .order("payment_date", { ascending: false })
-      .then(({ data }) => {
-        setPayments((data as Payment[]) || []);
-        setLoading(false);
-      });
+      .order("payment_date", { ascending: false });
+    setPayments((data as Payment[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [user]);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("customer-payments")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${user.id}` },
+        () => fetchPayments()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
