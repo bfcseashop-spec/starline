@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         heading: ['Spectral', 'serif'],
-        body: ['DM Sans', 'sans-serif'],
+        body: ['Spectral', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
