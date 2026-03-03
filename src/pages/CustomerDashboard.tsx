@@ -61,7 +61,7 @@ const CustomerDashboard = () => {
               {activeTab === "projects" && <CustomerProjects />}
               {activeTab === "payments" && <CustomerPayments />}
               {activeTab === "documents" && <CustomerDocuments />}
-              {activeTab === "pay" && <CustomerPaymentMethods />}
+              {activeTab === "pay" && <CustomerPaymentMethods onPaymentComplete={() => setActiveTab("payments")} />}
             </motion.div>
           </main>
         </div>

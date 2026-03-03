@@ -19,7 +19,7 @@ const typeIcons: Record<string, typeof Building2> = {
   other: CreditCard,
 };
 
-const CustomerPaymentMethods = () => {
+const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () => void }) => {
   const { user } = useAuth();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,9 +144,14 @@ const CustomerPaymentMethods = () => {
         <p className="text-muted-foreground text-sm mb-6">
           Your payment of <span className="font-bold text-foreground">{fmt(payAmount)}</span> has been submitted and is pending verification. You'll be notified once it's confirmed.
         </p>
-        <button onClick={resetForm} className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors">
-          Make Another Payment
-        </button>
+        <div className="flex gap-3 justify-center">
+          <button onClick={() => onPaymentComplete?.()} className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors">
+            View Payments
+          </button>
+          <button onClick={resetForm} className="bg-card border border-border hover:bg-muted text-foreground font-medium px-8 py-3 rounded-full text-sm transition-colors">
+            Make Another Payment
+          </button>
+        </div>
       </div>
     );
   }
