@@ -4,7 +4,7 @@ import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "sonner";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
-  Search, ChevronDown, DollarSign, Upload,
+  Search, ChevronDown, DollarSign, Upload, Image,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -82,6 +82,7 @@ const AdminPayments = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [viewSlip, setViewSlip] = useState<string | null>(null);
 
   const fetchData = async () => {
     const [payRes, profRes, projRes, rolesRes] = await Promise.all([
@@ -283,6 +284,7 @@ const AdminPayments = () => {
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden lg:table-cell">Type</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden lg:table-cell">Pay By</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden xl:table-cell">Ref / TXN</th>
+                <th className="text-center px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">Slip</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider hidden sm:table-cell">Status</th>
                 <th className="text-right px-4 py-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">Actions</th>
               </tr>
@@ -305,6 +307,18 @@ const AdminPayments = () => {
                     {methodLabels[p.payment_method] || p.payment_method}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground hidden xl:table-cell font-mono text-xs">{p.reference_no || "—"}</td>
+                  <td className="px-4 py-3 hidden sm:table-cell text-center">
+                    {p.image_url ? (
+                      <button onClick={() => setViewSlip(p.image_url)} className="inline-block w-9 h-9 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-dash-green/50 transition-all group relative">
+                        <img src={p.image_url} alt="Slip" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Image size={12} className="text-white" />
+                        </div>
+                      </button>
+                    ) : (
+                      <span className="text-muted-foreground/40 text-xs">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 hidden sm:table-cell">
                     <span className={`text-[10px] uppercase font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
                       p.status === "completed" ? "bg-dash-green/15 text-dash-green"
@@ -479,8 +493,11 @@ const AdminPayments = () => {
               </div>
 
               {viewPayment.image_url && (
-                <div className="mt-4 rounded-xl overflow-hidden border border-border">
-                  <img src={viewPayment.image_url} alt="Payment receipt" className="w-full h-48 object-cover" />
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-foreground mb-2">Payment Slip</p>
+                  <button onClick={() => { setViewPayment(null); setViewSlip(viewPayment.image_url); }} className="w-full rounded-xl overflow-hidden border border-border hover:ring-2 hover:ring-dash-green/50 transition-all cursor-pointer">
+                    <img src={viewPayment.image_url} alt="Payment slip" className="w-full max-h-48 object-contain bg-muted" />
+                  </button>
                 </div>
               )}
 
@@ -491,6 +508,18 @@ const AdminPayments = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* SLIP LIGHTBOX */}
+      {viewSlip && (
+        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4" onClick={() => setViewSlip(null)}>
+          <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setViewSlip(null)} className="absolute -top-3 -right-3 bg-card border border-border p-2 rounded-full text-muted-foreground hover:text-foreground transition-colors z-10">
+              <X size={18} />
+            </button>
+            <img src={viewSlip} alt="Payment slip" className="w-full rounded-xl max-h-[80vh] object-contain bg-card" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
