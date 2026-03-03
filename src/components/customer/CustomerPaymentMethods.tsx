@@ -31,6 +31,7 @@ const CustomerPaymentMethods = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [referenceNo, setReferenceNo] = useState("");
+  const [paymentType, setPaymentType] = useState("installment");
   const [step, setStep] = useState<"form" | "details" | "slip" | "done">("form");
 
   // Slip upload
@@ -104,7 +105,7 @@ const CustomerPaymentMethods = () => {
         reference_no: referenceNo || null,
         image_url: slipUrl,
         status: "pending",
-        payment_type: "installment",
+        payment_type: paymentType,
         notes: `Via ${selectedMethodObj?.title || "Unknown"}`,
       });
 
@@ -124,6 +125,7 @@ const CustomerPaymentMethods = () => {
     setCustomAmount("");
     setSelectedMethod("");
     setReferenceNo("");
+    setPaymentType("installment");
     setSlipFile(null);
     setSlipPreview(null);
     setPaymentDate(new Date().toISOString().split("T")[0]);
@@ -391,6 +393,32 @@ const CustomerPaymentMethods = () => {
         {methods.length === 0 && (
           <p className="text-xs text-muted-foreground mt-2">No payment methods available yet.</p>
         )}
+      </div>
+
+      {/* Select payment type */}
+      <div className="mb-8">
+        <h3 className="font-heading text-base font-bold text-foreground mb-3">Payment type</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { value: "down_payment", label: "Down Payment" },
+            { value: "installment", label: "Installment" },
+            { value: "advance", label: "Advance" },
+            { value: "other", label: "Other" },
+          ].map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setPaymentType(t.value)}
+              className={`p-3 rounded-xl border text-sm font-medium transition-colors ${
+                paymentType === t.value
+                  ? "border-dash-green bg-dash-green/5 text-foreground"
+                  : "border-border bg-card text-muted-foreground hover:border-muted-foreground/40"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Select a date */}
