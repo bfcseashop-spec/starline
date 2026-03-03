@@ -387,6 +387,7 @@ export type Database = {
           notes: string | null
           payment_date: string
           payment_method: string
+          payment_type: string
           project_id: string | null
           reference_no: string | null
           status: string
@@ -400,6 +401,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_method?: string
+          payment_type?: string
           project_id?: string | null
           reference_no?: string | null
           status?: string
@@ -413,6 +415,7 @@ export type Database = {
           notes?: string | null
           payment_date?: string
           payment_method?: string
+          payment_type?: string
           project_id?: string | null
           reference_no?: string | null
           status?: string
