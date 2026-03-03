@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   TrendingUp, DollarSign, Users, Plus, Trash2, Edit2, Search,
   ArrowUpRight, ArrowDownRight, Eye, Download, LayoutGrid, List, Calendar, FileText,
-  CheckCircle, AlertTriangle, PieChart,
+  CheckCircle, AlertTriangle, PieChart, Upload, Image, X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,12 @@ const AdminInvestment = () => {
   const [capitalForm, setCapitalForm] = useState({ investment_id: "", investor_id: "", share_percent: "", capital_amount: "" });
 
   const [contribDialog, setContribDialog] = useState(false);
-  const [contribForm, setContribForm] = useState({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "" });
+  const [contribForm, setContribForm] = useState({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "", project_id: "" });
+  const [contribImageFile, setContribImageFile] = useState<File | null>(null);
+  const [contribImagePreview, setContribImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const contribFileRef = useRef<HTMLInputElement>(null);
+  const [customerProjects, setCustomerProjects] = useState<{ id: string; project_name: string }[]>([]);
 
   // Filters
   const [monthFilter, setMonthFilter] = useState("all");
@@ -64,18 +69,20 @@ const AdminInvestment = () => {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [invRes, invtRes, catRes, contRes, shareRes] = await Promise.all([
+    const [invRes, invtRes, catRes, contRes, shareRes, projRes] = await Promise.all([
       supabase.from("investments").select("*").order("created_at", { ascending: false }),
       supabase.from("investors").select("*").order("name"),
       supabase.from("investment_categories").select("*").order("name"),
       supabase.from("contributions").select("*").order("contribution_date", { ascending: false }),
       supabase.from("investment_shares").select("*"),
+      supabase.from("customer_projects").select("id, project_name").order("project_name"),
     ]);
     setInvestments(invRes.data || []);
     setInvestors(invtRes.data || []);
     setCategories(catRes.data || []);
     setContributions(contRes.data || []);
     setShares(shareRes.data || []);
+    setCustomerProjects(projRes.data || []);
     setLoading(false);
   }, []);
 
@@ -164,15 +171,37 @@ const AdminInvestment = () => {
   };
 
   // ── Contribution CRUD ──
-  const openNewContrib = () => { setContribForm({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "" }); setContribDialog(true); };
+  const openNewContrib = () => { setContribForm({ investment_id: "", investor_id: "", category_id: "", amount: "", contribution_date: new Date().toISOString().split("T")[0], note: "", project_id: "" }); setContribImageFile(null); setContribImagePreview(null); setContribDialog(true); };
+
+  const handleContribImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setContribImageFile(file);
+    setContribImagePreview(URL.createObjectURL(file));
+  };
+
   const saveContrib = async () => {
     if (!contribForm.investment_id || !contribForm.investor_id) { toast.error("Investment and Investor are required"); return; }
+    
+    let slip_url: string | null = null;
+    if (contribImageFile) {
+      setUploadingImage(true);
+      const ext = contribImageFile.name.split(".").pop();
+      const path = `contributions/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("company-assets").upload(path, contribImageFile);
+      setUploadingImage(false);
+      if (upErr) { toast.error("Image upload failed: " + upErr.message); return; }
+      const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(path);
+      slip_url = urlData.publicUrl;
+    }
+
     const { error } = await supabase.from("contributions").insert({
       investment_id: contribForm.investment_id, investor_id: contribForm.investor_id,
       category_id: contribForm.category_id || null, amount: Number(contribForm.amount) || 0,
       contribution_date: contribForm.contribution_date, note: contribForm.note || null,
+      slip_url, project_id: contribForm.project_id || null,
     });
-    if (error) toast.error(error.message); else { toast.success("Contribution recorded"); setContribDialog(false); fetchAll(); }
+    if (error) toast.error(error.message); else { toast.success("Contribution recorded"); setContribDialog(false); setContribImageFile(null); setContribImagePreview(null); fetchAll(); }
   };
   const removeContrib = async (id: string) => {
     if (!confirm("Delete this contribution?")) return;
@@ -625,8 +654,8 @@ const AdminInvestment = () => {
       </Dialog>
 
       {/* Contribution Dialog */}
-      <Dialog open={contribDialog} onOpenChange={setContribDialog}>
-        <DialogContent>
+      <Dialog open={contribDialog} onOpenChange={(open) => { setContribDialog(open); if (!open) { setContribImageFile(null); setContribImagePreview(null); } }}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Record Contribution</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div>
@@ -644,6 +673,13 @@ const AdminInvestment = () => {
               </Select>
             </div>
             <div>
+              <label className="text-sm font-medium text-foreground">Project</label>
+              <Select value={contribForm.project_id} onValueChange={(v) => setContribForm({ ...contribForm, project_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger>
+                <SelectContent>{customerProjects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
               <label className="text-sm font-medium text-foreground">Category</label>
               <Select value={contribForm.category_id} onValueChange={(v) => setContribForm({ ...contribForm, category_id: v })}>
                 <SelectTrigger><SelectValue placeholder="Select category (optional)" /></SelectTrigger>
@@ -653,7 +689,24 @@ const AdminInvestment = () => {
             <div><label className="text-sm font-medium text-foreground">Amount (BDT) *</label><Input type="number" value={contribForm.amount} onChange={(e) => setContribForm({ ...contribForm, amount: e.target.value })} /></div>
             <div><label className="text-sm font-medium text-foreground">Date</label><Input type="date" value={contribForm.contribution_date} onChange={(e) => setContribForm({ ...contribForm, contribution_date: e.target.value })} /></div>
             <div><label className="text-sm font-medium text-foreground">Note</label><Textarea value={contribForm.note} onChange={(e) => setContribForm({ ...contribForm, note: e.target.value })} rows={2} /></div>
-            <Button onClick={saveContrib} className="w-full">Record Contribution</Button>
+            <div>
+              <label className="text-sm font-medium text-foreground">Upload Image</label>
+              <input ref={contribFileRef} type="file" accept="image/*" className="hidden" onChange={handleContribImage} />
+              {contribImagePreview ? (
+                <div className="relative mt-1.5 rounded-xl overflow-hidden border border-border">
+                  <img src={contribImagePreview} alt="Preview" className="w-full h-32 object-cover" />
+                  <button onClick={() => { setContribImageFile(null); setContribImagePreview(null); if (contribFileRef.current) contribFileRef.current.value = ""; }} className="absolute top-2 right-2 bg-background/80 rounded-full p-1 hover:bg-background"><X size={14} /></button>
+                </div>
+              ) : (
+                <button onClick={() => contribFileRef.current?.click()} className="mt-1.5 w-full border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                  <Upload size={20} />
+                  <span className="text-xs font-medium">Click to upload slip/receipt</span>
+                </button>
+              )}
+            </div>
+            <Button onClick={saveContrib} disabled={uploadingImage} className="w-full">
+              {uploadingImage ? "Uploading..." : "Record Contribution"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

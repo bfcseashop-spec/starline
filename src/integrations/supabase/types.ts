@@ -24,6 +24,7 @@ export type Database = {
           investment_id: string
           investor_id: string
           note: string | null
+          project_id: string | null
           slip_url: string | null
           updated_at: string
         }
@@ -36,6 +37,7 @@ export type Database = {
           investment_id: string
           investor_id: string
           note?: string | null
+          project_id?: string | null
           slip_url?: string | null
           updated_at?: string
         }
@@ -48,6 +50,7 @@ export type Database = {
           investment_id?: string
           investor_id?: string
           note?: string | null
+          project_id?: string | null
           slip_url?: string | null
           updated_at?: string
         }
@@ -71,6 +74,13 @@ export type Database = {
             columns: ["investor_id"]
             isOneToOne: false
             referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contributions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "customer_projects"
             referencedColumns: ["id"]
           },
         ]

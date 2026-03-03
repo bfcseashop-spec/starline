@@ -1,0 +1,1 @@
+ALTER TABLE public.contributions ADD COLUMN project_id uuid REFERENCES public.customer_projects(id) ON DELETE SET NULL DEFAULT NULL;
