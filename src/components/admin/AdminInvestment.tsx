@@ -540,44 +540,78 @@ const AdminInvestment = () => {
               <Plus size={16} /> {capitalEditing ? "Edit Capital" : "Add Capital"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-5 pt-2">
-            <div>
-              <label className="text-sm font-semibold text-foreground">Investment *</label>
-              <Select value={capitalForm.investment_id} onValueChange={(v) => setCapitalForm({ ...capitalForm, investment_id: v })}>
-                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select investment" /></SelectTrigger>
-                <SelectContent>
-                  {investments.map((i) => (
-                    <SelectItem key={i.id} value={i.id}>{i.name} ({fmt(Number(i.total_capital))})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground">Investor Name *</label>
-              <Select value={capitalForm.investor_id} onValueChange={(v) => setCapitalForm({ ...capitalForm, investor_id: v })}>
-                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Type name..." /></SelectTrigger>
-                <SelectContent>
-                  {investors.map((i) => (
-                    <SelectItem key={i.id} value={i.id}>
-                      <div className="flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ backgroundColor: i.avatar_color || "#3b82f6" }}>{i.name.charAt(0).toUpperCase()}</span>
-                        {i.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground">Capital Amount (BDT) *</label>
-              <Input type="number" className="mt-1.5" value={capitalForm.capital_amount} onChange={(e) => setCapitalForm({ ...capitalForm, capital_amount: e.target.value })} placeholder="Enter capital amount" />
-            </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground">Share Percentage (%) *</label>
-              <Input type="number" className="mt-1.5" value={capitalForm.share_percent} onChange={(e) => setCapitalForm({ ...capitalForm, share_percent: e.target.value })} placeholder="Enter share percentage" />
-            </div>
-            <Button onClick={saveCapital} className="w-full">{capitalEditing ? "Update Capital" : "Add Capital"}</Button>
-          </div>
+          {(() => {
+            const selectedInvestment = capitalForm.investment_id ? investmentMap.get(capitalForm.investment_id) : null;
+            const investmentTotal = selectedInvestment ? Number(selectedInvestment.total_capital) : 0;
+            const pct = Number(capitalForm.share_percent) || 0;
+            // Sum of all existing share percentages for this investment (excluding current editing)
+            const existingPctSum = shares
+              .filter((s) => s.investment_id === capitalForm.investment_id && (!capitalEditing || s.id !== capitalEditing.id))
+              .reduce((sum, s) => sum + Number(s.share_percent), 0);
+            const totalPctWithCurrent = existingPctSum + pct;
+            // Normalized: if total shares exceed 100%, normalize proportionally
+            const normalizedPct = totalPctWithCurrent > 0 ? (pct / totalPctWithCurrent) * 100 : 0;
+            const normalizedAmount = investmentTotal * (normalizedPct / 100);
+            const rawAmount = investmentTotal * (pct / 100);
+            const needsNormalization = totalPctWithCurrent > 100;
+
+            return (
+              <div className="space-y-5 pt-2">
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Investment *</label>
+                  <Select value={capitalForm.investment_id} onValueChange={(v) => {
+                    const inv = investmentMap.get(v);
+                    const invTotal = inv ? Number(inv.total_capital) : 0;
+                    const p = Number(capitalForm.share_percent) || 0;
+                    setCapitalForm({ ...capitalForm, investment_id: v, capital_amount: String(invTotal * (p / 100)) });
+                  }}>
+                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select investment" /></SelectTrigger>
+                    <SelectContent>
+                      {investments.map((i) => (
+                        <SelectItem key={i.id} value={i.id}>{i.name} ({fmt(Number(i.total_capital))})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Investor Name *</label>
+                  <Select value={capitalForm.investor_id} onValueChange={(v) => setCapitalForm({ ...capitalForm, investor_id: v })}>
+                    <SelectTrigger className="mt-1.5"><SelectValue placeholder="Type name..." /></SelectTrigger>
+                    <SelectContent>
+                      {investors.map((i) => (
+                        <SelectItem key={i.id} value={i.id}>
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style={{ backgroundColor: i.avatar_color || "#3b82f6" }}>{i.name.charAt(0).toUpperCase()}</span>
+                            {i.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Capital Amount ($) *</label>
+                  <Input type="number" className="mt-1.5" value={capitalForm.capital_amount} onChange={(e) => setCapitalForm({ ...capitalForm, capital_amount: e.target.value })} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-foreground">Share Percentage (%) *</label>
+                  <Input type="number" className="mt-1.5" value={capitalForm.share_percent} onChange={(e) => {
+                    const newPct = Number(e.target.value) || 0;
+                    const autoAmount = investmentTotal * (newPct / 100);
+                    setCapitalForm({ ...capitalForm, share_percent: e.target.value, capital_amount: String(autoAmount) });
+                  }} placeholder="Enter share percentage" />
+                  {pct > 0 && investmentTotal > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      {needsNormalization
+                        ? `After normalization: ${normalizedPct.toFixed(2)}% = ${fmt(normalizedAmount)}`
+                        : `${pct}% of ${fmt(investmentTotal)} = ${fmt(rawAmount)}`}
+                    </p>
+                  )}
+                </div>
+                <Button onClick={saveCapital} className="w-full">{capitalEditing ? "Update Capital" : "Add Capital"}</Button>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
