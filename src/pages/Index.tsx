@@ -50,11 +50,11 @@ const Index = () => {
           showScrollIndicator={(system as any).show_scroll_indicator}
         />
         <PropertySummary />
-        <PropertySearch onFilter={setFilters} />
+        {(system as any).show_search !== false && <PropertySearch onFilter={setFilters} />}
         {system.show_featured && <FeaturedProperties filters={filters} />}
         {system.show_stats && <StatsSection />}
         <ComingSoon />
-        <WhyStarline />
+        {(system as any).show_why_us !== false && <WhyStarline />}
       </main>
       <Footer company={company} social={social} />
     </div>
