@@ -54,6 +54,24 @@ const CustomerSidebar = ({ activeTab, onTabChange }: CustomerSidebarProps) => {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
+        {/* Home link to landing page */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Home">
+                  <Link to="/" className="rounded-xl h-11 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200">
+                    <div className="p-1.5 rounded-lg">
+                      <Home className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium">Home</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
