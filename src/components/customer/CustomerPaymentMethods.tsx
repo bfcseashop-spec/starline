@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, ChevronLeft, CreditCard, Building2, Smartphone, Globe, Copy, Check } from "lucide-react";
+import { Loader2, ChevronLeft, CreditCard, Building2, Smartphone, Globe, Copy, Check, Upload, X, CheckCircle2, Image } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentMethod {
@@ -30,7 +30,14 @@ const CustomerPaymentMethods = () => {
   const [customAmount, setCustomAmount] = useState("");
   const [selectedMethod, setSelectedMethod] = useState("");
   const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [step, setStep] = useState<"form" | "details">("form");
+  const [referenceNo, setReferenceNo] = useState("");
+  const [step, setStep] = useState<"form" | "details" | "slip" | "done">("form");
+
+  // Slip upload
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [slipPreview, setSlipPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,9 +47,7 @@ const CustomerPaymentMethods = () => {
           ? supabase.from("customer_projects").select("total_amount, paid_amount").eq("user_id", user.id)
           : Promise.resolve({ data: [] }),
       ]);
-
       setMethods((methodsRes.data as PaymentMethod[]) || []);
-
       if (projectsRes.data && projectsRes.data.length > 0) {
         let remaining = 0;
         for (const p of projectsRes.data) {
@@ -68,9 +73,183 @@ const CustomerPaymentMethods = () => {
   const selectedMethodObj = methods.find((m) => m.id === selectedMethod);
   const payAmount = amountOption === "balance" ? balance : Number(customAmount) || 0;
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("File must be under 5MB"); return; }
+    setSlipFile(file);
+    setSlipPreview(URL.createObjectURL(file));
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!user) return;
+    setUploading(true);
+    try {
+      let slipUrl: string | null = null;
+
+      if (slipFile) {
+        const ext = slipFile.name.split(".").pop();
+        const path = `${user.id}/${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from("payment-images").upload(path, slipFile);
+        if (uploadErr) throw uploadErr;
+        const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(path);
+        slipUrl = urlData.publicUrl;
+      }
+
+      const { error } = await supabase.from("payments").insert({
+        user_id: user.id,
+        amount: payAmount,
+        payment_method: selectedMethodObj?.method_type || "other",
+        payment_date: paymentDate,
+        reference_no: referenceNo || null,
+        image_url: slipUrl,
+        status: "pending",
+        payment_type: "installment",
+        notes: `Via ${selectedMethodObj?.title || "Unknown"}`,
+      });
+
+      if (error) throw error;
+      setStep("done");
+      toast.success("Payment submitted successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit payment");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setStep("form");
+    setAmountOption("balance");
+    setCustomAmount("");
+    setSelectedMethod("");
+    setReferenceNo("");
+    setSlipFile(null);
+    setSlipPreview(null);
+    setPaymentDate(new Date().toISOString().split("T")[0]);
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
 
-  // Step 2: Show selected method details for payment
+  // Step 4: Done
+  if (step === "done") {
+    return (
+      <div className="max-w-lg mx-auto text-center py-12">
+        <div className="w-16 h-16 bg-dash-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <CheckCircle2 size={32} className="text-dash-green" />
+        </div>
+        <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Payment Submitted!</h2>
+        <p className="text-muted-foreground text-sm mb-6">
+          Your payment of <span className="font-bold text-foreground">{fmt(payAmount)}</span> has been submitted and is pending verification. You'll be notified once it's confirmed.
+        </p>
+        <button onClick={resetForm} className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors">
+          Make Another Payment
+        </button>
+      </div>
+    );
+  }
+
+  // Step 3: Upload payment slip
+  if (step === "slip") {
+    return (
+      <div className="max-w-lg mx-auto">
+        <button onClick={() => setStep("details")} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+          <ChevronLeft size={16} /> Back
+        </button>
+
+        <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Upload Payment Slip</h2>
+        <p className="text-muted-foreground text-sm mb-6">
+          Upload a screenshot or photo of your payment receipt for verification.
+        </p>
+
+        {/* Reference / TXN ID */}
+        <div className="mb-6">
+          <h3 className="font-heading text-base font-bold text-foreground mb-2">Reference / TXN ID</h3>
+          <input
+            type="text"
+            value={referenceNo}
+            onChange={(e) => setReferenceNo(e.target.value)}
+            placeholder="Enter transaction reference number"
+            className="w-full p-4 rounded-xl border border-border bg-card text-foreground text-sm focus:outline-none focus:border-dash-green transition-colors"
+          />
+        </div>
+
+        {/* Upload area */}
+        <div className="mb-6">
+          <h3 className="font-heading text-base font-bold text-foreground mb-2">Payment Slip</h3>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+
+          {slipPreview ? (
+            <div className="relative rounded-xl border border-border overflow-hidden">
+              <img src={slipPreview} alt="Payment slip" className="w-full max-h-64 object-contain bg-muted" />
+              <button
+                onClick={() => { setSlipFile(null); setSlipPreview(null); }}
+                className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm p-1.5 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-2 border-dashed border-border hover:border-dash-green/50 rounded-xl p-8 flex flex-col items-center gap-3 transition-colors group"
+            >
+              <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center group-hover:bg-dash-green/10 transition-colors">
+                <Image size={24} className="text-muted-foreground group-hover:text-dash-green transition-colors" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-medium text-foreground">Click to upload payment slip</p>
+                <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 5MB</p>
+              </div>
+            </button>
+          )}
+        </div>
+
+        {/* Summary */}
+        <div className="bg-muted/50 rounded-xl p-4 mb-6 space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Amount</span>
+            <span className="font-bold text-foreground">{fmt(payAmount)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Method</span>
+            <span className="font-medium text-foreground">{selectedMethodObj?.title}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Date</span>
+            <span className="font-medium text-foreground">{new Date(paymentDate).toLocaleDateString()}</span>
+          </div>
+          {referenceNo && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Reference</span>
+              <span className="font-medium text-foreground">{referenceNo}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleSubmitPayment}
+            disabled={uploading}
+            className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {uploading ? <><Loader2 size={16} className="animate-spin" /> Submitting...</> : "Submit Payment"}
+          </button>
+          <button
+            onClick={() => handleSubmitPayment()}
+            disabled={uploading || !!slipFile}
+            className="bg-card border border-border hover:bg-muted text-foreground font-medium px-8 py-3 rounded-full text-sm transition-colors disabled:opacity-50"
+            style={{ display: slipFile ? "none" : undefined }}
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Step 2: Show selected method details
   if (step === "details" && selectedMethodObj) {
     const Icon = typeIcons[selectedMethodObj.method_type] || CreditCard;
     return (
@@ -81,7 +260,7 @@ const CustomerPaymentMethods = () => {
 
         <h2 className="font-heading text-2xl font-bold text-foreground mb-2">Complete Your Payment</h2>
         <p className="text-muted-foreground text-sm mb-6">
-          Pay <span className="font-bold text-foreground">{fmt(payAmount)}</span> using the details below.
+          Pay <span className="font-bold text-foreground">{fmt(payAmount)}</span> using the details below, then proceed to upload your payment slip.
         </p>
 
         <div className="bg-card rounded-xl border border-border p-6 mb-4">
@@ -118,7 +297,7 @@ const CustomerPaymentMethods = () => {
           </div>
         </div>
 
-        <div className="bg-dash-green/5 border border-dash-green/20 rounded-xl p-5">
+        <div className="bg-dash-green/5 border border-dash-green/20 rounded-xl p-5 mb-6">
           <h4 className="font-heading text-base font-semibold text-foreground mb-2">Payment Instructions</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>• Include your <span className="text-dash-green font-medium">Project Reference Number</span> when making payments</li>
@@ -126,11 +305,18 @@ const CustomerPaymentMethods = () => {
             <li>• Payments are verified within 24-48 hours</li>
           </ul>
         </div>
+
+        <button
+          onClick={() => setStep("slip")}
+          className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-8 py-3 rounded-full text-sm transition-colors flex items-center gap-2"
+        >
+          <Upload size={16} /> I've Paid — Upload Slip
+        </button>
       </div>
     );
   }
 
-  // Step 1: Form like the reference
+  // Step 1: Form
   return (
     <div className="max-w-lg mx-auto">
       <h2 className="font-heading text-2xl font-bold text-foreground mb-6">Make payment</h2>
@@ -232,11 +418,7 @@ const CustomerPaymentMethods = () => {
           Next
         </button>
         <button
-          onClick={() => {
-            setAmountOption("balance");
-            setCustomAmount("");
-            setSelectedMethod("");
-          }}
+          onClick={resetForm}
           className="bg-card border border-border hover:bg-muted text-foreground font-medium px-8 py-3 rounded-full text-sm transition-colors"
         >
           Cancel
