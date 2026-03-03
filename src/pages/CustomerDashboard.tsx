@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight } from "lucide-react";
+import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight, Megaphone, Wrench } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,9 +11,10 @@ import CustomerPayments from "@/components/customer/CustomerPayments";
 import CustomerDocuments from "@/components/customer/CustomerDocuments";
 import CustomerPaymentMethods from "@/components/customer/CustomerPaymentMethods";
 
-type Tab = "overview" | "profile" | "projects" | "payments" | "documents" | "pay";
+type Tab = "home" | "overview" | "profile" | "projects" | "payments" | "documents" | "pay";
 
 const pageTitle: Record<Tab, string> = {
+  home: "Home",
   overview: "Overview",
   projects: "My Building",
   payments: "Payments",
@@ -23,7 +24,7 @@ const pageTitle: Record<Tab, string> = {
 };
 
 const CustomerDashboard = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [activeTab, setActiveTab] = useState<Tab>("home");
   const { user } = useAuth();
 
   return (
@@ -54,6 +55,7 @@ const CustomerDashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
+              {activeTab === "home" && <HomeTab onNavigate={setActiveTab} />}
               {activeTab === "overview" && <OverviewTab onNavigate={setActiveTab} />}
               {activeTab === "profile" && <CustomerProfile />}
               {activeTab === "projects" && <CustomerProjects />}
@@ -197,6 +199,138 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
             <p className="text-muted-foreground text-sm">{card.desc}</p>
           </motion.button>
         ))}
+      </div>
+    </div>
+  );
+};
+
+const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
+  const { user } = useAuth();
+  const [balance, setBalance] = useState({ total: 0, paid: 0, remaining: 0 });
+  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetch = async () => {
+      const { data: projects } = await supabase
+        .from("customer_projects")
+        .select("total_amount, paid_amount")
+        .eq("user_id", user.id);
+
+      if (projects && projects.length > 0) {
+        const totals = projects.reduce(
+          (acc, p) => ({ total: acc.total + Number(p.total_amount), paid: acc.paid + Number(p.paid_amount) }),
+          { total: 0, paid: 0 }
+        );
+        setBalance({ ...totals, remaining: totals.total - totals.paid });
+      }
+
+      const { data: payments } = await supabase
+        .from("payments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("payment_date", { ascending: false })
+        .limit(5);
+
+      setRecentPayments(payments || []);
+      setLoading(false);
+    };
+    fetch();
+  }, [user]);
+
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT", maximumFractionDigits: 0 }).format(n);
+
+  return (
+    <div className="space-y-6">
+      {/* Balance Banner */}
+      <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-1.5 h-16 rounded-full bg-dash-green shrink-0" />
+          <div>
+            <p className="text-muted-foreground text-sm font-medium">Your current balance is</p>
+            <p className="font-heading text-3xl sm:text-4xl font-bold text-foreground mt-1">
+              {loading ? "..." : fmt(balance.remaining)}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => onNavigate("pay")}
+            className="bg-dash-green hover:bg-dash-green/90 text-white font-semibold px-6 py-3 rounded-full text-sm transition-colors"
+          >
+            Make payment
+          </button>
+          <button
+            onClick={() => onNavigate("payments")}
+            className="bg-card border border-border hover:bg-muted text-foreground font-medium px-6 py-3 rounded-full text-sm transition-colors"
+          >
+            View all payments
+          </button>
+        </div>
+      </div>
+
+      {/* Two column grid */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <h3 className="font-heading text-lg font-bold text-foreground mb-4">Quick Actions</h3>
+          <div className="space-y-3">
+            {[
+              { icon: HardHat, label: "My Building", desc: "View construction progress", tab: "projects" as Tab, color: "bg-dash-orange" },
+              { icon: FileText, label: "Documents", desc: "Access your documents", tab: "documents" as Tab, color: "bg-dash-purple" },
+              { icon: User, label: "Profile", desc: "Update your information", tab: "profile" as Tab, color: "bg-dash-pink" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => onNavigate(item.tab)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/60 transition-colors text-left group"
+              >
+                <div className={`${item.color} p-2 rounded-lg text-white`}>
+                  <item.icon size={18} />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+                <ChevronRight size={16} className="text-muted-foreground/40 group-hover:text-foreground transition-colors" />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Payments */}
+        <div className="bg-card border border-border rounded-2xl p-6">
+          <h3 className="font-heading text-lg font-bold text-foreground mb-4">Recent Payments</h3>
+          {recentPayments.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="bg-muted w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CreditCard size={20} className="text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm">No payments yet</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentPayments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/40">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full ${p.status === "completed" ? "bg-dash-green" : "bg-dash-orange"}`} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{fmt(p.amount)}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(p.payment_date).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    p.status === "completed" ? "bg-green-500/10 text-green-600" : "bg-orange-500/10 text-orange-600"
+                  }`}>
+                    {p.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
