@@ -384,6 +384,12 @@ const AdminSettings = () => {
       theme: sys.theme || "dark", header_style: sys.header_style || "default",
       show_stats: sys.show_stats !== false, show_featured: sys.show_featured !== false,
       show_contact: sys.show_contact !== false, banner_image_url: sys.banner_image_url || "",
+      show_why_us: sys.show_why_us !== false, show_search: sys.show_search !== false,
+      footer_text: sys.footer_text || "", footer_copyright: sys.footer_copyright || "",
+      meta_title: sys.meta_title || "", meta_description: sys.meta_description || "",
+      maintenance_mode: sys.maintenance_mode || false, maintenance_message: sys.maintenance_message || "We'll be back soon!",
+      google_analytics_id: sys.google_analytics_id || "",
+      favicon_url: sys.favicon_url || "",
     });
     const [bannerUploading, setBannerUploading] = useState(false);
 
@@ -461,11 +467,17 @@ const AdminSettings = () => {
         </SectionCard>
 
         {/* Features & Sections */}
-        <SectionCard icon={Sparkles} title="Features & Sections" iconColor="text-amber-600">
-          <div className="flex flex-wrap gap-6">
-            {([["show_stats", "Stats Section"], ["show_featured", "Featured Properties"], ["show_contact", "Contact Form"]] as const).map(([key, label]) => (
+        <SectionCard icon={Sparkles} title="Page Sections Visibility" iconColor="text-amber-600">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {([
+              ["show_stats", "Stats Section"],
+              ["show_featured", "Featured Properties"],
+              ["show_contact", "Contact Form"],
+              ["show_why_us", "Why Choose Us"],
+              ["show_search", "Property Search"],
+            ] as const).map(([key, label]) => (
               <div key={key} className="flex items-center gap-2">
-                <Switch checked={form[key]} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
+                <Switch checked={(form as any)[key]} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
                 <Label className="text-sm">{label}</Label>
               </div>
             ))}
@@ -481,6 +493,53 @@ const AdminSettings = () => {
               </SelectContent>
             </Select>
           </div>
+        </SectionCard>
+
+        {/* SEO & Meta */}
+        <SectionCard icon={Globe} title="SEO & Meta Tags" iconColor="text-teal-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Page Title (Meta)</Label>
+            <Input value={form.meta_title} onChange={(e) => setForm({ ...form, meta_title: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="Starline Builder's Ltd. — Premium Real Estate" />
+            <p className="text-xs text-muted-foreground mt-1">Appears in browser tab & search results (max 60 chars)</p>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Meta Description</Label>
+            <Textarea value={form.meta_description} onChange={(e) => setForm({ ...form, meta_description: e.target.value })} className="mt-1.5 bg-muted/50" rows={2} placeholder="Premium construction and real estate services in Bangladesh..." />
+            <p className="text-xs text-muted-foreground mt-1">Search engine description (max 160 chars)</p>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Google Analytics ID</Label>
+            <Input value={form.google_analytics_id} onChange={(e) => setForm({ ...form, google_analytics_id: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="G-XXXXXXXXXX" />
+          </div>
+        </SectionCard>
+
+        {/* Footer Settings */}
+        <SectionCard icon={Type} title="Footer Settings" iconColor="text-purple-600">
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Footer Text</Label>
+            <Textarea value={form.footer_text} onChange={(e) => setForm({ ...form, footer_text: e.target.value })} className="mt-1.5 bg-muted/50" rows={2} placeholder="Your trusted partner in premium real estate..." />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Copyright Text</Label>
+            <Input value={form.footer_copyright} onChange={(e) => setForm({ ...form, footer_copyright: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="© 2025 Starline Builder's Ltd. All rights reserved." />
+          </div>
+        </SectionCard>
+
+        {/* Maintenance Mode */}
+        <SectionCard icon={Settings2} title="Maintenance Mode" iconColor="text-red-600">
+          <div className="flex items-center gap-3">
+            <Switch checked={form.maintenance_mode} onCheckedChange={(v) => setForm({ ...form, maintenance_mode: v })} />
+            <div>
+              <Label className="text-sm font-medium">Enable Maintenance Mode</Label>
+              <p className="text-xs text-muted-foreground">When enabled, visitors see a maintenance page instead of the site</p>
+            </div>
+          </div>
+          {form.maintenance_mode && (
+            <div>
+              <Label className="text-xs font-semibold text-foreground">Maintenance Message</Label>
+              <Textarea value={form.maintenance_message} onChange={(e) => setForm({ ...form, maintenance_message: e.target.value })} className="mt-1.5 bg-muted/50" rows={2} />
+            </div>
+          )}
         </SectionCard>
 
         <Button onClick={() => saveSetting("system", form)} disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
