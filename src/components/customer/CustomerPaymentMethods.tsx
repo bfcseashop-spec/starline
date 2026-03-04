@@ -116,8 +116,9 @@ const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () 
 
       if (!ok) return;
       setStep("done");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to submit payment");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to submit payment";
+      toast.error(message);
     } finally {
       setUploading(false);
     }

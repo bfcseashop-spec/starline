@@ -69,13 +69,18 @@ const Auth = () => {
       } = await supabase.auth.getUser();
 
       if (authedUser) {
-        const { data: roleRow } = await supabase
+        const { data, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
-          .eq("user_id", authedUser.id)
-          .maybeSingle();
+          .eq("user_id", authedUser.id);
 
-        const effectiveRole = (roleRow?.role as "admin" | "customer" | null) ?? "customer";
+        if (roleError) {
+          throw roleError;
+        }
+
+        const roles = (data ?? []).map((r) => (r as { role: string }).role);
+        const effectiveRole: "admin" | "customer" =
+          (roles.includes("admin") ? "admin" : roles.includes("customer") ? "customer" : "customer");
 
         if (loginType === "admin" && effectiveRole !== "admin") {
           // Customer trying to use Admin portal: keep them as customer

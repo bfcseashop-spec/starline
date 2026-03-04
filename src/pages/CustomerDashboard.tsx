@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight, Megaphone, Wrench } from "lucide-react";
+import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight, Megaphone, Wrench, Sun, Moon } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerProfile from "@/components/customer/CustomerProfile";
 import CustomerProjects from "@/components/customer/CustomerProjects";
@@ -26,6 +27,8 @@ const pageTitle: Record<Tab, string> = {
 const CustomerDashboard = () => {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
 
   return (
     <SidebarProvider>
@@ -41,6 +44,13 @@ const CustomerDashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                title="Toggle theme"
+              >
+                {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <div className="hidden sm:flex items-center gap-2 bg-muted rounded-full px-4 py-2">
                 <div className="w-2 h-2 rounded-full bg-dash-green animate-pulse" />
                 <span className="text-xs text-muted-foreground font-medium">{user?.email}</span>
@@ -228,7 +238,7 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
 const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
   const { user } = useAuth();
   const [balance, setBalance] = useState({ total: 0, paid: 0, remaining: 0 });
-  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+  const [recentPayments, setRecentPayments] = useState<{ id: string; amount: number; payment_date: string; status?: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

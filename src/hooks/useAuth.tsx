@@ -23,13 +23,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
-    setRole((data?.role as AppRole) ?? "customer");
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("Failed to fetch user roles", error);
+      setRole("customer");
+      return;
+    }
+
+    const roles = (data ?? []).map((r) => (r as { role: string }).role);
+    if (roles.includes("admin")) {
+      setRole("admin");
+    } else if (roles.includes("customer")) {
+      setRole("customer");
+    } else {
+      setRole("customer");
+    }
   };
 
   useEffect(() => {
