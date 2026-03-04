@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   Loader2, Landmark, Download, Plus, DollarSign, TrendingUp, X, Save,
   CreditCard, Banknote, Wallet, Globe, Smartphone, ChevronDown,

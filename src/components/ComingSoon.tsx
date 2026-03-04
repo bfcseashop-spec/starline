@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Clock, Bell, Play } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import type { ComingSoonProject } from "@/hooks/useSiteSettings";
 
 const defaultProjects: ComingSoonProject[] = [

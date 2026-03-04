@@ -46,21 +46,31 @@ const CustomerProjects = () => {
   const [updates, setUpdates] = useState<Record<string, WorkUpdate[]>>({});
   const [images, setImages] = useState<Record<string, ProjectImage[]>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ images: ProjectImage[]; index: number } | null>(null);
 
-  useEffect(() => {
+  const fetchProjects = async () => {
     if (!user) return;
-    supabase
+    setError(null);
+    setLoading(true);
+    const { data, error: err } = await supabase
       .from("customer_projects")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setProjects((data as Project[]) || []);
-        setLoading(false);
-        if (data && data.length > 0) setExpandedProject(data[0].id);
-      });
+      .order("created_at", { ascending: false });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+      return;
+    }
+    setProjects((data as Project[]) || []);
+    if (data && data.length > 0) setExpandedProject(data[0].id);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProjects();
   }, [user]);
 
   const loadUpdates = async (projectId: string) => {
@@ -91,6 +101,19 @@ const CustomerProjects = () => {
   }, [expandedProject]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+        <h2 className="font-heading text-xl font-semibold text-foreground mb-2">Something went wrong</h2>
+        <p className="text-muted-foreground text-sm mb-4">{error}</p>
+        <button onClick={() => fetchProjects()} className="text-sm font-medium text-primary hover:underline">
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (projects.length === 0) {
     return (

@@ -183,4 +183,12 @@ function useToast() {
   };
 }
 
+toast.success = (message: string) => {
+  toast({ title: message });
+};
+
+toast.error = (message: string) => {
+  toast({ title: "Error", description: message, variant: "destructive" });
+};
+
 export { useToast, toast };

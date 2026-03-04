@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, Search, Home, Users, DollarSign, AlertTriangle, FileText, BarChart3, Sun, Moon, Calendar, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import type { AdminPage } from "@/components/admin/AdminSidebar";
@@ -49,8 +50,8 @@ const pageTitle: Record<AdminPage, string> = {
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [activePage, setActivePage] = useState<AdminPage>("dashboard");
-  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
   const [profileOpen, setProfileOpen] = useState(false);
   const [now, setNow] = useState(new Date());
 
@@ -59,16 +60,13 @@ const AdminDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
-
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : user?.email?.slice(0, 2).toUpperCase() ?? "AD";
 
   const formattedDate = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
   const formattedTime = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  const isDark = theme === "dark";
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -99,11 +97,11 @@ const AdminDashboard = () => {
 
             {/* Theme toggle */}
             <button
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={() => setTheme(isDark ? "light" : "dark")}
               className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
               title="Toggle theme"
             >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
             {/* Notifications */}

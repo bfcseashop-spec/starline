@@ -79,31 +79,40 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
     monthlyInstallment: 0,
   });
   const [loadingFinancials, setLoadingFinancials] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchFinancials = async () => {
+    if (!user) return;
+    setFetchError(null);
+    setLoadingFinancials(true);
+    const { data, error } = await supabase
+      .from("customer_projects")
+      .select("total_amount, paid_amount, monthly_installment")
+      .eq("user_id", user.id);
+
+    if (error) {
+      setFetchError(error.message);
+      setLoadingFinancials(false);
+      return;
+    }
+    if (data && data.length > 0) {
+      const totals = data.reduce(
+        (acc, p) => ({
+          totalAmount: acc.totalAmount + Number(p.total_amount),
+          paidAmount: acc.paidAmount + Number(p.paid_amount),
+          monthlyInstallment: acc.monthlyInstallment + Number(p.monthly_installment),
+        }),
+        { totalAmount: 0, paidAmount: 0, monthlyInstallment: 0 }
+      );
+      setFinancials({
+        ...totals,
+        remainingBalance: totals.totalAmount - totals.paidAmount,
+      });
+    }
+    setLoadingFinancials(false);
+  };
 
   useEffect(() => {
-    if (!user) return;
-    const fetchFinancials = async () => {
-      const { data } = await supabase
-        .from("customer_projects")
-        .select("total_amount, paid_amount, monthly_installment")
-        .eq("user_id", user.id);
-
-      if (data && data.length > 0) {
-        const totals = data.reduce(
-          (acc, p) => ({
-            totalAmount: acc.totalAmount + Number(p.total_amount),
-            paidAmount: acc.paidAmount + Number(p.paid_amount),
-            monthlyInstallment: acc.monthlyInstallment + Number(p.monthly_installment),
-          }),
-          { totalAmount: 0, paidAmount: 0, monthlyInstallment: 0 }
-        );
-        setFinancials({
-          ...totals,
-          remainingBalance: totals.totalAmount - totals.paidAmount,
-        });
-      }
-      setLoadingFinancials(false);
-    };
     fetchFinancials();
   }, [user]);
 
@@ -151,6 +160,18 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
           )}
         </div>
       </div>
+
+      {fetchError && (
+        <div className="mb-6 rounded-xl border border-destructive/50 bg-destructive/10 p-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-destructive">{fetchError}</p>
+          <button
+            onClick={() => fetchFinancials()}
+            className="shrink-0 text-sm font-medium text-foreground hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -209,34 +230,43 @@ const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
   const [balance, setBalance] = useState({ total: 0, paid: 0, remaining: 0 });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchHome = async () => {
+    if (!user) return;
+    setError(null);
+    setLoading(true);
+    const { data: projects, error: projErr } = await supabase
+      .from("customer_projects")
+      .select("total_amount, paid_amount")
+      .eq("user_id", user.id);
+
+    if (projErr) {
+      setError(projErr.message);
+      setLoading(false);
+      return;
+    }
+    if (projects && projects.length > 0) {
+      const totals = projects.reduce(
+        (acc, p) => ({ total: acc.total + Number(p.total_amount), paid: acc.paid + Number(p.paid_amount) }),
+        { total: 0, paid: 0 }
+      );
+      setBalance({ ...totals, remaining: totals.total - totals.paid });
+    }
+
+    const { data: payments } = await supabase
+      .from("payments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("payment_date", { ascending: false })
+      .limit(5);
+
+    setRecentPayments(payments || []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (!user) return;
-    const fetch = async () => {
-      const { data: projects } = await supabase
-        .from("customer_projects")
-        .select("total_amount, paid_amount")
-        .eq("user_id", user.id);
-
-      if (projects && projects.length > 0) {
-        const totals = projects.reduce(
-          (acc, p) => ({ total: acc.total + Number(p.total_amount), paid: acc.paid + Number(p.paid_amount) }),
-          { total: 0, paid: 0 }
-        );
-        setBalance({ ...totals, remaining: totals.total - totals.paid });
-      }
-
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("payment_date", { ascending: false })
-        .limit(5);
-
-      setRecentPayments(payments || []);
-      setLoading(false);
-    };
-    fetch();
+    fetchHome();
   }, [user]);
 
   const fmt = (n: number) =>
@@ -244,6 +274,15 @@ const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-destructive">{error}</p>
+          <button onClick={() => fetchHome()} className="shrink-0 text-sm font-medium text-foreground hover:underline">
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Balance Banner */}
       <div className="bg-card border border-border rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-start gap-4">

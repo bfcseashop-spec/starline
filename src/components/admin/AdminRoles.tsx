@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, X, Plus, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface UserRole {
   id: string;
@@ -65,6 +66,12 @@ const AdminRoles = () => {
   const [customRoles, setCustomRoles] = useState<{ name: string; desc: string }[]>([]);
   const [expandedRole, setExpandedRole] = useState<string | null>(null);
   const [rolePerms, setRolePerms] = useState<Record<string, Record<string, Record<string, boolean>>>>({});
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: React.ReactNode;
+    description?: React.ReactNode;
+    action: () => Promise<void> | void;
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const fetchRoles = async () => {
     const [rolesRes, profilesRes] = await Promise.all([
@@ -125,21 +132,37 @@ const AdminRoles = () => {
     setCreating(false);
   };
 
-  const handleChangeRole = async (userId: string, currentRole: string) => {
+  const handleChangeRole = (userId: string, currentRole: string) => {
     const newR = currentRole === "admin" ? "customer" : "admin";
-    if (!confirm(`Change this user's role to ${newR}?`)) return;
-    const { error } = await supabase.from("user_roles").update({ role: newR }).eq("user_id", userId);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Role changed to ${newR}`);
-    fetchRoles();
+    setConfirmConfig({
+      title: `Change this user's role to ${newR}?`,
+      description: "This will immediately update their access level.",
+      action: async () => {
+        const { error } = await supabase.from("user_roles").update({ role: newR }).eq("user_id", userId);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success(`Role changed to ${newR}`);
+        fetchRoles();
+      },
+    });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Remove this role assignment?")) return;
-    const { error } = await supabase.from("user_roles").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Role removed");
-    fetchRoles();
+  const handleDelete = (id: string) => {
+    setConfirmConfig({
+      title: "Remove this role assignment?",
+      description: "The user will lose this role but their account will remain.",
+      action: async () => {
+        const { error } = await supabase.from("user_roles").delete().eq("id", id);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success("Role removed");
+        fetchRoles();
+      },
+    });
   };
 
   const adminCount = roles.filter((r) => r.role === "admin").length;
@@ -157,9 +180,14 @@ const AdminRoles = () => {
   };
 
   const handleDeleteRole = (name: string) => {
-    if (!confirm(`Delete role "${name}"?`)) return;
-    setCustomRoles((prev) => prev.filter((r) => r.name !== name));
-    toast.success("Role deleted");
+    setConfirmConfig({
+      title: `Delete role "${name}"?`,
+      description: "This will remove the custom role configuration.",
+      action: () => {
+        setCustomRoles((prev) => prev.filter((r) => r.name !== name));
+        toast.success("Role deleted");
+      },
+    });
   };
 
   const getPermsForRole = (roleName: string) => {
@@ -515,6 +543,35 @@ const AdminRoles = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!confirmConfig}
+        onOpenChange={(open) => {
+          if (!open && !confirmLoading) {
+            setConfirmConfig(null);
+          }
+        }}
+        title={confirmConfig?.title || "Are you sure?"}
+        description={confirmConfig?.description}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={confirmLoading}
+        onConfirm={async () => {
+          if (!confirmConfig) return;
+          const action = confirmConfig.action;
+          const result = action();
+          if (result instanceof Promise) {
+            try {
+              setConfirmLoading(true);
+              await result;
+            } finally {
+              setConfirmLoading(false);
+            }
+          }
+          setConfirmConfig(null);
+        }}
+      />
     </div>
   );
 };

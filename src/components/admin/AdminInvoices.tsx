@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   FileText, Loader2, Printer, Search, Plus, X, Save, Receipt,
   User, Building2, Calendar, CreditCard, Hash, StickyNote,

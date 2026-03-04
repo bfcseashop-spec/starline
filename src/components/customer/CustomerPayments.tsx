@@ -45,15 +45,23 @@ const CustomerPayments = () => {
   const { user } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewSlip, setViewSlip] = useState<string | null>(null);
 
   const fetchPayments = async () => {
     if (!user) return;
-    const { data } = await supabase
+    setError(null);
+    setLoading(true);
+    const { data, error: err } = await supabase
       .from("payments")
       .select("*")
       .eq("user_id", user.id)
       .order("payment_date", { ascending: false });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+      return;
+    }
     setPayments((data as Payment[]) || []);
     setLoading(false);
   };
@@ -78,6 +86,21 @@ const CustomerPayments = () => {
   }, [user]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
+
+  if (error) {
+    return (
+      <div>
+        <h2 className="font-heading text-2xl font-bold text-foreground mb-6">Payment History</h2>
+        <div className="text-center py-16 rounded-xl border border-destructive/50 bg-destructive/10">
+          <XCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <p className="text-destructive text-sm mb-4">{error}</p>
+          <button onClick={() => fetchPayments()} className="text-sm font-medium text-foreground hover:underline">
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const totalPaid = payments.filter((p) => p.status === "completed").reduce((sum, p) => sum + Number(p.amount), 0);
   const pendingCount = payments.filter((p) => p.status === "pending").length;

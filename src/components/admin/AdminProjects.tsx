@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye, List, LayoutGrid } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Project {
   id: string;
@@ -134,11 +135,26 @@ const AdminProjects = () => {
     fetchData();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this project? This will also remove all related images, updates, and payments.")) return;
-    const { error } = await supabase.from("customer_projects").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Project deleted"); fetchData(); }
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const handleDelete = (id: string) => {
+    const target = projects.find((p) => p.id === id) || null;
+    setDeleteTarget(target);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("customer_projects").delete().eq("id", deleteTarget.id);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Project deleted");
+    setDeleteTarget(null);
+    fetchData();
   };
 
   const formatCurrency = (n: number) => `৳${n.toLocaleString()}`;
@@ -557,6 +573,26 @@ const AdminProjects = () => {
           );
         })()}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTarget(null);
+          }
+        }}
+        title={
+          deleteTarget
+            ? `Delete project "${deleteTarget.project_name}"?`
+            : "Delete project?"
+        }
+        description="This will also remove related images, work updates, and payments for this project."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

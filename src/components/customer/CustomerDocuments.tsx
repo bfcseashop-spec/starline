@@ -24,21 +24,44 @@ const CustomerDocuments = () => {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchDocuments = async () => {
     if (!user) return;
-    supabase
+    setError(null);
+    setLoading(true);
+    const { data, error: err } = await supabase
       .from("documents")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setDocuments((data as Document[]) || []);
-        setLoading(false);
-      });
+      .order("created_at", { ascending: false });
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+      return;
+    }
+    setDocuments((data as Document[]) || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchDocuments();
   }, [user]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <FileText size={48} className="text-destructive mx-auto mb-4" />
+        <h2 className="font-heading text-xl font-semibold text-foreground mb-2">Could not load documents</h2>
+        <p className="text-muted-foreground text-sm mb-4">{error}</p>
+        <button onClick={() => fetchDocuments()} className="text-sm font-medium text-primary hover:underline">
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   if (documents.length === 0) {
     return (

@@ -3,8 +3,9 @@ import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { LogIn, Shield, User, Loader2 } from "lucide-react";
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import starlineLogo from "@/assets/starline-logo.jpeg";
 
 const loginSchema = z.object({
@@ -21,7 +22,18 @@ const Auth = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
 
-  if (!authLoading && user) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (user) {
     return <Navigate to={role === "admin" ? "/admin" : "/dashboard"} replace />;
   }
 
@@ -44,10 +56,40 @@ const Auth = () => {
     setErrors({});
     setLoading(true);
     const { error } = await signIn(form.email, form.password);
+    setLoading(false);
     if (error) {
       toast.error(error.message);
+      return;
     }
-    setLoading(false);
+
+    // Successful sign-in: check role against selected login type
+    try {
+      const {
+        data: { user: authedUser },
+      } = await supabase.auth.getUser();
+
+      if (authedUser) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", authedUser.id)
+          .maybeSingle();
+
+        const effectiveRole = (roleRow?.role as "admin" | "customer" | null) ?? "customer";
+
+        if (loginType === "admin" && effectiveRole !== "admin") {
+          // Customer trying to use Admin portal: keep them as customer
+          toast.error("This account does not have admin access. Opening your customer dashboard instead.");
+          setLoginType("customer");
+        } else if (loginType === "customer" && effectiveRole === "admin") {
+          // Admin trying to use Customer portal: nudge them to Admin
+          toast.error("This is an admin account. Switched to the Admin portal.");
+          setLoginType("admin");
+        }
+      }
+    } catch {
+      // If role lookup fails, fall back to normal redirect behavior.
+    }
   };
 
   const inputClass = (field: string) =>
@@ -76,7 +118,10 @@ const Auth = () => {
         </div>
 
         <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-lg">
-          <h2 className="text-lg font-semibold text-foreground text-center mb-5">Welcome Back</h2>
+          <h2 className="text-lg font-semibold text-foreground text-center mb-2">Welcome Back</h2>
+          <p className="text-xs text-muted-foreground text-center mb-5">
+            Choose your portal. We’ll redirect you after sign in.
+          </p>
 
           {/* Login type toggle */}
           <div className="flex gap-2 mb-6">

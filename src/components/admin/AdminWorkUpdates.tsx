@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { ClipboardList, Plus, Loader2, X, Save, Trash2, Calendar, Percent } from "lucide-react";
 import { motion } from "framer-motion";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface WorkUpdate {
   id: string;
@@ -35,6 +36,8 @@ const AdminWorkUpdates = () => {
     progress_percent: "",
     update_date: new Date().toISOString().split("T")[0],
   });
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchData = async () => {
     const [updRes, projRes] = await Promise.all([
@@ -100,11 +103,22 @@ const AdminWorkUpdates = () => {
     fetchData();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this work update?")) return;
-    const { error } = await supabase.from("work_updates").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); fetchData(); }
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("work_updates").delete().eq("id", deleteTargetId);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Deleted");
+    setDeleteTargetId(null);
+    fetchData();
   };
 
   const inputClass = "w-full bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow";
@@ -218,6 +232,21 @@ const AdminWorkUpdates = () => {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTargetId(null);
+          }
+        }}
+        title="Delete this work update?"
+        description="This will permanently remove the work update."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

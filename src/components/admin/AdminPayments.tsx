@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+import { withMutationToast } from "@/lib/supabase-helpers";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
   Search, ChevronDown, DollarSign, Upload, Image,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Payment {
   id: string;
@@ -83,6 +85,8 @@ const AdminPayments = () => {
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [viewSlip, setViewSlip] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Payment | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchData = async () => {
     const [payRes, profRes, projRes, rolesRes] = await Promise.all([
@@ -180,31 +184,53 @@ const AdminPayments = () => {
       image_url: form.image_url || null,
     };
 
-    let error;
-    if (editId) {
-      ({ error } = await supabase.from("payments").update(payload).eq("id", editId));
-    } else {
-      ({ error } = await supabase.from("payments").insert(payload));
-      if (!error && form.project_id && form.status === "completed") {
-        const { data: proj } = await supabase.from("customer_projects").select("paid_amount").eq("id", form.project_id).maybeSingle();
-        if (proj) {
-          await supabase.from("customer_projects").update({ paid_amount: Number(proj.paid_amount) + Number(form.amount) }).eq("id", form.project_id);
+    const ok = await withMutationToast(
+      async () => {
+        const result = editId
+          ? await supabase.from("payments").update(payload).eq("id", editId)
+          : await supabase.from("payments").insert(payload);
+
+        // Best-effort project paid_amount update on newly completed payments
+        if (!editId && !result.error && form.project_id && form.status === "completed") {
+          const { data: proj } = await supabase
+            .from("customer_projects")
+            .select("paid_amount")
+            .eq("id", form.project_id)
+            .maybeSingle();
+
+          if (proj) {
+            await supabase
+              .from("customer_projects")
+              .update({ paid_amount: Number(proj.paid_amount) + Number(form.amount) })
+              .eq("id", form.project_id);
+          }
         }
-      }
-    }
+
+        return result;
+      },
+      { successMessage: editId ? "Payment updated!" : "Payment recorded!" },
+    );
 
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(editId ? "Payment updated!" : "Payment recorded!");
+    if (!ok) return;
     resetForm();
     fetchData();
   };
 
-  const handleDelete = async (p: Payment) => {
-    if (!confirm(`Delete payment of ৳${p.amount.toLocaleString()} for ${p.customer_name}?`)) return;
-    const { error } = await supabase.from("payments").delete().eq("id", p.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Payment deleted");
+  const handleDelete = (p: Payment) => {
+    setDeleteTarget(p);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const ok = await withMutationToast(
+      () => supabase.from("payments").delete().eq("id", deleteTarget.id),
+      { successMessage: "Payment deleted" },
+    );
+    setDeleteLoading(false);
+    if (!ok) return;
+    setDeleteTarget(null);
     fetchData();
   };
 
@@ -520,6 +546,26 @@ const AdminPayments = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTarget(null);
+          }
+        }}
+        title={
+          deleteTarget
+            ? `Delete payment of ৳${deleteTarget.amount.toLocaleString()} for ${deleteTarget.customer_name}?`
+            : "Delete payment?"
+        }
+        description="This will permanently remove the payment record. Project balances will not be automatically adjusted."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

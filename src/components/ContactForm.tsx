@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { z } from "zod";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),

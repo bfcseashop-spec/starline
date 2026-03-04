@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Save, Loader2, User, Phone, Mail, MapPin, Building2, Ruler } from "lucide-react";
 
 interface ProjectSummary {

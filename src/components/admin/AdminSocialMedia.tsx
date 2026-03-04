@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   Share2, Plus, Loader2, Trash2, Pencil, X, Save, Facebook, Instagram, Globe,
   MessageCircle, Send, Twitter, Linkedin, Youtube, Music2, Filter, LayoutGrid, List,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Post {
   id: string;
@@ -71,6 +72,8 @@ const AdminSocialMedia = () => {
   const [platformForm, setPlatformForm] = useState<PlatformConfig>({ ...defaultPlatformConfig });
   const [savingPlatform, setSavingPlatform] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchPosts = async () => {
     const { data } = await supabase.from("social_media_posts").select("*").order("created_at", { ascending: false });
@@ -119,11 +122,22 @@ const AdminSocialMedia = () => {
     resetForm(); fetchPosts();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this post?")) return;
-    const { error } = await supabase.from("social_media_posts").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Post deleted"); fetchPosts();
+  const handleDelete = (id: string) => {
+    setDeleteTargetId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetId) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("social_media_posts").delete().eq("id", deleteTargetId);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Post deleted");
+    setDeleteTargetId(null);
+    fetchPosts();
   };
 
   // Platform config handlers
@@ -502,6 +516,22 @@ const AdminSocialMedia = () => {
           );
         })()}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTargetId(null);
+          }
+        }}
+        title="Delete this post?"
+        description="This will permanently remove the social media post from the system."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

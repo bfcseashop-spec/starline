@@ -2,12 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   Users, Phone, MapPin, Loader2, Search, LayoutGrid, LayoutList,
   Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat, Printer, Download, UserPlus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface ViewProject {
   id: string;
@@ -67,6 +68,8 @@ const AdminCustomers = () => {
   const [amountCustomer, setAmountCustomer] = useState<Customer | null>(null);
   const [amountForm, setAmountForm] = useState({ project_id: "", amount: "" });
   const [customerProjects, setCustomerProjects] = useState<{ id: string; project_name: string }[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchCustomers = async () => {
     const [profilesRes, rolesRes, projectsRes] = await Promise.all([
@@ -203,11 +206,21 @@ const AdminCustomers = () => {
   };
 
   // Delete handler
-  const handleDelete = async (c: Customer) => {
-    if (!confirm(`Remove customer "${c.full_name || "Unnamed"}" profile? This won't delete their account.`)) return;
-    const { error } = await supabase.from("profiles").delete().eq("user_id", c.user_id);
-    if (error) { toast.error(error.message); return; }
+  const handleDelete = (c: Customer) => {
+    setDeleteTarget(c);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("profiles").delete().eq("user_id", deleteTarget.user_id);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Profile removed");
+    setDeleteTarget(null);
     fetchCustomers();
   };
 
@@ -734,6 +747,26 @@ const AdminCustomers = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTarget(null);
+          }
+        }}
+        title={
+          deleteTarget
+            ? `Remove customer "${deleteTarget.full_name || "Unnamed"}" profile?`
+            : "Remove customer profile?"
+        }
+        description="This only removes the profile record and does not delete the Supabase account."
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ChevronLeft, CreditCard, Building2, Smartphone, Globe, Copy, Check, Upload, X, CheckCircle2, Image } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+import { withMutationToast } from "@/lib/supabase-helpers";
 
 interface PaymentMethod {
   id: string;
@@ -97,21 +98,24 @@ const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () 
         slipUrl = urlData.publicUrl;
       }
 
-      const { error } = await supabase.from("payments").insert({
-        user_id: user.id,
-        amount: payAmount,
-        payment_method: selectedMethodObj?.method_type || "other",
-        payment_date: paymentDate,
-        reference_no: referenceNo || null,
-        image_url: slipUrl,
-        status: "pending",
-        payment_type: paymentType,
-        notes: `Via ${selectedMethodObj?.title || "Unknown"}`,
-      });
+      const ok = await withMutationToast(
+        () =>
+          supabase.from("payments").insert({
+            user_id: user.id,
+            amount: payAmount,
+            payment_method: selectedMethodObj?.method_type || "other",
+            payment_date: paymentDate,
+            reference_no: referenceNo || null,
+            image_url: slipUrl,
+            status: "pending",
+            payment_type: paymentType,
+            notes: `Via ${selectedMethodObj?.title || "Unknown"}`,
+          }),
+        { successMessage: "Payment submitted successfully!" },
+      );
 
-      if (error) throw error;
+      if (!ok) return;
       setStep("done");
-      toast.success("Payment submitted successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to submit payment");
     } finally {

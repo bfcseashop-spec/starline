@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import {
   TrendingUp, DollarSign, Users, Plus, Trash2, Edit2, Search,
   ArrowUpRight, ArrowDownRight, Eye, Download, LayoutGrid, List, Calendar, FileText,
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { Tables } from "@/integrations/supabase/types";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 type Investment = Tables<"investments">;
 type Investor = Tables<"investors">;
@@ -66,6 +67,12 @@ const AdminInvestment = () => {
   const investorMap = new Map(investors.map((i) => [i.id, i]));
   const investmentMap = new Map(investments.map((i) => [i.id, i]));
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: React.ReactNode;
+    description?: React.ReactNode;
+    action: () => Promise<void> | void;
+  } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -164,10 +171,20 @@ const AdminInvestment = () => {
     }
     setCapitalDialog(false); fetchAll();
   };
-  const removeCapital = async (id: string) => {
-    if (!confirm("Delete this share?")) return;
-    const { error } = await supabase.from("investment_shares").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Deleted"); fetchAll(); }
+  const removeCapital = (id: string) => {
+    setConfirmConfig({
+      title: "Delete this share?",
+      description: "This will remove the investor's capital allocation for this investment.",
+      action: async () => {
+        const { error } = await supabase.from("investment_shares").delete().eq("id", id);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success("Deleted");
+        fetchAll();
+      },
+    });
   };
 
   // ── Contribution CRUD ──
@@ -203,10 +220,20 @@ const AdminInvestment = () => {
     });
     if (error) toast.error(error.message); else { toast.success("Contribution recorded"); setContribDialog(false); setContribImageFile(null); setContribImagePreview(null); fetchAll(); }
   };
-  const removeContrib = async (id: string) => {
-    if (!confirm("Delete this contribution?")) return;
-    const { error } = await supabase.from("contributions").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success("Deleted"); fetchAll(); }
+  const removeContrib = (id: string) => {
+    setConfirmConfig({
+      title: "Delete this contribution?",
+      description: "This will permanently remove the contribution record.",
+      action: async () => {
+        const { error } = await supabase.from("contributions").delete().eq("id", id);
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        toast.success("Deleted");
+        fetchAll();
+      },
+    });
   };
 
   // Filtered contributions
@@ -710,6 +737,34 @@ const AdminInvestment = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmConfig}
+        onOpenChange={(open) => {
+          if (!open && !confirmLoading) {
+            setConfirmConfig(null);
+          }
+        }}
+        title={confirmConfig?.title || "Are you sure?"}
+        description={confirmConfig?.description}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={confirmLoading}
+        onConfirm={async () => {
+          if (!confirmConfig) return;
+          const result = confirmConfig.action();
+          if (result instanceof Promise) {
+            try {
+              setConfirmLoading(true);
+              await result;
+            } finally {
+              setConfirmLoading(false);
+            }
+          }
+          setConfirmConfig(null);
+        }}
+      />
     </div>
   );
 };

@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Wallet, Plus, Loader2, Trash2, Pencil, X, Save, Eye, Search, DollarSign, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Expense {
   id: string;
@@ -41,6 +42,8 @@ const AdminExpenses = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterStatus>("all");
   const [viewExpense, setViewExpense] = useState<Expense | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchExpenses = async () => {
     const { data } = await supabase.from("expenses").select("*").order("expense_date", { ascending: false });
@@ -82,11 +85,22 @@ const AdminExpenses = () => {
     resetForm(); fetchExpenses();
   };
 
-  const handleDelete = async (e: Expense) => {
-    if (!confirm(`Delete expense "${e.title}"?`)) return;
-    const { error } = await supabase.from("expenses").delete().eq("id", e.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Expense deleted"); fetchExpenses();
+  const handleDelete = (e: Expense) => {
+    setDeleteTarget(e);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Expense deleted");
+    setDeleteTarget(null);
+    fetchExpenses();
   };
 
   const filtered = expenses.filter((e) => {
@@ -278,6 +292,22 @@ const AdminExpenses = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTarget(null);
+          }
+        }}
+        title={deleteTarget ? `Delete expense "${deleteTarget.title}"?` : "Delete expense?"}
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };

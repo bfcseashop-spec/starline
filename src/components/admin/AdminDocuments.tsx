@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Profile {
   user_id: string;
@@ -76,6 +77,8 @@ const AdminDocuments = () => {
   const [editCategory, setEditCategory] = useState("");
   const [editProjectId, setEditProjectId] = useState("");
   const [editFileName, setEditFileName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Document | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -182,18 +185,26 @@ const AdminDocuments = () => {
     setUploading(false);
   };
 
-  const handleDelete = async (doc: Document) => {
-    if (!confirm(`Delete "${doc.file_name}"?`)) return;
+  const handleDelete = (doc: Document) => {
+    setDeleteTarget(doc);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
     // Extract path from URL
-    const urlParts = doc.file_url.split("/customer-documents/");
+    const urlParts = deleteTarget.file_url.split("/customer-documents/");
     const filePath = urlParts[urlParts.length - 1];
+    setDeleteLoading(true);
     await supabase.storage.from("customer-documents").remove([filePath]);
-    const { error } = await supabase.from("documents").delete().eq("id", doc.id);
-    if (error) toast.error("Delete failed");
-    else {
-      toast.success("Document deleted");
-      fetchData();
+    const { error } = await supabase.from("documents").delete().eq("id", deleteTarget.id);
+    setDeleteLoading(false);
+    if (error) {
+      toast.error("Delete failed");
+      return;
     }
+    toast.success("Document deleted");
+    setDeleteTarget(null);
+    fetchData();
   };
 
   const openEdit = (doc: Document) => {
@@ -573,6 +584,22 @@ const AdminDocuments = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !deleteLoading) {
+            setDeleteTarget(null);
+          }
+        }}
+        title={deleteTarget ? `Delete "${deleteTarget.file_name}"?` : "Delete document?"}
+        description="This will permanently remove the document and its file."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        confirmVariant="destructive"
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 };
