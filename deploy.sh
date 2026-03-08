@@ -28,9 +28,10 @@ set +a
 fi
 
 echo "[1/6] Backing up code to $TAR_FILE"
-tar --exclude='node_modules' --exclude='dist' --exclude='.git' --exclude='backups' 
---exclude='*.zip' --exclude='*.tar.gz' --exclude='*.sql' --exclude='.env' 
--czf "$TAR_FILE" .
+tar -czf "$TAR_FILE" \
+  --exclude='node_modules' --exclude='dist' --exclude='.git' --exclude='backups' \
+  --exclude='*.zip' --exclude='*.tar.gz' --exclude='*.sql' --exclude='.env' \
+  .
 echo "  Code backup: $TAR_FILE"
 
 if [ "$1" = "--no-deploy" ]; then
