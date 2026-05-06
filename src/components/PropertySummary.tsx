@@ -2,17 +2,29 @@ import { motion } from "framer-motion";
 import { Building2, Tag, Key, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { properties } from "@/data/properties";
 
 const PropertySummary = () => {
   const { data } = useQuery({
     queryKey: ["property-summary"],
     queryFn: async () => {
-      const { data: projects } = await supabase.from("customer_projects").select("status, location");
-      if (!projects) return { total: 0, forSale: 0, forRent: 0, cities: 0 };
+      const { data: projects, error } = await supabase.from("customer_projects").select("status, location");
+      if (error || !projects || projects.length === 0) {
+        const total = properties.length;
+        const forSale = properties.filter((p) => p.type !== "Handover").length;
+        const forRent = 0;
+        const cities = new Set(properties.map((p) => p.location.split(",").slice(-1)[0]?.trim()).filter(Boolean)).size;
+        return { total, forSale, forRent, cities };
+      }
+
       const total = projects.length;
-      const forSale = projects.filter((p) => p.status === "completed" || p.status === "for_sale").length;
+      const forSale = projects.filter((p) => p.status === "completed" || p.status === "for_sale" || p.status === "in_progress").length;
       const forRent = projects.filter((p) => p.status === "for_rent").length;
-      const cities = new Set(projects.map((p) => p.location).filter(Boolean)).size;
+      const cities = new Set(
+        projects
+          .map((p) => p.location?.split(",").slice(-1)[0]?.trim())
+          .filter(Boolean),
+      ).size;
       return { total, forSale, forRent, cities };
     },
   });

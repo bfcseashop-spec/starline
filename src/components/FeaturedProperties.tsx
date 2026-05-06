@@ -94,9 +94,9 @@ const FeaturedProperties = ({ filters }: Props) => {
           viewport={{ once: true }}
           className="text-center mt-12"
         >
-          <a href="/#properties" className="inline-flex items-center gap-2 text-gold font-semibold text-sm hover:gap-3 transition-all">
+          <Link to="/properties/ongoing" className="inline-flex items-center gap-2 text-gold font-semibold text-sm hover:gap-3 transition-all">
             View All Properties <ArrowRight size={16} />
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

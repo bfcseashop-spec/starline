@@ -24,6 +24,12 @@ interface ProjectImageRow {
   sort_order: number;
 }
 
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
 const splitLocation = (value: string | null): { address: string; city: string } => {
   if (!value) return { address: "Location details coming soon", city: "Dhaka" };
   const parts = value.split(",").map((p) => p.trim()).filter(Boolean);
@@ -69,6 +75,8 @@ export const usePublicProperties = (
 
       const normalized = (projects as CustomerProjectRow[]).map((p) => {
         const location = splitLocation(p.location);
+        const nameNorm = normalize(p.project_name);
+        const matchedFallback = fallback.find((f) => normalize(f.name) === nameNorm);
         const label =
           category === "upcoming"
             ? "Planned Starline property with modern planning and practical use of space."
@@ -77,12 +85,14 @@ export const usePublicProperties = (
               : "Active Starline property under development with monitored progress.";
 
         const fallbackImage =
-          fallback.find((f) => f.name.toLowerCase().includes(p.project_name.toLowerCase()))?.image ||
+          matchedFallback?.image ||
+          fallback.find((f) => normalize(f.name).includes(nameNorm) || nameNorm.includes(normalize(f.name)))?.image ||
           fallback[0]?.image ||
           "";
 
         return {
           name: p.project_name,
+          slug: matchedFallback?.slug,
           address: location.address,
           city: location.city,
           notes: label,

@@ -2,6 +2,7 @@ export type ProjectCategory = "upcoming" | "ongoing" | "handover";
 
 export interface ProjectSummary {
   name: string;
+  slug?: string;
   address: string;
   city: string;
   notes?: string;
@@ -148,6 +149,7 @@ export const privacyContent: LegalPageContent = {
 export const upcomingProjects: ProjectSummary[] = [
   {
     name: "Starline Senpara Residence",
+    slug: "starline-senpara-residence",
     address: "East Senpara, Monipur, Mirpur",
     city: "Dhaka",
     notes: "Planned residential development in a well‑connected neighbourhood of Mirpur.",
@@ -155,6 +157,7 @@ export const upcomingProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Shawra Para Heights",
+    slug: "starline-shawra-para-heights",
     address: "East Shawra Para, Mirpur",
     city: "Dhaka 1216",
     notes: "Upcoming apartment complex with modern amenities and efficient layouts.",
@@ -162,6 +165,7 @@ export const upcomingProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Uttara Vista",
+    slug: "starline-uttara-vista",
     address: "Uttara",
     city: "Dhaka",
     notes: "Future premium project in a fast‑growing urban hub of the capital.",
@@ -172,6 +176,7 @@ export const upcomingProjects: ProjectSummary[] = [
 export const ongoingProjects: ProjectSummary[] = [
   {
     name: "Starline Tower - 1",
+    slug: "starline-tower-one",
     address: "House: 291–298, Road 18, Block A, Avenue 5, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "High‑rise residential tower with contemporary façade and smart planning.",
@@ -179,6 +184,7 @@ export const ongoingProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Neeraloy Villa",
+    slug: "starline-neeraloy-villa",
     address: "Shekhertek, Shyamoli Housing Society, House-27/C, Road-6, Mohammadpur",
     city: "Dhaka 1207",
     notes: "Family‑focused apartments with attention to light, air and circulation.",
@@ -186,6 +192,7 @@ export const ongoingProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Tower",
+    slug: "starline-tower",
     address: "Shah Ali Bug, House-37/4/C & 37/4/4, Mirpur-1",
     city: "Dhaka 1216",
     notes: "Signature corner development with strong street presence.",
@@ -193,6 +200,7 @@ export const ongoingProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Shanti Niketon",
+    slug: "starline-shanti-niketon",
     address: "House: 479/1–2, Road 5, East Kazipara, Mirpur",
     city: "Dhaka 1216",
     notes: "Community‑oriented project designed for everyday comfort.",
@@ -203,6 +211,7 @@ export const ongoingProjects: ProjectSummary[] = [
 export const handoverProjects: ProjectSummary[] = [
   {
     name: "Starline Sapiya Manjil",
+    slug: "starline-sapiya-manjil",
     address: "House: 173, Sawmilen Gali, Senpara Panbata, Mirpur‑10",
     city: "Dhaka 1216",
     notes: "Completed and handed‑over apartments known for reliable construction quality.",
@@ -210,6 +219,7 @@ export const handoverProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Nur Hosen Villa",
+    slug: "starline-nur-hosen-villa",
     address: "House: 6, Road 7, Block C, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "Delivered on time with satisfied homeowners and strong community feedback.",
@@ -217,6 +227,7 @@ export const handoverProjects: ProjectSummary[] = [
   },
   {
     name: "Starline Sarkar Villa",
+    slug: "starline-sarkar-villa",
     address: "House: 299–300, Road 18, Block A, Avenue 5, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "Corner plot development emphasizing light, ventilation and functional layouts.",

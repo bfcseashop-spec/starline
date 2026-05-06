@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "admin:upsert": "node scripts/upsert-admin.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

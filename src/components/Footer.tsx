@@ -22,82 +22,118 @@ const Footer = ({ company, social, content }: Props) => {
   const activeSocials = socialLabels.filter((s) => social?.[s.key]);
   const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
   const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
-  const quickLinks = content?.quick_links
-    ? content.quick_links.split(",").map((l) => l.trim()).filter(Boolean)
-    : ["Properties", "About Us", "Ongoing Projects", "Upcoming Projects", "Handover Projects"];
+  const fallbackPhone = "+8801334563765";
+  const fallbackAddress = "3-No, Gate, Road#11, House#E43, Block#E, Level-1, B-1, Niketon, Gulshan, Dhaka-1212";
+  const primaryEmail = company?.email || "admin@starlineb.com";
+  const officePhone = company?.phone || fallbackPhone;
+  const quickLinks = [
+    { label: "Home", to: "/" },
+    { label: "Properties", to: "/properties/ongoing" },
+    { label: "Upcoming", to: "/properties/upcoming" },
+    { label: "Handover", to: "/properties/handover" },
+    { label: "About", to: "/about" },
+    { label: "Contact", to: "/#contact" },
+  ];
+  const serviceLinks = [
+    { label: "Customer Login", to: "/auth" },
+    { label: "Admin Panel", to: "/auth" },
+    { label: "Privacy Policy", to: "/privacy" },
+    { label: "Terms & Conditions", to: "/terms" },
+  ];
 
   return (
-    <footer id="contact" className="bg-navy">
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div className="md:col-span-2">
-            <h3 className="font-heading text-2xl font-bold text-white mb-4">
-              {brandName.includes("Ltd") ? (
-                <>{brandName.split("Ltd")[0]}<span className="text-gold">Ltd{brandName.split("Ltd")[1] || "."}</span></>
-              ) : (
-                <>{brandName}<span className="text-gold">.</span></>
-              )}
-            </h3>
-            <p className="text-white/45 max-w-md text-sm leading-relaxed mb-6">{description}</p>
-            {activeSocials.length > 0 && (
-              <div className="flex flex-wrap gap-2.5">
-                {activeSocials.map((s) => (
-                  <a key={s.key} href={social?.[s.key] || "#"} target="_blank" rel="noopener noreferrer" className="text-white/30 hover:text-gold text-xs border border-white/10 rounded-lg px-3 py-2 hover:border-gold/30 transition-all flex items-center gap-1">
-                    {s.label} <ArrowUpRight size={12} />
-                  </a>
-                ))}
+    <footer id="contact" className="relative overflow-hidden bg-gradient-to-b from-[#06122b] to-[#030712] border-t border-white/10">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-gold/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-6 py-16">
+        <div className="grid lg:grid-cols-12 gap-10">
+          <div className="lg:col-span-5">
+            <div className="flex items-center gap-3 mb-5">
+              <img src="/logo.png" alt="Starline logo" className="h-12 w-12 rounded-xl object-contain bg-white p-1" />
+              <div>
+                <p className="font-heading text-xl font-bold text-white">{brandName}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-white/60">Premium Real Estate Partner</p>
               </div>
-            )}
+            </div>
+            <p className="text-white/65 text-sm leading-relaxed max-w-md">{description}</p>
+            <div className="mt-6 grid gap-3">
+              <a href={`mailto:${primaryEmail}`} className="inline-flex items-center gap-2 text-white/80 hover:text-gold text-sm">
+                <Mail size={15} className="text-gold" />
+                {primaryEmail}
+              </a>
+              <p className="inline-flex items-center gap-2 text-white/80 text-sm">
+                <Phone size={15} className="text-gold" />
+                {officePhone}
+              </p>
+              <p className="inline-flex items-center gap-2 text-white/80 text-sm">
+                <Phone size={15} className="text-gold" />
+                +880 9614-720401
+              </p>
+              <p className="inline-flex items-start gap-2 text-white/75 text-sm leading-relaxed">
+                <MapPin size={15} className="text-gold mt-0.5 shrink-0" />
+                {company?.address || fallbackAddress}
+              </p>
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
+          <div className="lg:col-span-3">
             <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Quick Links</h4>
             <ul className="space-y-3">
-              {quickLinks.map((label) => {
-                let href = "#";
-                if (label.toLowerCase().includes("property")) href = "/#properties";
-                if (label.toLowerCase().includes("properties")) href = "/properties/ongoing";
-                if (label.toLowerCase().includes("about")) href = "/about";
-                if (label.toLowerCase().includes("project")) href = "/properties/ongoing";
-                if (label.toLowerCase().includes("ongoing")) href = "/properties/ongoing";
-                if (label.toLowerCase().includes("upcoming")) href = "/properties/upcoming";
-                if (label.toLowerCase().includes("handover")) href = "/properties/handover";
-                if (label.toLowerCase().includes("contact")) href = "/#contact";
-
-                return (
-                  <li key={label}>
-                    <Link to={href} className="text-white/40 hover:text-white text-sm transition-colors">
-                      {label}
-                    </Link>
-                  </li>
-                );
-              })}
+              {quickLinks.map((item) => (
+                <li key={item.label}>
+                  <Link to={item.to} className="text-white/65 hover:text-white text-sm transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Contact Us</h4>
-            <ul className="space-y-3 text-white/40 text-sm">
-              <li className="flex items-start gap-2"><Mail size={14} className="text-gold shrink-0 mt-0.5" /> {company?.email || "info@starlinebuilders.com"}</li>
-              <li className="flex items-start gap-2"><Phone size={14} className="text-gold shrink-0 mt-0.5" /> {company?.phone || "+1 (555) 123-4567"}</li>
-              <li className="flex items-start gap-2"><MapPin size={14} className="text-gold shrink-0 mt-0.5" /> {company?.address || "100 Park Avenue, New York"}</li>
+          <div className="lg:col-span-2">
+            <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Support</h4>
+            <ul className="space-y-3">
+              {serviceLinks.map((item) => (
+                <li key={item.label}>
+                  <Link to={item.to} className="text-white/65 hover:text-white text-sm transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
+          </div>
+
+          <div className="lg:col-span-2">
+            <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Connect</h4>
+            <div className="flex flex-col gap-2.5">
+              {activeSocials.length > 0 ? (
+                activeSocials.map((s) => (
+                  <a
+                    key={s.key}
+                    href={social?.[s.key] || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white/70 hover:text-gold text-sm border border-white/10 rounded-lg px-3 py-2 hover:border-gold/40 transition-all inline-flex items-center justify-between"
+                  >
+                    {s.label} <ArrowUpRight size={13} />
+                  </a>
+                ))
+              ) : (
+                <p className="text-white/45 text-sm">Social links will appear here.</p>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-white/25 text-xs">{copyright}</p>
-          <div className="flex gap-6">
-            <Link to="/privacy" className="text-white/25 hover:text-white/50 text-xs transition-colors">
-              Privacy Policy
-            </Link>
-            <Link to="/terms" className="text-white/25 hover:text-white/50 text-xs transition-colors">
-              Terms &amp; Conditions
-            </Link>
-          </div>
+        <div className="border-t border-white/10 mt-12 pt-7 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-white/35 text-xs">{copyright}</p>
+          {content?.quick_links && (
+            <p className="text-white/30 text-xs text-center md:text-right">
+              {content.quick_links}
+            </p>
+          )}
         </div>
       </div>
     </footer>

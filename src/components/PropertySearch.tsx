@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { properties } from "@/data/properties";
 
-const locations = ["All Locations", "Mirpur, Dhaka", "Mohammadpur, Dhaka", "Uttara, Dhaka", "Kazipara, Dhaka"];
-const propertyTypes = ["All Types", "Apartment", "Residential", "Handover"];
+const locations = ["All Locations", ...Array.from(new Set(properties.map((p) => p.location)))];
+const propertyTypes = ["All Types", ...Array.from(new Set(properties.map((p) => p.type)))];
 const bedroomOptions = ["Any", "1+", "2+", "3+", "4+", "5+"];
 const priceRanges = ["Any Price", "Contact for Price", "Handover Complete"];
 

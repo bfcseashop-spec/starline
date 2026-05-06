@@ -3,7 +3,7 @@ import { Menu, X, LogIn, LayoutDashboard } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import type { CompanySettings, SocialLinks, SocialPlatforms, HeaderConfig } from "@/hooks/useSiteSettings";
-import defaultLogo from "@/assets/logo.png";
+const defaultLogo = "/logo.png";
 
 interface Props {
   company?: CompanySettings;
@@ -31,12 +31,16 @@ const Navbar = ({ company, headerConfig }: Props) => {
   const configLinks = (headerConfig?.nav_items || [])
     .filter((n) => n.visible)
     .map((n) => {
-      const href = n.href.startsWith("#") ? `/${n.href}` : n.href || "/";
-      const isPropertiesHref = href.includes("/projects/") || href.includes("/properties/");
-      return {
-        label: isPropertiesHref ? "Properties" : n.label,
-        to: isPropertiesHref ? "/properties/ongoing" : href,
-      };
+      const lowerLabel = n.label.toLowerCase();
+      const href = (n.href || "").trim();
+      if (lowerLabel.includes("home")) return { label: "Home", to: "/" };
+      if (lowerLabel.includes("about")) return { label: "About", to: "/about" };
+      if (lowerLabel.includes("contact")) return { label: "Contact", to: "/#contact" };
+      if (lowerLabel.includes("propert") || href.includes("/projects/") || href.includes("/properties/")) {
+        return { label: "Properties", to: "/properties/ongoing" };
+      }
+      if (href.startsWith("#")) return { label: n.label, to: `/${href}` };
+      return { label: n.label, to: href || "/" };
     });
   const navLinks = configLinks.length > 0 ? configLinks : links;
 
@@ -52,16 +56,16 @@ const Navbar = ({ company, headerConfig }: Props) => {
         <div
           className={`rounded-2xl border transition-all duration-300 ${
             scrolled
-              ? "bg-white/95 border-border shadow-xl backdrop-blur-md"
-              : "bg-white/85 border-white/40 shadow-lg backdrop-blur-md"
+              ? "bg-gradient-to-r from-[#060d22]/96 via-[#0a1838]/95 to-[#060d22]/96 border-white/15 shadow-xl backdrop-blur-md"
+              : "bg-gradient-to-r from-[#060d22]/88 via-[#0a1838]/85 to-[#060d22]/88 border-white/20 shadow-lg backdrop-blur-md"
           }`}
         >
           <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 min-w-0">
               <img src={logoUrl} alt="Starline logo" className="w-10 h-10 rounded-xl object-contain shrink-0" />
               <div className="min-w-0">
-                <p className="font-heading text-sm md:text-base font-bold text-navy truncate">{brandName}</p>
-                <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-muted-foreground truncate">{slogan}</p>
+                <p className="font-heading text-sm md:text-base font-bold text-white truncate">{brandName}</p>
+                <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-white/70 truncate">{slogan}</p>
               </div>
             </Link>
 
@@ -70,7 +74,7 @@ const Navbar = ({ company, headerConfig }: Props) => {
                 <Link
                   key={l.label}
                   to={l.to}
-                  className="px-4 py-2 text-sm font-semibold text-navy/80 hover:text-navy hover:bg-navy/5 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
                 >
                   {l.label}
                 </Link>
@@ -90,7 +94,7 @@ const Navbar = ({ company, headerConfig }: Props) => {
             </nav>
 
             <button
-              className="md:hidden text-navy p-2 rounded-lg hover:bg-navy/5"
+              className="md:hidden text-white p-2 rounded-lg hover:bg-white/10"
               onClick={() => setOpen((v) => !v)}
               aria-label="Toggle menu"
             >
@@ -99,14 +103,14 @@ const Navbar = ({ company, headerConfig }: Props) => {
           </div>
 
           {open && (
-            <div className="md:hidden border-t border-border/80 px-4 pb-4 pt-3 bg-white rounded-b-2xl">
+            <div className="md:hidden border-t border-white/10 px-4 pb-4 pt-3 bg-[#0b1734]/98 rounded-b-2xl">
               <div className="flex flex-col gap-2">
                 {navLinks.map((l) => (
                   <Link
                     key={l.label}
                     to={l.to}
                     onClick={() => setOpen(false)}
-                    className="px-3 py-2 rounded-lg text-sm font-semibold text-navy/85 hover:bg-navy/5"
+                    className="px-3 py-2 rounded-lg text-sm font-semibold text-white/85 hover:bg-white/10"
                   >
                     {l.label}
                   </Link>

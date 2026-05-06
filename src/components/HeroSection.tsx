@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
-import heroImage from "@/assets/hero-skyline.png";
 
 interface Props {
   bannerTitle?: string;
@@ -41,7 +40,11 @@ const HeroSection = ({
     return href;
   };
 
-  const bgImage = bannerImageUrl || heroImage;
+  const imageCandidate = (bannerImageUrl || "").trim();
+  const hasValidBannerImage =
+    imageCandidate.length > 0 &&
+    !/logo(\.|-|_)?/i.test(imageCandidate) &&
+    !/\/logo\.png$/i.test(imageCandidate);
   const title = bannerTitle || "Building Dreams, Crafting Futures";
   const subtitle = bannerSubtitle || "Premium construction and real estate services by Starline Builder's Ltd. We build more than structures — we create lasting legacies.";
 
@@ -55,11 +58,15 @@ const HeroSection = ({
     <section className="relative flex items-center overflow-hidden" style={{ minHeight }}>
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={bgImage} alt="Hero banner" className="w-full h-full object-cover scale-105" />
+        {hasValidBannerImage && (
+          <img src={imageCandidate} alt="Hero banner" className="w-full h-full object-cover scale-105" />
+        )}
         <div
           className="absolute inset-0"
           style={{
-            background: `linear-gradient(to right, ${overlayColor}e6, ${overlayColor}b3, ${overlayColor}66)`,
+            background: hasValidBannerImage
+              ? `linear-gradient(to right, ${overlayColor}e6, ${overlayColor}b3, ${overlayColor}66)`
+              : "linear-gradient(135deg, #020817 0%, #0a1633 45%, #10224a 100%)",
             opacity: overlayOpacity / 100,
           }}
         />

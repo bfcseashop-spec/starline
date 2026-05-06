@@ -1,12 +1,10 @@
-import property1 from "@/assets/property-1.jpg";
-import property1b from "@/assets/property-1b.jpg";
-import property1c from "@/assets/property-1c.jpg";
-import property2 from "@/assets/property-2.jpg";
-import property2b from "@/assets/property-2b.jpg";
-import property2c from "@/assets/property-2c.jpg";
-import property3 from "@/assets/property-3.jpg";
-import property3b from "@/assets/property-3b.jpg";
-import property3c from "@/assets/property-3c.jpg";
+const towerOneImage = "https://wellassetgroup.com/uploads/backend/images/projects/2103092219.jpg";
+const neeraloyImage = "https://wellassetgroup.com/uploads/backend/images/projects/631571038.jpg";
+const towerImage = "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg";
+const shantiNiketonImage = "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg";
+const upcomingSenparaImage = "https://wellassetgroup.com/uploads/backend/images/projects/916057683.jpeg";
+const upcomingShawraImage = "https://wellassetgroup.com/uploads/backend/images/projects/1286103583.jpeg";
+const upcomingUttaraImage = "https://wellassetgroup.com/uploads/backend/images/projects/647424063.jpeg";
 
 export interface Property {
   id: number;
@@ -32,7 +30,7 @@ export const properties: Property[] = [
   {
     id: 1,
     slug: "starline-tower-one",
-    images: [property1, property1b, property1c],
+    images: [towerOneImage, towerOneImage, towerOneImage],
     title: "Starline Tower - 1",
     location: "Mirpur, Dhaka",
     price: "Contact for Price",
@@ -59,7 +57,7 @@ export const properties: Property[] = [
   {
     id: 2,
     slug: "starline-neeraloy-villa",
-    images: [property2, property2b, property2c],
+    images: [neeraloyImage, neeraloyImage, neeraloyImage],
     title: "Starline Neeraloy Villa",
     location: "Mohammadpur, Dhaka",
     price: "Contact for Price",
@@ -86,21 +84,21 @@ export const properties: Property[] = [
   {
     id: 3,
     slug: "starline-sapiya-manjil",
-    images: [property3, property3b, property3c],
+    images: [towerImage, towerImage, towerImage],
     title: "Starline Sapiya Manjil",
     location: "Mirpur-10, Dhaka",
     price: "Handover Complete",
     priceNum: 0,
     beds: 3,
     baths: 2,
-    sqft: "1,280",
+    sqft: "1,187",
     tag: "Exclusive",
     type: "Handover",
     yearBuilt: 2025,
     garage: 0,
     lotSize: "N/A",
     description:
-      "Starline Sapiya Manjil is one of our completed and handed-over properties in Mirpur-10. It reflects our commitment to delivery reliability, construction quality, and homeowner satisfaction.",
+      "Starline Sapiya Manjil is one of our completed and handed-over properties in Mirpur-10. It reflects our commitment to timely delivery and quality-focused construction.",
     amenities: [
       "Completed Handover",
       "Practical Unit Layout",
@@ -108,6 +106,143 @@ export const properties: Property[] = [
       "Durable Construction Finish",
       "Post-Handover Support",
     ],
+  },
+  {
+    id: 4,
+    slug: "starline-shanti-niketon",
+    images: [shantiNiketonImage, shantiNiketonImage, shantiNiketonImage],
+    title: "Starline Shanti Niketon",
+    location: "Mirpur, Dhaka",
+    price: "Contact for Price",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,263",
+    tag: "Ongoing",
+    type: "Apartment",
+    yearBuilt: 2026,
+    garage: 1,
+    lotSize: "N/A",
+    description:
+      "Starline Shanti Niketon is an ongoing residential development in East Kazipara, Mirpur designed for practical family living and better day-to-day comfort.",
+    amenities: ["Modern Lift", "Generator Backup", "Ventilated Layout", "Parking", "Fire Safety"],
+  },
+  {
+    id: 5,
+    slug: "starline-tower",
+    images: [towerImage, towerImage, towerImage],
+    title: "Starline Tower",
+    location: "Mirpur-1, Dhaka",
+    price: "Contact for Price",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,263",
+    tag: "Ongoing",
+    type: "Apartment",
+    yearBuilt: 2026,
+    garage: 1,
+    lotSize: "N/A",
+    description:
+      "Starline Tower at Shah Ali Bug, Mirpur-1 is a signature corner development with practical floor planning and functional utility support.",
+    amenities: ["Corner Plot Advantage", "Modern Lift", "Generator", "Security Provisions", "Parking"],
+  },
+  {
+    id: 6,
+    slug: "starline-nur-hosen-villa",
+    images: [shantiNiketonImage, shantiNiketonImage, shantiNiketonImage],
+    title: "Starline Nur Hosen Villa",
+    location: "Mirpur, Dhaka",
+    price: "Handover Complete",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,263",
+    tag: "Handover",
+    type: "Handover",
+    yearBuilt: 2025,
+    garage: 1,
+    lotSize: "N/A",
+    description:
+      "Starline Nur Hosen Villa is a completed project in Mirpur, delivered with a quality finish and reliable post-handover support.",
+    amenities: ["Completed Handover", "Lift", "Generator Backup", "Functional Layout", "Community Location"],
+  },
+  {
+    id: 7,
+    slug: "starline-sarkar-villa",
+    images: [towerOneImage, towerOneImage, towerOneImage],
+    title: "Starline Sarkar Villa",
+    location: "Mirpur, Dhaka",
+    price: "Handover Complete",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,350",
+    tag: "Handover",
+    type: "Handover",
+    yearBuilt: 2025,
+    garage: 1,
+    lotSize: "N/A",
+    description:
+      "Starline Sarkar Villa is a completed corner-plot development with thoughtful circulation and daylight-focused planning.",
+    amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
+  },
+  {
+    id: 8,
+    slug: "starline-senpara-residence",
+    images: [upcomingSenparaImage, upcomingSenparaImage, upcomingSenparaImage],
+    title: "Starline Senpara Residence",
+    location: "Mirpur, Dhaka",
+    price: "Upcoming",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,350",
+    tag: "Upcoming",
+    type: "Residential",
+    yearBuilt: 2027,
+    garage: 1,
+    lotSize: "N/A",
+    description: "Upcoming residential project in East Senpara, Monipur, Mirpur with modern planning and family-oriented layouts.",
+    amenities: ["Planned Project", "Family Layout", "Parking", "Lift Provision", "Utility Planning"],
+  },
+  {
+    id: 9,
+    slug: "starline-shawra-para-heights",
+    images: [upcomingShawraImage, upcomingShawraImage, upcomingShawraImage],
+    title: "Starline Shawra Para Heights",
+    location: "Mirpur, Dhaka",
+    price: "Upcoming",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,263",
+    tag: "Upcoming",
+    type: "Residential",
+    yearBuilt: 2027,
+    garage: 1,
+    lotSize: "N/A",
+    description: "Upcoming apartment project in East Shawra Para, Mirpur with efficient unit layouts and practical circulation.",
+    amenities: ["Planned Project", "Efficient Layout", "Parking", "Lift Provision", "Utility Planning"],
+  },
+  {
+    id: 10,
+    slug: "starline-uttara-vista",
+    images: [upcomingUttaraImage, upcomingUttaraImage, upcomingUttaraImage],
+    title: "Starline Uttara Vista",
+    location: "Uttara, Dhaka",
+    price: "Upcoming",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,187",
+    tag: "Upcoming",
+    type: "Residential",
+    yearBuilt: 2027,
+    garage: 1,
+    lotSize: "N/A",
+    description: "Future premium project in Uttara with modern design language and practical urban living standards.",
+    amenities: ["Planned Project", "Modern Facade", "Parking", "Lift Provision", "Utility Planning"],
   },
 ];
 
