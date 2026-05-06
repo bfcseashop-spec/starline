@@ -18,7 +18,7 @@ const StatsSection = ({ items }: Props) => {
   return (
     <section className="py-20 bg-card border-y border-border">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {list.map((stat, i) => (
             <motion.div
               key={stat.label + i}
@@ -26,7 +26,7 @@ const StatsSection = ({ items }: Props) => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="text-center"
+              className="text-center rounded-2xl border border-transparent hover:border-border hover:bg-muted/30 transition-colors py-4"
             >
               <p className="text-gradient-gold font-heading text-4xl md:text-5xl font-bold mb-2">{stat.value}</p>
               <p className="text-muted-foreground text-sm uppercase tracking-wider font-medium">{stat.label}</p>

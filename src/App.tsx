@@ -9,6 +9,12 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Auth from "./pages/Auth";
 import CustomerDashboard from "./pages/CustomerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import About from "./pages/About";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import ProjectsUpcoming from "./pages/ProjectsUpcoming";
+import ProjectsOngoing from "./pages/ProjectsOngoing";
+import ProjectsHandover from "./pages/ProjectsHandover";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +29,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/property/:slug" element={<PropertyDetail />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/projects/upcoming" element={<ProjectsUpcoming />} />
+            <Route path="/projects/ongoing" element={<ProjectsOngoing />} />
+            <Route path="/projects/handover" element={<ProjectsHandover />} />
             <Route path="/dashboard" element={<ProtectedRoute requiredRole="customer"><CustomerDashboard /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

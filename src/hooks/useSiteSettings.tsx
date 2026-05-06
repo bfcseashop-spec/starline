@@ -87,10 +87,11 @@ export interface HeaderConfig {
 
 const DEFAULT_HEADER: HeaderConfig = {
   nav_items: [
-    { id: "1", label: "Home", href: "#", visible: true },
-    { id: "2", label: "Properties", href: "#properties", visible: true },
-    { id: "3", label: "About", href: "#about", visible: true },
-    { id: "4", label: "Contact", href: "#contact", visible: true },
+    { id: "1", label: "Home", href: "/", visible: true },
+    { id: "2", label: "Properties", href: "/#properties", visible: true },
+    { id: "3", label: "About", href: "/about", visible: true },
+    { id: "4", label: "Projects", href: "/projects/ongoing", visible: true },
+    { id: "5", label: "Contact", href: "/#contact", visible: true },
   ],
   bg_color_scrolled: "#1a1a2e",
   bg_color_initial: "transparent",

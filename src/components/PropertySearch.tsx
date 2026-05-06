@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 
 const locations = ["All Locations", "Manhattan, New York", "Brooklyn Heights, New York", "Beverly Hills, California", "Miami, Florida", "San Francisco, California"];
 const propertyTypes = ["All Types", "Penthouse", "Villa", "Townhouse", "Condo", "Estate"];

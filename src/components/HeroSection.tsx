@@ -35,6 +35,12 @@ const HeroSection = ({
   minHeight = "60vh",
   showScrollIndicator = true,
 }: Props) => {
+  const normalizeHref = (href: string) => {
+    if (!href) return "/";
+    if (href.startsWith("#")) return `/${href}`;
+    return href;
+  };
+
   const bgImage = bannerImageUrl || heroImage;
   const title = bannerTitle || "Building Dreams, Crafting Futures";
   const subtitle = bannerSubtitle || "Premium construction and real estate services by Starline Builder's Ltd. We build more than structures — we create lasting legacies.";
@@ -64,7 +70,7 @@ const HeroSection = ({
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-gold/5 rounded-full blur-3xl" />
 
       {/* Content */}
-      <div className={`relative z-10 max-w-7xl mx-auto px-6 w-full py-32 ${isCenter ? "text-center" : ""}`}>
+      <div className={`relative z-10 max-w-7xl mx-auto px-6 w-full py-28 md:py-32 ${isCenter ? "text-center" : ""}`}>
         <div className={isCenter ? "max-w-2xl mx-auto" : "max-w-2xl"}>
           {showBadge && (
             <motion.div
@@ -82,7 +88,7 @@ const HeroSection = ({
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-heading text-5xl md:text-7xl font-bold text-white leading-[1.1] mb-6"
+            className="font-heading text-5xl md:text-7xl font-bold text-white leading-[1.06] mb-6"
           >
             {firstPart}{firstPart && <br />}
             <span className="text-gradient-gold">{lastTwo}</span>
@@ -104,13 +110,13 @@ const HeroSection = ({
             className={`flex flex-wrap gap-4 ${isCenter ? "justify-center" : ""}`}
           >
             <a
-              href={ctaPrimaryLink}
+              href={normalizeHref(ctaPrimaryLink || "")}
               className="bg-gold-gradient text-accent-foreground px-8 py-4 rounded-xl font-semibold text-sm flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-gold/20"
             >
               {ctaPrimaryText} <ArrowRight size={16} />
             </a>
             <a
-              href={ctaSecondaryLink}
+              href={normalizeHref(ctaSecondaryLink || "")}
               className="border border-white/20 text-white px-8 py-4 rounded-xl font-semibold text-sm flex items-center gap-2 hover:bg-white/10 transition-all backdrop-blur-sm"
             >
               <Play size={16} className="text-gold" /> {ctaSecondaryText}

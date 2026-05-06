@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import type { CompanySettings, SocialLinks, SocialPlatforms, HeaderConfig } from "@/hooks/useSiteSettings";
+import defaultLogo from "@/assets/logo.png";
 
 const socialDefs = [
   { key: "facebook" as const, label: "Facebook", icon: (
@@ -177,8 +178,17 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
   }, []);
 
   const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
-  const brandName = company?.name || "Starline Builder's";
-  const logoUrl = company?.logo_url;
+  const brandName = company?.name || "Starline Builder's Ltd.";
+  const logoUrl = company?.logo_url || defaultLogo;
+
+  const normalizeHref = (href: string) => {
+    if (!href) return "/";
+    if (href.startsWith("#")) return `/${href}`;
+    return href;
+  };
+
+  const isExternal = (href: string) => /^https?:\/\//i.test(href);
+  const isInternal = (href: string) => href.startsWith("/") || href.startsWith("#");
 
   const activeSocials = socialDefs.filter((s) => {
     const cfg = socialPlatforms?.[s.key];
@@ -230,7 +240,7 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
       >
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           {/* Brand */}
-          <a href="#" className="font-heading text-xl font-bold flex items-center gap-3">
+          <Link to="/" className="font-heading text-xl font-bold flex items-center gap-3">
             {logoUrl && (
               <img src={logoUrl} alt="Logo" className={`${logoSizeClass[logoSize]} rounded-xl object-contain`} />
             )}
@@ -248,21 +258,47 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
                 )}
               </div>
             )}
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
             {visibleNavItems.map((link) => (
-              <a
-                key={link.id}
-                href={link.href}
-                className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
-                style={{ color: navFontColor, opacity: 0.85 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={e => (e.currentTarget.style.opacity = "0.85")}
-              >
-                {link.label}
-              </a>
+              isExternal(link.href) ? (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
+                  style={{ color: navFontColor, opacity: 0.85 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.85")}
+                >
+                  {link.label}
+                </a>
+              ) : isInternal(link.href) ? (
+                <Link
+                  key={link.id}
+                  to={normalizeHref(link.href)}
+                  className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
+                  style={{ color: navFontColor, opacity: 0.85 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.85")}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.id}
+                  href={link.href}
+                  className="text-sm font-medium px-4 py-2 rounded-lg hover:bg-white/10 transition-all tracking-wide"
+                  style={{ color: navFontColor, opacity: 0.85 }}
+                  onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.85")}
+                >
+                  {link.label}
+                </a>
+              )
             ))}
 
             <div className="w-px h-6 bg-white/15 mx-3" />
@@ -304,9 +340,39 @@ const Navbar = ({ company, headerConfig, social, socialPlatforms }: Props) => {
             >
               <div className="px-6 py-5 flex flex-col gap-3">
                 {visibleNavItems.map((link) => (
-                  <a key={link.id} href={link.href} onClick={() => setOpen(false)} className="transition-colors text-sm py-2 border-b border-white/5" style={{ color: navFontColor, opacity: 0.85 }}>
-                    {link.label}
-                  </a>
+                  isExternal(link.href) ? (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setOpen(false)}
+                      className="transition-colors text-sm py-2 border-b border-white/5"
+                      style={{ color: navFontColor, opacity: 0.85 }}
+                    >
+                      {link.label}
+                    </a>
+                  ) : isInternal(link.href) ? (
+                    <Link
+                      key={link.id}
+                      to={normalizeHref(link.href)}
+                      onClick={() => setOpen(false)}
+                      className="transition-colors text-sm py-2 border-b border-white/5"
+                      style={{ color: navFontColor, opacity: 0.85 }}
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={link.id}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="transition-colors text-sm py-2 border-b border-white/5"
+                      style={{ color: navFontColor, opacity: 0.85 }}
+                    >
+                      {link.label}
+                    </a>
+                  )
                 ))}
 
                 {/* Social icons in mobile */}
