@@ -52,9 +52,9 @@ const Navbar = ({ company, headerConfig }: Props) => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+      <div className="max-w-7xl mx-auto">
         <div
-          className={`rounded-2xl border transition-all duration-300 ${
+          className={`rounded-b-2xl border transition-all duration-300 bg-[#0000008c] ${
             scrolled
               ? "bg-gradient-to-r from-[#060d22]/96 via-[#0a1838]/95 to-[#060d22]/96 border-white/15 shadow-xl backdrop-blur-md"
               : "bg-gradient-to-r from-[#060d22]/88 via-[#0a1838]/85 to-[#060d22]/88 border-white/20 shadow-lg backdrop-blur-md"
@@ -62,7 +62,7 @@ const Navbar = ({ company, headerConfig }: Props) => {
         >
           <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 min-w-0">
-              <img src={logoUrl} alt="Starline logo" className="w-10 h-10 rounded-xl object-contain shrink-0" />
+              <img src="/logo-main.png" alt="Starline logo" className="w-auto h-12 object-contain shrink-0" />
               <div className="min-w-0">
                 <p className="font-heading text-sm md:text-base font-bold text-white truncate">{brandName}</p>
                 <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-white/70 truncate">{slogan}</p>

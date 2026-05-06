@@ -52,7 +52,7 @@ const Footer = ({ company, social, content }: Props) => {
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
             <div className="flex items-center gap-3 mb-5">
-              <img src="/logo.png" alt="Starline logo" className="h-12 w-12 rounded-xl object-contain bg-white p-1" />
+              <img src="/logo-main.png" alt="Starline logo" className="w-auto h-12 object-contain" />
               <div>
                 <p className="font-heading text-xl font-bold text-white">{brandName}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-white/60">Premium Real Estate Partner</p>
