@@ -1,7 +1,7 @@
 import ContentPageShell from "@/components/ContentPageShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { aboutContent } from "@/data/siteContent";
-import aboutLegacyImage from "@/assets/wellasset-about.png";
+import aboutLegacyImage from "@/assets/hero-skyline.png";
 
 const About = () => {
   return (
