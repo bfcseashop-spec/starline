@@ -2,10 +2,10 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 
-const locations = ["All Locations", "Manhattan, New York", "Brooklyn Heights, New York", "Beverly Hills, California", "Miami, Florida", "San Francisco, California"];
-const propertyTypes = ["All Types", "Penthouse", "Villa", "Townhouse", "Condo", "Estate"];
+const locations = ["All Locations", "Mirpur, Dhaka", "Mohammadpur, Dhaka", "Uttara, Dhaka", "Kazipara, Dhaka"];
+const propertyTypes = ["All Types", "Apartment", "Residential", "Handover"];
 const bedroomOptions = ["Any", "1+", "2+", "3+", "4+", "5+"];
-const priceRanges = ["Any Price", "Under $1M", "$1M – $3M", "$3M – $5M", "$5M – $10M", "$10M+"];
+const priceRanges = ["Any Price", "Contact for Price", "Handover Complete"];
 
 export interface Filters {
   location: string;
@@ -59,8 +59,8 @@ const PropertySearch = ({ onFilter }: Props) => {
   const hasFilters = filters.location !== "All Locations" || filters.propertyType !== "All Types" || filters.bedrooms !== "Any" || filters.priceRange !== "Any Price";
 
   return (
-    <section className="py-12">
-      <div className="max-w-6xl mx-auto px-6">
+    <section className="py-8 md:py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

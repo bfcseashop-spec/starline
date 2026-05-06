@@ -22,16 +22,16 @@ const WhyStarline = ({ reasons }: Props) => {
   const list = reasons && reasons.length > 0 ? reasons : defaultReasons;
 
   return (
-    <section id="about" className="py-24 bg-navy relative overflow-hidden">
+    <section id="about" className="py-16 md:py-20 bg-navy relative overflow-hidden">
       <div className="absolute top-0 right-0 w-96 h-96 bg-gold/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/5 rounded-full blur-3xl" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10 md:mb-14"
         >
           <p className="text-gold uppercase tracking-[0.3em] text-sm font-semibold mb-3">Why Choose Us</p>
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-white">

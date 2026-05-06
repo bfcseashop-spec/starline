@@ -5,7 +5,24 @@ export interface ProjectSummary {
   address: string;
   city: string;
   notes?: string;
+  image: string;
 }
+
+const PROJECT_IMAGES = {
+  ongoing: {
+    towerOne: "https://wellassetgroup.com/uploads/backend/images/projects/2103092219.jpg",
+    neeraloyVilla: "https://wellassetgroup.com/uploads/backend/images/projects/631571038.jpg",
+    tower: "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg",
+    shantiNiketon: "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
+  },
+  upcoming: {
+    eastSenpara: "https://wellassetgroup.com/uploads/backend/images/projects/916057683.jpeg",
+    eastShawraPara: "https://wellassetgroup.com/uploads/backend/images/projects/1286103583.jpeg",
+    uttara: "https://wellassetgroup.com/uploads/backend/images/projects/647424063.jpeg",
+  },
+  handoverFallback:
+    "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
+} as const;
 
 export interface AboutContentSection {
   title: string;
@@ -30,7 +47,7 @@ export const aboutContent: AboutPageContent = {
   heroTitle: "Building Excellence, Delivering Trust",
   heroSubtitle: "Premium real estate developments inspired by decades of experience in Bangladesh.",
   intro:
-    "Starline Builder's Ltd. continues a legacy of delivering durable, beautiful and comfortable homes. Drawing on the experience and standards pioneered at Well Asset Developer's, we focus on thoughtful locations, functional design and quality construction that stands the test of time.",
+    "Starline Builder's Ltd. is dedicated to delivering durable, beautiful and comfortable homes. We focus on thoughtful locations, functional design and quality construction that stands the test of time.",
   sections: [
     {
       title: "Our Story",
@@ -134,18 +151,21 @@ export const upcomingProjects: ProjectSummary[] = [
     address: "East Senpara, Monipur, Mirpur",
     city: "Dhaka",
     notes: "Planned residential development in a well‑connected neighbourhood of Mirpur.",
+    image: PROJECT_IMAGES.upcoming.eastSenpara,
   },
   {
     name: "Starline Shawra Para Heights",
     address: "East Shawra Para, Mirpur",
     city: "Dhaka 1216",
     notes: "Upcoming apartment complex with modern amenities and efficient layouts.",
+    image: PROJECT_IMAGES.upcoming.eastShawraPara,
   },
   {
     name: "Starline Uttara Vista",
     address: "Uttara",
     city: "Dhaka",
     notes: "Future premium project in a fast‑growing urban hub of the capital.",
+    image: PROJECT_IMAGES.upcoming.uttara,
   },
 ];
 
@@ -155,24 +175,28 @@ export const ongoingProjects: ProjectSummary[] = [
     address: "House: 291–298, Road 18, Block A, Avenue 5, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "High‑rise residential tower with contemporary façade and smart planning.",
+    image: PROJECT_IMAGES.ongoing.towerOne,
   },
   {
     name: "Starline Neeraloy Villa",
-    address: "House: 27/C, Road 6, Shekher Tek, Mohammadpur",
+    address: "Shekhertek, Shyamoli Housing Society, House-27/C, Road-6, Mohammadpur",
     city: "Dhaka 1207",
     notes: "Family‑focused apartments with attention to light, air and circulation.",
+    image: PROJECT_IMAGES.ongoing.neeraloyVilla,
   },
   {
     name: "Starline Tower",
-    address: "House: 37/4/C, 37/4/4, Shah Ali Bagh, Mirpur‑1",
+    address: "Shah Ali Bug, House-37/4/C & 37/4/4, Mirpur-1",
     city: "Dhaka 1216",
     notes: "Signature corner development with strong street presence.",
+    image: PROJECT_IMAGES.ongoing.tower,
   },
   {
     name: "Starline Shanti Niketon",
     address: "House: 479/1–2, Road 5, East Kazipara, Mirpur",
     city: "Dhaka 1216",
     notes: "Community‑oriented project designed for everyday comfort.",
+    image: PROJECT_IMAGES.ongoing.shantiNiketon,
   },
 ];
 
@@ -182,18 +206,21 @@ export const handoverProjects: ProjectSummary[] = [
     address: "House: 173, Sawmilen Gali, Senpara Panbata, Mirpur‑10",
     city: "Dhaka 1216",
     notes: "Completed and handed‑over apartments known for reliable construction quality.",
+    image: PROJECT_IMAGES.handoverFallback,
   },
   {
     name: "Starline Nur Hosen Villa",
     address: "House: 6, Road 7, Block C, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "Delivered on time with satisfied homeowners and strong community feedback.",
+    image: PROJECT_IMAGES.handoverFallback,
   },
   {
     name: "Starline Sarkar Villa",
     address: "House: 299–300, Road 18, Block A, Avenue 5, Section 11, Mirpur",
     city: "Dhaka 1216",
     notes: "Corner plot development emphasizing light, ventilation and functional layouts.",
+    image: PROJECT_IMAGES.handoverFallback,
   },
 ];
 

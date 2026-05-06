@@ -58,10 +58,12 @@ const Footer = ({ company, social, content }: Props) => {
               {quickLinks.map((label) => {
                 let href = "#";
                 if (label.toLowerCase().includes("property")) href = "/#properties";
+                if (label.toLowerCase().includes("properties")) href = "/properties/ongoing";
                 if (label.toLowerCase().includes("about")) href = "/about";
-                if (label.toLowerCase().includes("ongoing")) href = "/projects/ongoing";
-                if (label.toLowerCase().includes("upcoming")) href = "/projects/upcoming";
-                if (label.toLowerCase().includes("handover")) href = "/projects/handover";
+                if (label.toLowerCase().includes("project")) href = "/properties/ongoing";
+                if (label.toLowerCase().includes("ongoing")) href = "/properties/ongoing";
+                if (label.toLowerCase().includes("upcoming")) href = "/properties/upcoming";
+                if (label.toLowerCase().includes("handover")) href = "/properties/handover";
                 if (label.toLowerCase().includes("contact")) href = "/#contact";
 
                 return (

@@ -6,6 +6,8 @@ import type { Filters } from "./PropertySearch";
 
 const priceFilter = (priceNum: number, range: string) => {
   if (range === "Any Price") return true;
+  if (range === "Contact for Price") return priceNum === 0;
+  if (range === "Handover Complete") return priceNum === 0;
   if (range === "Under $1M") return priceNum < 1_000_000;
   if (range === "$1M – $3M") return priceNum >= 1_000_000 && priceNum <= 3_000_000;
   if (range === "$3M – $5M") return priceNum >= 3_000_000 && priceNum <= 5_000_000;
@@ -33,13 +35,13 @@ const FeaturedProperties = ({ filters }: Props) => {
   });
 
   return (
-    <section id="properties" className="py-24 bg-background">
-      <div className="max-w-7xl mx-auto px-6">
+    <section id="properties" className="py-14 md:py-20 bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10 md:mb-14"
         >
           <p className="text-gold uppercase tracking-[0.3em] text-sm font-semibold mb-3">Our Portfolio</p>
           <h2 className="font-heading text-4xl md:text-5xl font-bold text-foreground">Featured Properties</h2>
@@ -48,7 +50,7 @@ const FeaturedProperties = ({ filters }: Props) => {
 
         <AnimatePresence mode="wait">
           {filtered.length > 0 ? (
-            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid md:grid-cols-3 gap-8">
+            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid md:grid-cols-3 gap-5 md:gap-8">
               {filtered.map((property, i) => (
                 <motion.article
                   key={property.id}

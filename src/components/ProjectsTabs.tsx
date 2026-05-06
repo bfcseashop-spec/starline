@@ -1,9 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 
 const tabs = [
-  { label: "Ongoing", to: "/projects/ongoing" },
-  { label: "Upcoming", to: "/projects/upcoming" },
-  { label: "Handover", to: "/projects/handover" },
+  { label: "Ongoing", to: "/properties/ongoing" },
+  { label: "Upcoming", to: "/properties/upcoming" },
+  { label: "Handover", to: "/properties/handover" },
 ];
 
 const ProjectsTabs = () => {

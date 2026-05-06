@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Play } from "lucide-react";
-import heroImage from "@/assets/hero-skyline.jpg";
+import heroImage from "@/assets/hero-skyline.png";
 
 interface Props {
   bannerTitle?: string;

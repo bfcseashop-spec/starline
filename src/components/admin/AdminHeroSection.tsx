@@ -12,7 +12,7 @@ import {
   ArrowRight, Play, Sparkles, LayoutDashboard,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import heroFallback from "@/assets/hero-skyline.jpg";
+import heroFallback from "@/assets/hero-skyline.png";
 
 interface HeroSettings {
   banner_title: string;

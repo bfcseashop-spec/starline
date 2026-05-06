@@ -6,7 +6,7 @@ import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import starlineLogo from "@/assets/starline-logo.jpeg";
+import starlineLogo from "@/assets/starline-logo.png";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email").max(255),

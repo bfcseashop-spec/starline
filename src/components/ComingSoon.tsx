@@ -33,13 +33,13 @@ const ComingSoon = ({ projects }: Props) => {
   };
 
   return (
-    <section className="py-24 bg-muted/40">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="py-14 md:py-20 bg-muted/35">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-10 md:mb-14"
         >
           <div className="inline-flex items-center gap-2 bg-gold/10 rounded-full px-4 py-2 mb-4">
             <Clock size={16} className="text-gold" />
