@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Building2, Tag, Key, MapPin } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { properties } from "@/data/properties";
 
@@ -30,10 +31,10 @@ const PropertySummary = () => {
   });
 
   const items = [
-    { icon: Building2, value: String(data?.total ?? 0), label: "Total Properties", gradient: "bg-dash-blue" },
-    { icon: Tag, value: String(data?.forSale ?? 0), label: "For Sale", gradient: "bg-dash-green" },
-    { icon: Key, value: String(data?.forRent ?? 0), label: "For Rent", gradient: "bg-dash-orange" },
-    { icon: MapPin, value: String(data?.cities ?? 0), label: "Cities", gradient: "bg-dash-purple" },
+    { icon: Building2, value: String(data?.total ?? 0), label: "Total Properties", gradient: "bg-dash-blue", to: "/properties/ongoing" },
+    { icon: Tag, value: String(data?.forSale ?? 0), label: "For Sale", gradient: "bg-dash-green", to: "/properties/ongoing" },
+    { icon: Key, value: String(data?.forRent ?? 0), label: "For Rent", gradient: "bg-dash-orange", to: "/properties/handover" },
+    { icon: MapPin, value: String(data?.cities ?? 0), label: "Cities", gradient: "bg-dash-purple", to: "/properties/upcoming" },
   ];
 
   return (
@@ -47,15 +48,20 @@ const PropertySummary = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-card rounded-2xl border border-border p-4 md:p-5 shadow-lg flex items-center gap-3"
+              className="h-full"
             >
-              <div className={`p-3 rounded-xl ${item.gradient} shrink-0`}>
-                <item.icon size={22} className="text-white" />
-              </div>
-              <div>
-                <p className="font-heading text-xl md:text-2xl font-bold text-foreground">{item.value}</p>
-                <p className="text-muted-foreground text-[10px] md:text-xs font-medium uppercase tracking-wider">{item.label}</p>
-              </div>
+              <Link
+                to={item.to}
+                className="bg-card rounded-2xl border border-border p-4 md:p-5 shadow-lg flex items-center gap-3 h-full hover:border-gold/45 hover:-translate-y-0.5 hover:shadow-xl transition-all"
+              >
+                <div className={`p-3 rounded-xl ${item.gradient} shrink-0`}>
+                  <item.icon size={22} className="text-white" />
+                </div>
+                <div>
+                  <p className="font-heading text-xl md:text-2xl font-bold text-foreground">{item.value}</p>
+                  <p className="text-muted-foreground text-[10px] md:text-xs font-medium uppercase tracking-wider">{item.label}</p>
+                </div>
+              </Link>
             </motion.div>
           ))}
         </div>

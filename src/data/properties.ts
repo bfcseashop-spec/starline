@@ -26,13 +26,19 @@ export interface Property {
   lotSize: string;
 }
 
+const starlineTowerOneImages = [
+  "/properties/starline-tower-one/01.png",
+  "/properties/starline-tower-one/02.png",
+  "/properties/starline-tower-one/03.png",
+];
+
 export const properties: Property[] = [
   {
     id: 1,
     slug: "starline-tower-one",
-    images: [towerOneImage, towerOneImage, towerOneImage],
+    images: starlineTowerOneImages,
     title: "Starline Tower - 1",
-    location: "Mirpur, Dhaka",
+    location: "Sector-11, Ave-5, Mirpur 11",
     price: "Contact for Price",
     priceNum: 0,
     beds: 3,
@@ -42,9 +48,9 @@ export const properties: Property[] = [
     type: "Apartment",
     yearBuilt: 2026,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "4.5 katha",
     description:
-      "Starline Tower - 1 is a contemporary residential development in Mirpur, Dhaka. The project focuses on efficient apartment layouts, practical circulation, and quality materials to ensure long-term comfort for urban families.",
+      "Starline Tower - 1 is a contemporary residential development at Sector-11, Avenue 5, Mirpur 11, Dhaka. The project focuses on efficient apartment layouts, practical circulation, and quality materials to ensure long-term comfort for urban families.",
     amenities: [
       "Modern Lift",
       "Generator Backup",

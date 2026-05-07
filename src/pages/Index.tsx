@@ -36,7 +36,6 @@ const Index = () => {
         <HeroSection
           bannerTitle={system.banner_title}
           bannerSubtitle={system.banner_subtitle}
-          bannerImageUrl={system.banner_image_url}
           badgeText={(system as any).badge_text}
           showBadge={(system as any).show_badge}
           ctaPrimaryText={(system as any).cta_primary_text}

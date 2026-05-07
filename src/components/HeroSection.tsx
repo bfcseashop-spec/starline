@@ -1,10 +1,11 @@
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { properties } from "@/data/properties";
 
 interface Props {
   bannerTitle?: string;
   bannerSubtitle?: string;
-  bannerImageUrl?: string;
   badgeText?: string;
   showBadge?: boolean;
   ctaPrimaryText?: string;
@@ -21,7 +22,6 @@ interface Props {
 const HeroSection = ({
   bannerTitle,
   bannerSubtitle,
-  bannerImageUrl,
   badgeText = "Trusted Since 2010",
   showBadge = true,
   ctaPrimaryText = "Explore Properties",
@@ -34,17 +34,18 @@ const HeroSection = ({
   minHeight = "60vh",
   showScrollIndicator = true,
 }: Props) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+
   const normalizeHref = (href: string) => {
     if (!href) return "/";
     if (href.startsWith("#")) return `/${href}`;
     return href;
   };
 
-  const imageCandidate = (bannerImageUrl || "").trim();
-  const hasValidBannerImage =
-    imageCandidate.length > 0 &&
-    !/logo(\.|-|_)?/i.test(imageCandidate) &&
-    !/\/logo\.png$/i.test(imageCandidate);
+  const slides = useMemo(
+    () => Array.from(new Set(properties.map((p) => p.images?.[0]).filter(Boolean))).slice(0, 5),
+    [],
+  );
   const title = bannerTitle || "Building Dreams, Crafting Futures";
   const subtitle = bannerSubtitle || "Premium construction and real estate services by Starline Builder's Ltd. We build more than structures — we create lasting legacies.";
 
@@ -53,18 +54,40 @@ const HeroSection = ({
   const firstPart = words.slice(0, -2).join(" ");
 
   const isCenter = textAlignment === "center";
+  const hasSlides = slides.length > 0;
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [slides.length]);
+
+  useEffect(() => {
+    if (currentSlide < slides.length) return;
+    setCurrentSlide(0);
+  }, [currentSlide, slides.length]);
 
   return (
     <section className="relative flex items-center overflow-hidden" style={{ minHeight }}>
       {/* Background */}
       <div className="absolute inset-0">
-        {hasValidBannerImage && (
-          <img src={imageCandidate} alt="Hero banner" className="w-full h-full object-cover scale-105" />
-        )}
+        {hasSlides &&
+          slides.map((slide, index) => (
+            <img
+              key={`${slide}-${index}`}
+              src={slide}
+              alt={`Hero slide ${index + 1}`}
+              className={`absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-700 ${
+                index === currentSlide ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))}
         <div
           className="absolute inset-0"
           style={{
-            background: hasValidBannerImage
+            background: hasSlides
               ? `linear-gradient(to right, ${overlayColor}e6, ${overlayColor}b3, ${overlayColor}66)`
               : "linear-gradient(135deg, #020817 0%, #0a1633 45%, #10224a 100%)",
             opacity: overlayOpacity / 100,
@@ -132,6 +155,27 @@ const HeroSection = ({
         </div>
       </div>
 
+      {slides.length > 1 && (
+        <>
+          <button
+            type="button"
+            aria-label="Previous slide"
+            onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="Next slide"
+            onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+            className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-black/35 text-white hover:bg-black/55 transition-colors"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </>
+      )}
+
       {/* Scroll indicator */}
       {showScrollIndicator && (
         <motion.div
@@ -148,6 +192,22 @@ const HeroSection = ({
             />
           </div>
         </motion.div>
+      )}
+
+      {slides.length > 1 && (
+        <div className="absolute bottom-6 md:bottom-8 right-6 md:right-10 z-20 flex items-center gap-2">
+          {slides.map((slide, index) => (
+            <button
+              key={`${slide}-dot-${index}`}
+              type="button"
+              aria-label={`Go to slide ${index + 1}`}
+              onClick={() => setCurrentSlide(index)}
+              className={`h-2.5 rounded-full transition-all ${
+                index === currentSlide ? "w-7 bg-gold" : "w-2.5 bg-white/55 hover:bg-white/75"
+              }`}
+            />
+          ))}
+        </div>
       )}
     </section>
   );
