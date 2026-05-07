@@ -70,6 +70,12 @@ npm run build
 echo "[5/8] npm run api:build"
 npm run api:build
 
+API_ENTRY="$SCRIPT_DIR/backend/dist/src/main.js"
+if [[ ! -f "$API_ENTRY" ]]; then
+  echo "ERROR: API bundle missing: $API_ENTRY (expected after tsc; check backend/tsconfig paths)"
+  exit 1
+fi
+
 echo "[6-8/8] PM2: recreate starline + starline-api from ecosystem.config.cjs"
 echo "       (Ensures cwd is $SCRIPT_DIR — fixes crash loops when PM2 started npm without --cwd)"
 export API_PORT="${API_PORT:-4042}"

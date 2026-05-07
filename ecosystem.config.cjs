@@ -1,6 +1,6 @@
 /**
  * PM2 process definitions — always cwd = repo root so:
- * - `backend/dist/main.js` resolves shared `node_modules`
+ * - `backend/dist/src/main.js` (tsc mirrors `src/`) resolves shared `node_modules`
  * - `uploads/` and other paths keyed off process.cwd() match StorageController
  */
 const path = require("path");
@@ -22,7 +22,7 @@ module.exports = {
     {
       name: "starline-api",
       cwd: ROOT,
-      script: path.join(ROOT, "backend", "dist", "main.js"),
+      script: path.join(ROOT, "backend", "dist", "src", "main.js"),
       interpreter: "node",
       autorestart: true,
       max_restarts: 25,

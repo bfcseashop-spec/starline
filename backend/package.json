@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "ts-node src/main.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.js",
+    "start": "node dist/src/main.js",
     "db:init": "ts-node scripts/init-db.ts",
     "seed:admin": "ts-node scripts/seed-admin.ts",
     "import:data": "ts-node scripts/import-data-export.ts"
