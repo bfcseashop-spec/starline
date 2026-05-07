@@ -51,10 +51,10 @@ const starlineNurHosenVillaImages = [
   "/properties/starline-nur-hosen-villa/02.png",
   "/properties/starline-nur-hosen-villa/03.png",
 ];
-const starlineSarkarVillaImages = [
-  "/properties/starline-sarkar-villa/01.png",
-  "/properties/starline-sarkar-villa/02.png",
-  "/properties/starline-sarkar-villa/03.png",
+const starlineMonoaraVillaImages = [
+  "/properties/starline-monoara-villa/01.png",
+  "/properties/starline-monoara-villa/02.png",
+  "/properties/starline-monoara-villa/03.png",
 ];
 
 export const properties: Property[] = [
@@ -181,8 +181,8 @@ export const properties: Property[] = [
   {
     id: 7,
     slug: "starline-sarkar-villa",
-    images: starlineSarkarVillaImages,
-    title: "Starline Sarkar Villa",
+    images: starlineMonoaraVillaImages,
+    title: "Starline Monoara Villa",
     location: "Sector-11, Mirpur-11",
     price: "Handover Complete",
     priceNum: 0,
@@ -195,7 +195,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "N/A",
     description:
-      "Starline Sarkar Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
+      "Starline Monoara Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
     amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
   },
   {

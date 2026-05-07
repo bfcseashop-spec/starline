@@ -218,12 +218,12 @@ export const handoverProjects: ProjectSummary[] = [
     image: "/properties/starline-nur-hosen-villa/01.png",
   },
   {
-    name: "Starline Sarkar Villa",
+    name: "Starline Monoara Villa",
     slug: "starline-sarkar-villa",
     address: "Sector-11, Mirpur-11",
     city: "Dhaka 1216",
     notes: "Corner plot development emphasizing light, ventilation and functional layouts.",
-    image: "/properties/starline-sarkar-villa/01.png",
+    image: "/properties/starline-monoara-villa/01.png",
   },
 ];
 
