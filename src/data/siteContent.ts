@@ -191,14 +191,6 @@ export const ongoingProjects: ProjectSummary[] = [
     image: PROJECT_IMAGES.ongoing.neeraloyVilla,
   },
   {
-    name: "Starline Tower",
-    slug: "starline-tower",
-    address: "Shah Ali Bug, House-37/4/C & 37/4/4, Mirpur-1",
-    city: "Dhaka 1216",
-    notes: "Signature corner development with strong street presence.",
-    image: PROJECT_IMAGES.ongoing.tower,
-  },
-  {
     name: "Starline Shanti Niketon",
     slug: "starline-shanti-niketon",
     address: "Kazipara, Mirpur",
