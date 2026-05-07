@@ -33,7 +33,7 @@ source .env 2>/dev/null || true
 set +a
 fi
 
-echo "[1/6] Backing up code to $TAR_FILE"
+echo "[1/8] Backing up code to $TAR_FILE"
 tar -czf "$TAR_FILE" \
   --exclude='node_modules' --exclude='dist' --exclude='.git' --exclude='backups' \
   --exclude='*.zip' --exclude='*.tar.gz' --exclude='*.sql' --exclude='.env' \
@@ -47,10 +47,10 @@ exit 0
 fi
 
 echo ""
-echo "[2/6] git pull (uses --autostash so local .env is stashed during pull)"
+echo "[2/8] git pull (uses --autostash so local .env is stashed during pull)"
 git pull --autostash
 
-echo "[3/6] npm install"
+echo "[3/8] npm install"
 npm install
 
 echo "[4/8] npm run build"
@@ -59,14 +59,13 @@ npm run build
 echo "[5/8] npm run api:build"
 npm run api:build
 
-echo "[6/8] Restarting PM2 (starline)"
-pm2 restart starline --update-env || pm2 start serve --name starline -- -s dist -l 5174
+echo "[6-8/8] PM2: recreate starline + starline-api from ecosystem.config.cjs"
+echo "       (Ensures cwd is $SCRIPT_DIR — fixes crash loops when PM2 started npm without --cwd)"
+export API_PORT="${API_PORT:-4042}"
+pm2 delete starline starline-api 2>/dev/null || true
+pm2 start "$SCRIPT_DIR/ecosystem.config.cjs" --update-env
 
-echo "[7/8] Restarting PM2 (starline-api)"
-API_PORT_VALUE="${API_PORT:-4042}"
-pm2 restart starline-api --update-env || API_PORT="$API_PORT_VALUE" pm2 start "npm run api:start" --name starline-api --update-env
-
-echo "[8/8] Saving PM2 state"
+echo "[save] Persisting PM2 process list"
 pm2 save
 
 echo ""

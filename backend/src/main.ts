@@ -31,4 +31,7 @@ async function bootstrap() {
   await app.listen(Number(process.env.API_PORT || 4000));
 }
 
-bootstrap();
+bootstrap().catch((err: unknown) => {
+  console.error("Nest bootstrap failed:", err);
+  process.exit(1);
+});
