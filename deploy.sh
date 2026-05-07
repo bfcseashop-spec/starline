@@ -47,8 +47,8 @@ exit 0
 fi
 
 echo ""
-echo "[2/6] git pull"
-git pull
+echo "[2/6] git pull (uses --autostash so local .env is stashed during pull)"
+git pull --autostash
 
 echo "[3/6] npm install"
 npm install
