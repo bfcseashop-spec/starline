@@ -41,6 +41,11 @@ const starlineSapiyaManjilImages = [
   "/properties/starline-sapiya-manjil/02.png",
   "/properties/starline-sapiya-manjil/03.png",
 ];
+const starlineShantiNiketonImages = [
+  "/properties/starline-shanti-niketon/01.png",
+  "/properties/starline-shanti-niketon/02.png",
+  "/properties/starline-shanti-niketon/03.png",
+];
 
 export const properties: Property[] = [
   {
@@ -126,9 +131,9 @@ export const properties: Property[] = [
   {
     id: 4,
     slug: "starline-shanti-niketon",
-    images: [shantiNiketonImage, shantiNiketonImage, shantiNiketonImage],
+    images: starlineShantiNiketonImages,
     title: "Starline Shanti Niketon",
-    location: "Mirpur, Dhaka",
+    location: "Kazipara, Mirpur",
     price: "Contact for Price",
     priceNum: 0,
     beds: 3,
@@ -140,7 +145,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "N/A",
     description:
-      "Starline Shanti Niketon is an ongoing residential development in East Kazipara, Mirpur designed for practical family living and better day-to-day comfort.",
+      "Starline Shanti Niketon is an ongoing residential development in Kazipara, Mirpur designed for practical family living and better day-to-day comfort.",
     amenities: ["Modern Lift", "Generator Backup", "Ventilated Layout", "Parking", "Fire Safety"],
   },
   {

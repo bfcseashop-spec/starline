@@ -14,7 +14,7 @@ const PROJECT_IMAGES = {
     towerOne: "/properties/starline-tower-one/1.png",
     neeraloyVilla: "/properties/starline-neeraloy-villa/01.png",
     tower: "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg",
-    shantiNiketon: "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
+    shantiNiketon: "/properties/starline-shanti-niketon/01.png",
   },
   upcoming: {
     eastSenpara: "https://wellassetgroup.com/uploads/backend/images/projects/916057683.jpeg",
@@ -201,7 +201,7 @@ export const ongoingProjects: ProjectSummary[] = [
   {
     name: "Starline Shanti Niketon",
     slug: "starline-shanti-niketon",
-    address: "House: 479/1–2, Road 5, East Kazipara, Mirpur",
+    address: "Kazipara, Mirpur",
     city: "Dhaka 1216",
     notes: "Community‑oriented project designed for everyday comfort.",
     image: PROJECT_IMAGES.ongoing.shantiNiketon,
