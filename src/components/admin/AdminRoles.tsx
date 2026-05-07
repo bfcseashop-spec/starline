@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { Shield, Users, Loader2, Eye, Pencil, Trash2, UserPlus, UserCheck, KeyRound, X, Plus, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -75,8 +75,8 @@ const AdminRoles = () => {
 
   const fetchRoles = async () => {
     const [rolesRes, profilesRes] = await Promise.all([
-      supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name, phone"),
+      backend.from("user_roles").select("*").order("created_at", { ascending: false }),
+      backend.from("profiles").select("user_id, full_name, phone"),
     ]);
 
     const nameMap: Record<string, string> = {};
@@ -101,8 +101,8 @@ const AdminRoles = () => {
     }
     setCreating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await supabase.functions.invoke("create-customer", {
+      const { data: { session } } = await backend.auth.getSession();
+      const res = await backend.functions.invoke("create-customer", {
         body: {
           email: userForm.email,
           password: userForm.password,
@@ -119,7 +119,7 @@ const AdminRoles = () => {
 
       // If role should be admin, update the role
       if (userForm.role === "admin" && res.data?.user_id) {
-        await supabase.from("user_roles").update({ role: "admin" }).eq("user_id", res.data.user_id);
+        await backend.from("user_roles").update({ role: "admin" }).eq("user_id", res.data.user_id);
       }
 
       toast.success("User created successfully");
@@ -138,7 +138,7 @@ const AdminRoles = () => {
       title: `Change this user's role to ${newR}?`,
       description: "This will immediately update their access level.",
       action: async () => {
-        const { error } = await supabase.from("user_roles").update({ role: newR }).eq("user_id", userId);
+        const { error } = await backend.from("user_roles").update({ role: newR }).eq("user_id", userId);
         if (error) {
           toast.error(error.message);
           return;
@@ -154,7 +154,7 @@ const AdminRoles = () => {
       title: "Remove this role assignment?",
       description: "The user will lose this role but their account will remain.",
       action: async () => {
-        const { error } = await supabase.from("user_roles").delete().eq("id", id);
+        const { error } = await backend.from("user_roles").delete().eq("id", id);
         if (error) {
           toast.error(error.message);
           return;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/use-toast";
 import { Wallet, Plus, Loader2, Trash2, Pencil, X, Save, Eye, Search, DollarSign, ChevronDown } from "lucide-react";
@@ -46,7 +46,7 @@ const AdminExpenses = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchExpenses = async () => {
-    const { data } = await supabase.from("expenses").select("*").order("expense_date", { ascending: false });
+    const { data } = await backend.from("expenses").select("*").order("expense_date", { ascending: false });
     setExpenses((data || []) as Expense[]);
     setLoading(false);
   };
@@ -75,9 +75,9 @@ const AdminExpenses = () => {
 
     let error;
     if (editId) {
-      ({ error } = await supabase.from("expenses").update(payload).eq("id", editId));
+      ({ error } = await backend.from("expenses").update(payload).eq("id", editId));
     } else {
-      ({ error } = await supabase.from("expenses").insert(payload));
+      ({ error } = await backend.from("expenses").insert(payload));
     }
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -92,7 +92,7 @@ const AdminExpenses = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("expenses").delete().eq("id", deleteTarget.id);
+    const { error } = await backend.from("expenses").delete().eq("id", deleteTarget.id);
     setDeleteLoading(false);
     if (error) {
       toast.error(error.message);

@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, ChevronLeft, CreditCard, Building2, Smartphone, Globe, Copy, Check, Upload, X, CheckCircle2, Image } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
-import { withMutationToast } from "@/lib/supabase-helpers";
+import { withMutationToast } from "@/lib/mutationToast";
 
 interface PaymentMethod {
   id: string;
@@ -44,9 +44,9 @@ const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () 
   useEffect(() => {
     const fetchData = async () => {
       const [methodsRes, projectsRes] = await Promise.all([
-        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
+        backend.from("payment_methods").select("*").eq("is_active", true).order("sort_order"),
         user
-          ? supabase.from("customer_projects").select("total_amount, paid_amount").eq("user_id", user.id)
+          ? backend.from("customer_projects").select("total_amount, paid_amount").eq("user_id", user.id)
           : Promise.resolve({ data: [] }),
       ]);
       setMethods((methodsRes.data as PaymentMethod[]) || []);
@@ -92,15 +92,15 @@ const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () 
       if (slipFile) {
         const ext = slipFile.name.split(".").pop();
         const path = `${user.id}/${Date.now()}.${ext}`;
-        const { error: uploadErr } = await supabase.storage.from("payment-images").upload(path, slipFile);
+        const { error: uploadErr } = await backend.storage.from("payment-images").upload(path, slipFile);
         if (uploadErr) throw uploadErr;
-        const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(path);
+        const { data: urlData } = backend.storage.from("payment-images").getPublicUrl(path);
         slipUrl = urlData.publicUrl;
       }
 
       const ok = await withMutationToast(
         () =>
-          supabase.from("payments").insert({
+          backend.from("payments").insert({
             user_id: user.id,
             amount: payAmount,
             payment_method: selectedMethodObj?.method_type || "other",
@@ -312,7 +312,7 @@ const CustomerPaymentMethods = ({ onPaymentComplete }: { onPaymentComplete?: () 
         <div className="bg-dash-green/5 border border-dash-green/20 rounded-xl p-5 mb-6">
           <h4 className="font-heading text-base font-semibold text-foreground mb-2">Payment Instructions</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Include your <span className="text-dash-green font-medium">Project Reference Number</span> when making payments</li>
+            <li>• Include your <span className="text-dash-green font-medium">Property reference number</span> when making payments</li>
             <li>• After payment, keep the receipt for your records</li>
             <li>• Payments are verified within 24-48 hours</li>
           </ul>

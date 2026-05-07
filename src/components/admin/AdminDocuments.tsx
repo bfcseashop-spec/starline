@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import {
   FileText, Loader2, Plus, Trash2, Download, Upload, Search, Filter,
   FileCheck, FileSpreadsheet, File, X, Eye, ExternalLink, Pencil, Printer,
@@ -83,9 +83,9 @@ const AdminDocuments = () => {
   const fetchData = async () => {
     setLoading(true);
     const [docsRes, profilesRes, projectsRes] = await Promise.all([
-      supabase.from("documents").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("customer_projects").select("id, project_name, user_id"),
+      backend.from("documents").select("*").order("created_at", { ascending: false }),
+      backend.from("profiles").select("user_id, full_name"),
+      backend.from("customer_projects").select("id, project_name, user_id"),
     ]);
     setDocuments((docsRes.data as Document[]) || []);
     setProfiles((profilesRes.data as Profile[]) || []);
@@ -136,7 +136,7 @@ const AdminDocuments = () => {
       const ext = file.name.split(".").pop();
       const path = `${formUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await backend.storage
         .from("customer-documents")
         .upload(path, file);
       if (uploadError) {
@@ -144,11 +144,11 @@ const AdminDocuments = () => {
         continue;
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = backend.storage
         .from("customer-documents")
         .getPublicUrl(path);
 
-      const { error: insertError } = await supabase.from("documents").insert({
+      const { error: insertError } = await backend.from("documents").insert({
         user_id: formUserId,
         project_id: formProjectId || null,
         file_name: file.name,
@@ -195,8 +195,8 @@ const AdminDocuments = () => {
     const urlParts = deleteTarget.file_url.split("/customer-documents/");
     const filePath = urlParts[urlParts.length - 1];
     setDeleteLoading(true);
-    await supabase.storage.from("customer-documents").remove([filePath]);
-    const { error } = await supabase.from("documents").delete().eq("id", deleteTarget.id);
+    await backend.storage.from("customer-documents").remove([filePath]);
+    const { error } = await backend.from("documents").delete().eq("id", deleteTarget.id);
     setDeleteLoading(false);
     if (error) {
       toast.error("Delete failed");
@@ -216,7 +216,7 @@ const AdminDocuments = () => {
 
   const handleEditSave = async () => {
     if (!editDoc) return;
-    const { error } = await supabase.from("documents").update({
+    const { error } = await backend.from("documents").update({
       category: editCategory,
       project_id: editProjectId || null,
       file_name: editFileName,

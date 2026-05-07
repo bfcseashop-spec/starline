@@ -1,11 +1,14 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { backend } from "@/lib/backendClient";
+import { usePortfolioTemplates } from "@/hooks/usePropertyCatalog";
+import { uploadProjectCoverImage } from "@/lib/uploadProjectImage";
+import { adminToastErr } from "@/lib/adminToast";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "@/components/ui/use-toast";
 import {
   Users, Phone, MapPin, Loader2, Search, LayoutGrid, LayoutList,
-  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat, Printer, Download, UserPlus,
+  Eye, Pencil, Trash2, X, Save, Plus, DollarSign, ChevronDown, HardHat, Printer, Download, UserPlus, Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -31,18 +34,34 @@ interface Customer {
 }
 
 type ViewMode = "list" | "grid";
-type FilterStatus = "all" | "with_due" | "fully_paid" | "no_projects";
+type FilterStatus = "all" | "with_due" | "fully_paid" | "no_properties";
 
 const filterLabels: Record<FilterStatus, string> = {
   all: "All Customers",
   with_due: "Has Due Amount",
   fully_paid: "Fully Paid",
-  no_projects: "No Projects",
+  no_properties: "No Properties",
 };
 
 const avatarColors = [
   "bg-dash-blue", "bg-dash-green", "bg-dash-orange", "bg-dash-purple", "bg-dash-pink", "bg-dash-teal",
 ];
+
+const emptyAddForm = () => ({
+  email: "",
+  password: "",
+  full_name: "",
+  phone: "",
+  address: "",
+  portfolio_template_slug: "",
+  project_name: "",
+  location: "",
+  building_image_url: "",
+  total_amount: "",
+  down_payment: "",
+  paid_amount: "",
+  installment_amount: "",
+});
 
 const AdminCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -55,14 +74,37 @@ const AdminCustomers = () => {
   // Modals
   const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", phone: "", address: "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
-  const [editProjects, setEditProjects] = useState<{ id: string; project_name: string; total_amount: number; paid_amount: number; monthly_installment: number }[]>([]);
+  const [editForm, setEditForm] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+    portfolio_template_slug: "",
+    project_id: "",
+    project_name: "",
+    location: "",
+    building_image_url: "",
+    total_amount: "",
+    down_payment: "",
+    paid_amount: "",
+    installment_amount: "",
+  });
+  const [editProjects, setEditProjects] = useState<
+    { id: string; project_name: string; total_amount: number; paid_amount: number; monthly_installment: number; location?: string | null; building_image_url?: string | null }[]
+  >([]);
   const [showNewProject, setShowNewProject] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Add customer modal
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [addForm, setAddForm] = useState({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
+  const [addForm, setAddForm] = useState(emptyAddForm);
+
+  const { data: portfolioTemplates = [], isFetching: templatesLoading } = usePortfolioTemplates(
+    showAddCustomer || !!editCustomer,
+  );
+  const addCoverInputRef = useRef<HTMLInputElement>(null);
+  const editCoverInputRef = useRef<HTMLInputElement>(null);
+  const [coverUploadingAdd, setCoverUploadingAdd] = useState(false);
+  const [coverUploadingEdit, setCoverUploadingEdit] = useState(false);
 
   // Add amount modal
   const [amountCustomer, setAmountCustomer] = useState<Customer | null>(null);
@@ -73,10 +115,16 @@ const AdminCustomers = () => {
 
   const fetchCustomers = async () => {
     const [profilesRes, rolesRes, projectsRes] = await Promise.all([
-      supabase.from("profiles").select("user_id, full_name, phone, address, avatar_url"),
-      supabase.from("user_roles").select("user_id, role").eq("role", "customer"),
-      supabase.from("customer_projects").select("user_id, total_amount, paid_amount"),
+      backend.from("profiles").select("user_id, full_name, phone, address, avatar_url"),
+      backend.from("user_roles").select("user_id, role").eq("role", "customer"),
+      backend.from("customer_projects").select("user_id, total_amount, paid_amount"),
     ]);
+
+    if (profilesRes.error || rolesRes.error || projectsRes.error) {
+      adminToastErr(profilesRes.error || rolesRes.error || projectsRes.error, "Couldn't load customers");
+      setLoading(false);
+      return;
+    }
 
     const customerIds = new Set((rolesRes.data || []).map((r) => r.user_id));
     const projectMap: Record<string, { count: number; total: number; paid: number }> = {};
@@ -111,16 +159,32 @@ const AdminCustomers = () => {
     const due = (c.total_amount || 0) - (c.paid_amount || 0);
     if (filter === "with_due") return due > 0;
     if (filter === "fully_paid") return c.project_count > 0 && due <= 0;
-    if (filter === "no_projects") return c.project_count === 0;
+    if (filter === "no_properties") return c.project_count === 0;
     return true;
   });
 
   // Edit handlers
   const openEdit = async (c: Customer) => {
-    setEditForm({ full_name: c.full_name || "", phone: c.phone || "", address: c.address || "", project_id: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
+    setEditForm({
+      full_name: c.full_name || "",
+      phone: c.phone || "",
+      address: c.address || "",
+      portfolio_template_slug: "",
+      project_id: "",
+      project_name: "",
+      location: "",
+      building_image_url: "",
+      total_amount: "",
+      down_payment: "",
+      paid_amount: "",
+      installment_amount: "",
+    });
     setEditCustomer(c);
     setShowNewProject(false);
-    const { data } = await supabase.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment").eq("user_id", c.user_id);
+    const { data } = await backend
+      .from("customer_projects")
+      .select("id, project_name, total_amount, paid_amount, monthly_installment, location, building_image_url")
+      .eq("user_id", c.user_id);
     const projects = data || [];
     setEditProjects(projects);
     if (projects.length > 0) {
@@ -129,6 +193,8 @@ const AdminCustomers = () => {
         ...f,
         project_id: p.id,
         project_name: p.project_name,
+        location: p.location || "",
+        building_image_url: p.building_image_url || "",
         total_amount: String(p.total_amount),
         paid_amount: String(p.paid_amount),
         installment_amount: String(p.monthly_installment),
@@ -142,8 +208,11 @@ const AdminCustomers = () => {
     if (p) {
       setEditForm((f) => ({
         ...f,
+        portfolio_template_slug: "",
         project_id: p.id,
         project_name: p.project_name,
+        location: p.location || "",
+        building_image_url: p.building_image_url || "",
         total_amount: String(p.total_amount),
         paid_amount: String(p.paid_amount),
         installment_amount: String(p.monthly_installment),
@@ -156,22 +225,32 @@ const AdminCustomers = () => {
     if (!editCustomer) return;
     setSaving(true);
     // Update profile
-    const { error } = await supabase.from("profiles").update({
+    const { error } = await backend.from("profiles").update({
       full_name: editForm.full_name.trim() || null,
       phone: editForm.phone.trim() || null,
       address: editForm.address.trim() || null,
     }).eq("user_id", editCustomer.user_id);
-    if (error) { setSaving(false); toast.error(error.message); return; }
+    if (error) {
+      setSaving(false);
+      adminToastErr(error, "Couldn't update customer profile");
+      return;
+    }
 
     // Update project if selected
     if (editForm.project_id) {
-      const { error: projError } = await supabase.from("customer_projects").update({
+      const { error: projError } = await backend.from("customer_projects").update({
         project_name: editForm.project_name.trim(),
+        location: editForm.location.trim() || null,
+        building_image_url: editForm.building_image_url.trim() || null,
         total_amount: Number(editForm.total_amount) || 0,
         paid_amount: Number(editForm.paid_amount) || 0,
         monthly_installment: Number(editForm.installment_amount) || 0,
       }).eq("id", editForm.project_id);
-      if (projError) { setSaving(false); toast.error(projError.message); return; }
+      if (projError) {
+        setSaving(false);
+        adminToastErr(projError, "Couldn't update property assignment");
+        return;
+      }
     } else if (showNewProject && editForm.project_name.trim()) {
       // Create new project for this customer
       const totalAmt = Number(editForm.total_amount) || 0;
@@ -180,22 +259,28 @@ const AdminCustomers = () => {
       const totalPaid = downPay + paidAmt;
       const installmentAmt = Number(editForm.installment_amount) || 0;
 
-      const { error: projError } = await supabase.from("customer_projects").insert({
+      const { error: projError } = await backend.from("customer_projects").insert({
         user_id: editCustomer.user_id,
         project_name: editForm.project_name.trim(),
+        location: editForm.location.trim() || null,
+        building_image_url: editForm.building_image_url.trim() || null,
         total_amount: totalAmt,
         paid_amount: totalPaid,
         monthly_installment: installmentAmt,
         status: "in_progress",
       });
-      if (projError) { setSaving(false); toast.error(projError.message); return; }
+      if (projError) {
+        setSaving(false);
+        adminToastErr(projError, "Couldn't add property for this customer");
+        return;
+      }
 
       // Record payments
       if (downPay > 0) {
-        await supabase.from("payments").insert({ user_id: editCustomer.user_id, amount: downPay, payment_method: "cash", status: "completed", notes: "Down payment" });
+        await backend.from("payments").insert({ user_id: editCustomer.user_id, amount: downPay, payment_method: "cash", status: "completed", notes: "Down payment" });
       }
       if (paidAmt > 0) {
-        await supabase.from("payments").insert({ user_id: editCustomer.user_id, amount: paidAmt, payment_method: "cash", status: "completed", notes: "Initial payment" });
+        await backend.from("payments").insert({ user_id: editCustomer.user_id, amount: paidAmt, payment_method: "cash", status: "completed", notes: "Initial payment" });
       }
     }
 
@@ -213,10 +298,10 @@ const AdminCustomers = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("profiles").delete().eq("user_id", deleteTarget.user_id);
+    const { error } = await backend.from("profiles").delete().eq("user_id", deleteTarget.user_id);
     setDeleteLoading(false);
     if (error) {
-      toast.error(error.message);
+      adminToastErr(error, "Couldn't remove customer profile");
       return;
     }
     toast.success("Profile removed");
@@ -228,27 +313,31 @@ const AdminCustomers = () => {
   const openAddAmount = async (c: Customer) => {
     setAmountCustomer(c);
     setAmountForm({ project_id: "", amount: "" });
-    const { data } = await supabase.from("customer_projects").select("id, project_name").eq("user_id", c.user_id);
+    const { data } = await backend.from("customer_projects").select("id, project_name").eq("user_id", c.user_id);
     setCustomerProjects(data || []);
   };
 
   const handleAddAmount = async () => {
-    if (!amountCustomer || !amountForm.project_id || !amountForm.amount) { toast.error("Select project and enter amount"); return; }
+    if (!amountCustomer || !amountForm.project_id || !amountForm.amount) { toast.error("Select property and enter amount"); return; }
     setSaving(true);
-    const { error } = await supabase.from("payments").insert({
+    const { error } = await backend.from("payments").insert({
       user_id: amountCustomer.user_id,
       project_id: amountForm.project_id,
       amount: Number(amountForm.amount),
       payment_method: "cash",
       status: "completed",
     });
-    if (error) { setSaving(false); toast.error(error.message); return; }
+    if (error) {
+      setSaving(false);
+      adminToastErr(error, "Couldn't record payment");
+      return;
+    }
     // Update paid_amount on project
     const proj = customerProjects.find((p) => p.id === amountForm.project_id);
     if (proj) {
-      const { data: current } = await supabase.from("customer_projects").select("paid_amount").eq("id", amountForm.project_id).single();
+      const { data: current } = await backend.from("customer_projects").select("paid_amount").eq("id", amountForm.project_id).single();
       if (current) {
-        await supabase.from("customer_projects").update({ paid_amount: Number(current.paid_amount) + Number(amountForm.amount) }).eq("id", amountForm.project_id);
+        await backend.from("customer_projects").update({ paid_amount: Number(current.paid_amount) + Number(amountForm.amount) }).eq("id", amountForm.project_id);
       }
     }
     setSaving(false);
@@ -261,11 +350,16 @@ const AdminCustomers = () => {
     if (!addForm.email || !addForm.password) { toast.error("Email and password are required"); return; }
     if (addForm.password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setSaving(true);
-    const { data, error } = await supabase.functions.invoke("create-customer", {
+    const { data, error } = await backend.functions.invoke("create-customer", {
       body: {
-        email: addForm.email, password: addForm.password, full_name: addForm.full_name,
-        phone: addForm.phone, address: addForm.address,
+        email: addForm.email,
+        password: addForm.password,
+        full_name: addForm.full_name,
+        phone: addForm.phone,
+        address: addForm.address,
         project_name: addForm.project_name || null,
+        location: addForm.location || null,
+        building_image_url: addForm.building_image_url || null,
         total_amount: addForm.total_amount ? Number(addForm.total_amount) : null,
         down_payment: addForm.down_payment ? Number(addForm.down_payment) : null,
         paid_amount: addForm.paid_amount ? Number(addForm.paid_amount) : null,
@@ -273,10 +367,13 @@ const AdminCustomers = () => {
       },
     });
     setSaving(false);
-    if (error || data?.error) { toast.error(data?.error || error?.message || "Failed to create customer"); return; }
+    if (error) {
+      adminToastErr(error, "Failed to create customer");
+      return;
+    }
     toast.success("Customer created!");
     setShowAddCustomer(false);
-    setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" });
+    setAddForm(emptyAddForm());
     fetchCustomers();
   };
 
@@ -300,7 +397,7 @@ const AdminCustomers = () => {
           <button onClick={() => setView("grid")} className={`p-2 rounded-lg transition-colors ${view === "grid" ? "bg-dash-blue text-white" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
             <LayoutGrid size={18} />
           </button>
-          <button onClick={() => { setAddForm({ email: "", password: "", full_name: "", phone: "", address: "", project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" }); setShowAddCustomer(true); }}
+          <button onClick={() => { setAddForm(emptyAddForm()); setShowAddCustomer(true); }}
             className="bg-dash-green text-white px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
             <UserPlus size={16} /> Add Customer
           </button>
@@ -383,7 +480,7 @@ const AdminCustomers = () => {
                       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                         {c.phone && <span className="flex items-center gap-1"><Phone size={12} /> {c.phone}</span>}
                         {c.address && <span className="flex items-center gap-1 truncate max-w-[200px]"><MapPin size={12} /> {c.address}</span>}
-                        <span className="bg-muted px-2 py-0.5 rounded-full font-medium">{c.project_count} project{c.project_count !== 1 ? "s" : ""}</span>
+                        <span className="bg-muted px-2 py-0.5 rounded-full font-medium">{c.project_count} propert{c.project_count !== 1 ? "ies" : "y"}</span>
                       </div>
                     </div>
                   </div>
@@ -484,7 +581,7 @@ const AdminCustomers = () => {
                   )}
 
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="bg-dash-blue/10 text-dash-blue px-2.5 py-1 rounded-full font-medium">{c.project_count} project{c.project_count !== 1 ? "s" : ""}</span>
+                    <span className="bg-dash-blue/10 text-dash-blue px-2.5 py-1 rounded-full font-medium">{c.project_count} propert{c.project_count !== 1 ? "ies" : "y"}</span>
                   </div>
 
                   {/* Actions */}
@@ -540,13 +637,88 @@ const AdminCustomers = () => {
                   <input value={addForm.address} onChange={(e) => setAddForm((f) => ({ ...f, address: e.target.value }))} className={inputClass} placeholder="Customer address" maxLength={200} />
                 </div>
 
-                {/* Project Details Section */}
+                {/* Property details (optional; stored as customer_projects row) */}
                 <div className="border-t border-border pt-4 mt-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Project Details (Optional)</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Property Details (Optional)</p>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name</label>
-                      <input value={addForm.project_name} onChange={(e) => setAddForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} placeholder="e.g. Skyline Tower Apt #5B" maxLength={150} />
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Portfolio property</label>
+                      <select
+                        disabled={templatesLoading}
+                        value={addForm.portfolio_template_slug}
+                        onChange={(e) => {
+                          const slug = e.target.value;
+                          if (!slug) {
+                            setAddForm((f) => ({ ...f, portfolio_template_slug: "" }));
+                            return;
+                          }
+                          const t = portfolioTemplates.find((x) => x.slug === slug);
+                          if (!t) return;
+                          setAddForm((f) => ({
+                            ...f,
+                            portfolio_template_slug: slug,
+                            project_name: t.title,
+                            location: t.location,
+                            building_image_url: t.coverImage || "",
+                          }));
+                        }}
+                        className={inputClass}
+                      >
+                        <option value="">Custom — type below</option>
+                        {portfolioTemplates.map((t) => (
+                          <option key={t.slug} value={t.slug}>{t.title} ({t.location})</option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-muted-foreground mt-1">Picks name, location, and cover image from your public portfolio catalog.</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Property Name</label>
+                      <input value={addForm.project_name} onChange={(e) => setAddForm((f) => ({ ...f, portfolio_template_slug: "", project_name: e.target.value }))} className={inputClass} placeholder="e.g. Starline Tower Apt #5B" maxLength={150} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Location</label>
+                      <input value={addForm.location} onChange={(e) => setAddForm((f) => ({ ...f, portfolio_template_slug: "", location: e.target.value }))} className={inputClass} placeholder="Area, Dhaka…" maxLength={200} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Cover image</label>
+                      <input
+                        type="url"
+                        value={addForm.building_image_url}
+                        onChange={(e) => setAddForm((f) => ({ ...f, building_image_url: e.target.value }))}
+                        className={`${inputClass} mb-2`}
+                        placeholder="https://… or upload below"
+                      />
+                      <input
+                        ref={addCoverInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (!file) return;
+                          setCoverUploadingAdd(true);
+                          const { url, error: upErr } = await uploadProjectCoverImage(file, "staging");
+                          setCoverUploadingAdd(false);
+                          if (upErr || !url) { toast.error(upErr || "Upload failed"); return; }
+                          setAddForm((f) => ({ ...f, building_image_url: url }));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => addCoverInputRef.current?.click()}
+                        disabled={coverUploadingAdd}
+                        className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-muted/60 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {coverUploadingAdd ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                        Upload image
+                      </button>
+                      {addForm.building_image_url && (
+                        <div className="mt-2 flex items-center gap-3 rounded-xl border border-border overflow-hidden bg-muted/30 p-2">
+                          <img src={addForm.building_image_url} alt="" className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                          <p className="text-xs text-muted-foreground truncate">Preview uses the URL shown above.</p>
+                        </div>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
@@ -611,14 +783,42 @@ const AdminCustomers = () => {
                   <input value={editForm.address} onChange={(e) => setEditForm((f) => ({ ...f, address: e.target.value }))} className={inputClass} />
                 </div>
 
-                {/* Project Details Section */}
                 {editProjects.length > 0 ? (
                   <div className="border-t border-border pt-4 mt-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Project Details</p>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Property Details</p>
                     <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Portfolio property</label>
+                        <select
+                          disabled={templatesLoading}
+                          value={editForm.portfolio_template_slug}
+                          onChange={(e) => {
+                            const slug = e.target.value;
+                            if (!slug) {
+                              setEditForm((f) => ({ ...f, portfolio_template_slug: "" }));
+                              return;
+                            }
+                            const t = portfolioTemplates.find((x) => x.slug === slug);
+                            if (!t) return;
+                            setEditForm((f) => ({
+                              ...f,
+                              portfolio_template_slug: slug,
+                              project_name: t.title,
+                              location: t.location,
+                              building_image_url: t.coverImage || "",
+                            }));
+                          }}
+                          className={inputClass}
+                        >
+                          <option value="">Keep / edit manually</option>
+                          {portfolioTemplates.map((t) => (
+                            <option key={t.slug} value={t.slug}>{t.title} ({t.location})</option>
+                          ))}
+                        </select>
+                      </div>
                       {editProjects.length > 1 && (
                         <div>
-                          <label className="text-sm font-medium text-foreground mb-1.5 block">Select Project</label>
+                          <label className="text-sm font-medium text-foreground mb-1.5 block">Select Property</label>
                           <select value={editForm.project_id} onChange={(e) => handleEditProjectChange(e.target.value)} className={inputClass}>
                             {editProjects.map((p) => (
                               <option key={p.id} value={p.id}>{p.project_name}</option>
@@ -627,8 +827,51 @@ const AdminCustomers = () => {
                         </div>
                       )}
                       <div>
-                        <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name</label>
-                        <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} />
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Property Name</label>
+                        <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, portfolio_template_slug: "", project_name: e.target.value }))} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Location</label>
+                        <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, portfolio_template_slug: "", location: e.target.value }))} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-foreground mb-1.5 block">Cover image</label>
+                        <input
+                          type="url"
+                          value={editForm.building_image_url}
+                          onChange={(e) => setEditForm((f) => ({ ...f, building_image_url: e.target.value }))}
+                          className={`${inputClass} mb-2`}
+                          placeholder="https://…"
+                        />
+                        <input
+                          ref={editCoverInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (!file) return;
+                            setCoverUploadingEdit(true);
+                            const prefix = editForm.project_id ? `covers/${editForm.project_id}` : "staging";
+                            const { url, error: upErr } = await uploadProjectCoverImage(file, prefix);
+                            setCoverUploadingEdit(false);
+                            if (upErr || !url) { toast.error(upErr || "Upload failed"); return; }
+                            setEditForm((f) => ({ ...f, building_image_url: url }));
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => editCoverInputRef.current?.click()}
+                          disabled={coverUploadingEdit}
+                          className="w-full py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted/60 flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {coverUploadingEdit ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                          Upload cover
+                        </button>
+                        {editForm.building_image_url && (
+                          <img src={editForm.building_image_url} alt="" className="mt-2 w-full max-h-32 object-cover rounded-xl border border-border" />
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -660,15 +903,83 @@ const AdminCustomers = () => {
                   <div className="border-t border-border pt-4 mt-2">
                     {!showNewProject ? (
                       <button onClick={() => setShowNewProject(true)} className="w-full border-2 border-dashed border-border rounded-xl py-4 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors flex items-center justify-center gap-2">
-                        <Plus size={16} /> Add Project
+                        <Plus size={16} /> Add Property
                       </button>
                     ) : (
                       <>
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">New Project</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">New Property</p>
                         <div className="space-y-4">
                           <div>
-                            <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name *</label>
-                            <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} placeholder="e.g. Skyline Tower Apt #5B" />
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Portfolio property</label>
+                            <select
+                              disabled={templatesLoading}
+                              value={editForm.portfolio_template_slug}
+                              onChange={(e) => {
+                                const slug = e.target.value;
+                                if (!slug) {
+                                  setEditForm((f) => ({ ...f, portfolio_template_slug: "" }));
+                                  return;
+                                }
+                                const t = portfolioTemplates.find((x) => x.slug === slug);
+                                if (!t) return;
+                                setEditForm((f) => ({
+                                  ...f,
+                                  portfolio_template_slug: slug,
+                                  project_name: t.title,
+                                  location: t.location,
+                                  building_image_url: t.coverImage || "",
+                                }));
+                              }}
+                              className={inputClass}
+                            >
+                              <option value="">Custom — type below</option>
+                              {portfolioTemplates.map((t) => (
+                                <option key={t.slug} value={t.slug}>{t.title} ({t.location})</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Property Name *</label>
+                            <input value={editForm.project_name} onChange={(e) => setEditForm((f) => ({ ...f, portfolio_template_slug: "", project_name: e.target.value }))} className={inputClass} placeholder="e.g. Starline Tower Apt #5B" />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Location</label>
+                            <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, portfolio_template_slug: "", location: e.target.value }))} className={inputClass} />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-foreground mb-1.5 block">Cover image</label>
+                            <input
+                              type="url"
+                              value={editForm.building_image_url}
+                              onChange={(e) => setEditForm((f) => ({ ...f, building_image_url: e.target.value }))}
+                              className={`${inputClass} mb-2`}
+                              placeholder="https://…"
+                            />
+                            <input
+                              ref={editCoverInputRef}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = "";
+                                if (!file) return;
+                                setCoverUploadingEdit(true);
+                                const { url, error: upErr } = await uploadProjectCoverImage(file, "staging");
+                                setCoverUploadingEdit(false);
+                                if (upErr || !url) { toast.error(upErr || "Upload failed"); return; }
+                                setEditForm((f) => ({ ...f, building_image_url: url }));
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => editCoverInputRef.current?.click()}
+                              disabled={coverUploadingEdit}
+                              className="w-full py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted/60 flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                              {coverUploadingEdit ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                              Upload cover
+                            </button>
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -694,8 +1005,8 @@ const AdminCustomers = () => {
                             <label className="text-sm font-medium text-foreground mb-1.5 block">Due Amount</label>
                             <input readOnly value={editForm.total_amount ? Math.max(0, Number(editForm.total_amount) - (Number(editForm.down_payment) || 0) - (Number(editForm.paid_amount) || 0)) : ""} className={`${inputClass} bg-muted/50 cursor-not-allowed`} placeholder="Auto-calculated" />
                           </div>
-                          <button onClick={() => { setShowNewProject(false); setEditForm((f) => ({ ...f, project_name: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" })); }} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
-                            Cancel adding project
+                          <button onClick={() => { setShowNewProject(false); setEditForm((f) => ({ ...f, portfolio_template_slug: "", project_name: "", location: "", building_image_url: "", total_amount: "", down_payment: "", paid_amount: "", installment_amount: "" })); }} className="text-xs text-muted-foreground hover:text-destructive transition-colors">
+                            Cancel adding property
                           </button>
                         </div>
                       </>
@@ -724,13 +1035,13 @@ const AdminCustomers = () => {
               </div>
               <p className="text-sm text-muted-foreground mb-4">For: <span className="font-semibold text-foreground">{amountCustomer.full_name || "Unnamed"}</span></p>
               {customerProjects.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-6 text-center">This customer has no projects yet.</p>
+                <p className="text-sm text-muted-foreground py-6 text-center">This customer has no properties yet.</p>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-1.5 block">Project</label>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Property</label>
                     <select value={amountForm.project_id} onChange={(e) => setAmountForm((f) => ({ ...f, project_id: e.target.value }))} className={inputClass}>
-                      <option value="">Select project...</option>
+                      <option value="">Select property...</option>
                       {customerProjects.map((p) => <option key={p.id} value={p.id}>{p.project_name}</option>)}
                     </select>
                   </div>
@@ -760,7 +1071,7 @@ const AdminCustomers = () => {
             ? `Remove customer "${deleteTarget.full_name || "Unnamed"}" profile?`
             : "Remove customer profile?"
         }
-        description="This only removes the profile record and does not delete the Supabase account."
+        description="Removes the customer's profile record from the database. Related rows (projects, payments, etc.) are not deleted unless configured in PostgreSQL. The login user may still exist until removed from the users table."
         confirmLabel="Remove"
         cancelLabel="Cancel"
         confirmVariant="destructive"
@@ -781,8 +1092,8 @@ const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Cu
     if (!customer) return;
     setLoading(true);
     Promise.all([
-      supabase.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment, status").eq("user_id", customer.user_id).order("project_name"),
-      supabase.from("payments").select("id, amount, payment_date, payment_method, status, reference_no, notes, project_id").eq("user_id", customer.user_id).order("payment_date", { ascending: false }),
+      backend.from("customer_projects").select("id, project_name, total_amount, paid_amount, monthly_installment, status").eq("user_id", customer.user_id).order("project_name"),
+      backend.from("payments").select("id, amount, payment_date, payment_method, status, reference_no, notes, project_id").eq("user_id", customer.user_id).order("payment_date", { ascending: false }),
     ]).then(([projRes, payRes]) => {
       const projs = (projRes.data || []) as ViewProject[];
       const projMap: Record<string, string> = {};
@@ -864,7 +1175,7 @@ const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Cu
       [244, 63, 94],   // pink
     ];
     const summaryData = [
-      { label: "Projects", value: String(customer.project_count) },
+      { label: "Properties", value: String(customer.project_count) },
       { label: "Total Amount", value: fmt(customer.total_amount) },
       { label: "Paid Amount", value: fmt(customer.paid_amount) },
       { label: "Due Amount", value: fmt(due) },
@@ -1038,7 +1349,7 @@ const ViewCustomerModal = ({ customer, onClose, formatCurrency }: { customer: Cu
             {loading ? (
               <div className="flex justify-center py-6"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
             ) : projects.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">No projects assigned.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No properties assigned.</p>
             ) : (
               <div className="space-y-3">
                 {projects.map((p) => {

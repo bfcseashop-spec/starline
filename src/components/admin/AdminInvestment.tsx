@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import {
   TrendingUp, DollarSign, Users, Plus, Trash2, Edit2, Search,
@@ -13,14 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import type { Tables } from "@/integrations/supabase/types";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-
-type Investment = Tables<"investments">;
-type Investor = Tables<"investors">;
-type InvestmentCategory = Tables<"investment_categories">;
-type Contribution = Tables<"contributions">;
-type InvestmentShare = Tables<"investment_shares">;
+import type {
+  Contribution,
+  Investment,
+  InvestmentCategory,
+  InvestmentShare,
+  Investor,
+} from "@/types/database-rows";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "BDT", maximumFractionDigits: 2 }).format(n);
@@ -77,12 +77,12 @@ const AdminInvestment = () => {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     const [invRes, invtRes, catRes, contRes, shareRes, projRes] = await Promise.all([
-      supabase.from("investments").select("*").order("created_at", { ascending: false }),
-      supabase.from("investors").select("*").order("name"),
-      supabase.from("investment_categories").select("*").order("name"),
-      supabase.from("contributions").select("*").order("contribution_date", { ascending: false }),
-      supabase.from("investment_shares").select("*"),
-      supabase.from("customer_projects").select("id, project_name").order("project_name"),
+      backend.from("investments").select("*").order("created_at", { ascending: false }),
+      backend.from("investors").select("*").order("name"),
+      backend.from("investment_categories").select("*").order("name"),
+      backend.from("contributions").select("*").order("contribution_date", { ascending: false }),
+      backend.from("investment_shares").select("*"),
+      backend.from("customer_projects").select("id, project_name").order("project_name"),
     ]);
     setInvestments(invRes.data || []);
     setInvestors(invtRes.data || []);
@@ -106,11 +106,11 @@ const AdminInvestment = () => {
     if (!investorForm.name.trim()) { toast.error("Name is required"); return; }
     const payload = { name: investorForm.name, email: investorForm.email || null, phone: investorForm.phone || null, avatar_color: investorForm.avatar_color };
     if (investorEditing) {
-      const { error } = await supabase.from("investors").update(payload).eq("id", investorEditing.id);
+      const { error } = await backend.from("investors").update(payload).eq("id", investorEditing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Investor updated");
     } else {
-      const { error } = await supabase.from("investors").insert(payload);
+      const { error } = await backend.from("investors").insert(payload);
       if (error) { toast.error(error.message); return; }
       toast.success("Investor added");
     }
@@ -122,11 +122,11 @@ const AdminInvestment = () => {
   const saveCategory = async () => {
     if (!categoryForm.name.trim()) { toast.error("Name is required"); return; }
     if (categoryEditing) {
-      const { error } = await supabase.from("investment_categories").update({ name: categoryForm.name, color: categoryForm.color }).eq("id", categoryEditing.id);
+      const { error } = await backend.from("investment_categories").update({ name: categoryForm.name, color: categoryForm.color }).eq("id", categoryEditing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Category updated");
     } else {
-      const { error } = await supabase.from("investment_categories").insert({ name: categoryForm.name, color: categoryForm.color });
+      const { error } = await backend.from("investment_categories").insert({ name: categoryForm.name, color: categoryForm.color });
       if (error) { toast.error(error.message); return; }
       toast.success("Category created");
     }
@@ -139,11 +139,11 @@ const AdminInvestment = () => {
     if (!investmentForm.name.trim()) { toast.error("Name is required"); return; }
     const payload = { name: investmentForm.name, description: investmentForm.description || null, total_capital: Number(investmentForm.total_capital) || 0, status: investmentForm.status };
     if (investmentEditing) {
-      const { error } = await supabase.from("investments").update(payload).eq("id", investmentEditing.id);
+      const { error } = await backend.from("investments").update(payload).eq("id", investmentEditing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Investment updated");
     } else {
-      const { error } = await supabase.from("investments").insert(payload);
+      const { error } = await backend.from("investments").insert(payload);
       if (error) { toast.error(error.message); return; }
       toast.success("Investment created");
     }
@@ -161,11 +161,11 @@ const AdminInvestment = () => {
     if (!capitalForm.investment_id || !capitalForm.investor_id) { toast.error("Investment and Investor are required"); return; }
     const payload = { investment_id: capitalForm.investment_id, investor_id: capitalForm.investor_id, share_percent: Number(capitalForm.share_percent) || 0, capital_amount: Number(capitalForm.capital_amount) || 0 };
     if (capitalEditing) {
-      const { error } = await supabase.from("investment_shares").update(payload).eq("id", capitalEditing.id);
+      const { error } = await backend.from("investment_shares").update(payload).eq("id", capitalEditing.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Capital updated");
     } else {
-      const { error } = await supabase.from("investment_shares").insert(payload);
+      const { error } = await backend.from("investment_shares").insert(payload);
       if (error) { toast.error(error.message); return; }
       toast.success("Capital added");
     }
@@ -176,7 +176,7 @@ const AdminInvestment = () => {
       title: "Delete this share?",
       description: "This will remove the investor's capital allocation for this investment.",
       action: async () => {
-        const { error } = await supabase.from("investment_shares").delete().eq("id", id);
+        const { error } = await backend.from("investment_shares").delete().eq("id", id);
         if (error) {
           toast.error(error.message);
           return;
@@ -205,14 +205,14 @@ const AdminInvestment = () => {
       setUploadingImage(true);
       const ext = contribImageFile.name.split(".").pop();
       const path = `contributions/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("company-assets").upload(path, contribImageFile);
+      const { error: upErr } = await backend.storage.from("company-assets").upload(path, contribImageFile);
       setUploadingImage(false);
       if (upErr) { toast.error("Image upload failed: " + upErr.message); return; }
-      const { data: urlData } = supabase.storage.from("company-assets").getPublicUrl(path);
+      const { data: urlData } = backend.storage.from("company-assets").getPublicUrl(path);
       slip_url = urlData.publicUrl;
     }
 
-    const { error } = await supabase.from("contributions").insert({
+    const { error } = await backend.from("contributions").insert({
       investment_id: contribForm.investment_id, investor_id: contribForm.investor_id,
       category_id: contribForm.category_id || null, amount: Number(contribForm.amount) || 0,
       contribution_date: contribForm.contribution_date, note: contribForm.note || null,
@@ -225,7 +225,7 @@ const AdminInvestment = () => {
       title: "Delete this contribution?",
       description: "This will permanently remove the contribution record.",
       action: async () => {
-        const { error } = await supabase.from("contributions").delete().eq("id", id);
+        const { error } = await backend.from("contributions").delete().eq("id", id);
         if (error) {
           toast.error(error.message);
           return;
@@ -700,9 +700,9 @@ const AdminInvestment = () => {
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Project</label>
+              <label className="text-sm font-medium text-foreground">Property</label>
               <Select value={contribForm.project_id} onValueChange={(v) => setContribForm({ ...contribForm, project_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Select project (optional)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select property (optional)" /></SelectTrigger>
                 <SelectContent>{customerProjects.map((p) => <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>)}</SelectContent>
               </Select>
             </div>

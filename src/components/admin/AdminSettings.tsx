@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -63,7 +63,7 @@ const AdminSettings = () => {
   useEffect(() => { fetchSettings(); }, []);
 
   const fetchSettings = async () => {
-    const { data } = await supabase.from("site_settings").select("*");
+    const { data } = await backend.from("site_settings").select("*");
     if (data) {
       const map: SettingsMap = {};
       data.forEach((r: any) => { map[r.setting_key] = r.setting_value; });
@@ -74,7 +74,7 @@ const AdminSettings = () => {
 
   const saveSetting = async (key: string, value: Record<string, any>) => {
     setSaving(true);
-    const { error } = await supabase.from("site_settings").upsert(
+    const { error } = await backend.from("site_settings").upsert(
       { setting_key: key, setting_value: value },
       { onConflict: "setting_key" }
     );
@@ -88,10 +88,10 @@ const AdminSettings = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `${path}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("company-assets").upload(filePath, file);
+    const { error } = await backend.storage.from("company-assets").upload(filePath, file);
     setUploading(false);
     if (error) { toast.error("Upload failed"); return null; }
-    const { data: pub } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+    const { data: pub } = backend.storage.from("company-assets").getPublicUrl(filePath);
     return pub.publicUrl;
   };
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { ClipboardList, Plus, Loader2, X, Save, Trash2, Calendar, Percent } from "lucide-react";
 import { motion } from "framer-motion";
@@ -41,8 +41,8 @@ const AdminWorkUpdates = () => {
 
   const fetchData = async () => {
     const [updRes, projRes] = await Promise.all([
-      supabase.from("work_updates").select("*").order("update_date", { ascending: false }),
-      supabase.from("customer_projects").select("id, project_name").order("project_name"),
+      backend.from("work_updates").select("*").order("update_date", { ascending: false }),
+      backend.from("customer_projects").select("id, project_name").order("project_name"),
     ]);
 
     const projMap: Record<string, string> = {};
@@ -91,9 +91,9 @@ const AdminWorkUpdates = () => {
 
     let error;
     if (editId) {
-      ({ error } = await supabase.from("work_updates").update(payload).eq("id", editId));
+      ({ error } = await backend.from("work_updates").update(payload).eq("id", editId));
     } else {
-      ({ error } = await supabase.from("work_updates").insert(payload));
+      ({ error } = await backend.from("work_updates").insert(payload));
     }
 
     setSaving(false);
@@ -110,7 +110,7 @@ const AdminWorkUpdates = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTargetId) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("work_updates").delete().eq("id", deleteTargetId);
+    const { error } = await backend.from("work_updates").delete().eq("id", deleteTargetId);
     setDeleteLoading(false);
     if (error) {
       toast.error(error.message);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "@/components/ui/use-toast";
 import {
@@ -83,10 +83,10 @@ const AdminInvoices = () => {
 
   const fetchData = async () => {
     const [payRes, profRes, projRes, settingsRes] = await Promise.all([
-      supabase.from("payments").select("*").order("payment_date", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("customer_projects").select("id, project_name, user_id"),
-      supabase.from("site_settings").select("setting_key, setting_value").eq("setting_key", "invoice"),
+      backend.from("payments").select("*").order("payment_date", { ascending: false }),
+      backend.from("profiles").select("user_id, full_name"),
+      backend.from("customer_projects").select("id, project_name, user_id"),
+      backend.from("site_settings").select("setting_key, setting_value").eq("setting_key", "invoice"),
     ]);
 
     const profs = (profRes.data || []) as Profile[];
@@ -161,7 +161,7 @@ const AdminInvoices = () => {
     if (!slipForm.amount || Number(slipForm.amount) <= 0) { toast.error("Please enter a valid amount"); return; }
 
     setSaving(true);
-    const { error, data } = await supabase.from("payments").insert({
+    const { error, data } = await backend.from("payments").insert({
       user_id: slipForm.user_id,
       project_id: slipForm.project_id || null,
       amount: Number(slipForm.amount),
@@ -196,7 +196,7 @@ const AdminInvoices = () => {
     if (!editPayment) return;
     if (!slipForm.amount || Number(slipForm.amount) <= 0) { toast.error("Please enter a valid amount"); return; }
     setSaving(true);
-    const { error } = await supabase.from("payments").update({
+    const { error } = await backend.from("payments").update({
       user_id: slipForm.user_id,
       project_id: slipForm.project_id || null,
       amount: Number(slipForm.amount),
@@ -217,7 +217,7 @@ const AdminInvoices = () => {
   const handleDeletePayment = async () => {
     if (!deletePayment) return;
     setDeleting(true);
-    const { error } = await supabase.from("payments").delete().eq("id", deletePayment.id);
+    const { error } = await backend.from("payments").delete().eq("id", deletePayment.id);
     setDeleting(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Payment deleted successfully!");
@@ -274,7 +274,7 @@ const AdminInvoices = () => {
       <div className="relative mb-6">
         <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <Input value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search invoices by customer, reference, or project..."
+          placeholder="Search invoices by customer, reference, or property..."
           className="pl-11" />
       </div>
 
@@ -286,7 +286,7 @@ const AdminInvoices = () => {
               <tr className="border-b-2 border-primary/20 bg-muted/50">
                 <th className="text-left px-5 py-3 font-bold text-primary text-xs">Invoice #</th>
                 <th className="text-left px-5 py-3 font-bold text-primary text-xs">Customer</th>
-                <th className="text-left px-5 py-3 font-bold text-primary text-xs">Project</th>
+                <th className="text-left px-5 py-3 font-bold text-primary text-xs">Property</th>
                 <th className="text-left px-5 py-3 font-bold text-primary text-xs">Date</th>
                 <th className="text-left px-5 py-3 font-bold text-primary text-xs">Amount</th>
                 <th className="text-left px-5 py-3 font-bold text-primary text-xs">Status</th>
@@ -402,13 +402,13 @@ const AdminInvoices = () => {
                   </Select>
                 </div>
 
-                {/* Project */}
+                {/* Property */}
                 <div>
                   <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5 mb-1.5">
-                    <Building2 size={12} className="text-orange-600" /> Project
+                    <Building2 size={12} className="text-orange-600" /> Property
                   </Label>
                   <Select value={slipForm.project_id} onValueChange={v => setSlipForm({ ...slipForm, project_id: v })}>
-                    <SelectTrigger className="bg-muted/50"><SelectValue placeholder="Select project (optional)" /></SelectTrigger>
+                    <SelectTrigger className="bg-muted/50"><SelectValue placeholder="Select property (optional)" /></SelectTrigger>
                     <SelectContent>
                       {customerProjects.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.project_name}</SelectItem>
@@ -493,7 +493,7 @@ const AdminInvoices = () => {
                       </div>
                       {slipForm.project_id && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Project:</span>
+                          <span className="text-muted-foreground">Property:</span>
                           <span className="font-medium text-foreground">{projects.find(p => p.id === slipForm.project_id)?.project_name || "—"}</span>
                         </div>
                       )}
@@ -551,7 +551,7 @@ const AdminInvoices = () => {
               <div className="p-6 space-y-3">
                 {[
                   { label: "Customer", value: viewPayment.customer_name },
-                  { label: "Project", value: viewPayment.project_name },
+                  { label: "Property", value: viewPayment.project_name },
                   { label: "Amount", value: `৳${viewPayment.amount.toLocaleString()}` },
                   { label: "Date", value: new Date(viewPayment.payment_date).toLocaleDateString() },
                   { label: "Method", value: paymentMethods.find(m => m.id === viewPayment.payment_method)?.label || viewPayment.payment_method },

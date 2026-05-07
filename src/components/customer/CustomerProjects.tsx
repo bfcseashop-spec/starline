@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { HardHat, MapPin, Calendar, Loader2, Clock, CheckCircle, AlertCircle, Images, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -54,7 +54,7 @@ const CustomerProjects = () => {
     if (!user) return;
     setError(null);
     setLoading(true);
-    const { data, error: err } = await supabase
+    const { data, error: err } = await backend
       .from("customer_projects")
       .select("*")
       .eq("user_id", user.id)
@@ -75,7 +75,7 @@ const CustomerProjects = () => {
 
   const loadUpdates = async (projectId: string) => {
     if (updates[projectId]) return;
-    const { data } = await supabase
+    const { data } = await backend
       .from("work_updates")
       .select("*")
       .eq("project_id", projectId)
@@ -85,7 +85,7 @@ const CustomerProjects = () => {
 
   const loadImages = async (projectId: string) => {
     if (images[projectId]) return;
-    const { data } = await supabase
+    const { data } = await backend
       .from("project_images")
       .select("*")
       .eq("project_id", projectId)

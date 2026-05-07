@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 
 interface PaymentData {
   id: string;
@@ -58,7 +58,7 @@ const BANK_NAMES: Record<string, string> = {
 };
 
 async function fetchAllSettings() {
-  const { data } = await supabase.from("site_settings").select("setting_key, setting_value");
+  const { data } = await backend.from("site_settings").select("setting_key, setting_value");
   const map: Record<string, any> = {};
   (data || []).forEach((r: any) => { map[r.setting_key] = r.setting_value; });
   return map;
@@ -146,7 +146,7 @@ export async function generateInvoicePdf(payment: PaymentData) {
 
   const tableData = [
     ["Customer", payment.customer_name || "—"],
-    ["Project", payment.project_name || "—"],
+    ["Property", payment.project_name || "—"],
     ["Amount", `${sym}${payment.amount.toLocaleString()}`],
     ["Payment Method", payment.payment_method.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())],
     ["Status", payment.status.charAt(0).toUpperCase() + payment.status.slice(1)],

@@ -5,7 +5,7 @@ import { LogIn, Shield, User, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import starlineLogo from "@/assets/starline-logo.png";
 
 const loginSchema = z.object({
@@ -66,10 +66,10 @@ const Auth = () => {
     try {
       const {
         data: { user: authedUser },
-      } = await supabase.auth.getUser();
+      } = await backend.auth.getUser();
 
       if (authedUser) {
-        const { data, error: roleError } = await supabase
+        const { data, error: roleError } = await backend
           .from("user_roles")
           .select("role")
           .eq("user_id", authedUser.id);

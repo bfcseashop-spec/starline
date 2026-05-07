@@ -1,15 +1,29 @@
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bed, Bath, Maximize, Calendar, Car, Ruler, MapPin, Check } from "lucide-react";
+import { ArrowLeft, Bed, Bath, Maximize, Calendar, Car, Ruler, MapPin, Check, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ImageGallery from "@/components/ImageGallery";
 import ContactForm from "@/components/ContactForm";
-import { getPropertyBySlug } from "@/data/properties";
+import { properties as fallbackProperties } from "@/data/properties";
+import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
 
 const PropertyDetail = () => {
   const { slug } = useParams<{ slug: string }>();
-  const property = getPropertyBySlug(slug || "");
+  const { data: catalog, isPending } = usePropertyCatalog();
+  const property = useMemo(() => {
+    const list = catalog ?? fallbackProperties;
+    return list.find((p) => p.slug === slug);
+  }, [catalog, slug]);
+
+  if (isPending && !catalog) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-gold opacity-70" aria-label="Loading" />
+      </div>
+    );
+  }
 
   if (!property) {
     return (

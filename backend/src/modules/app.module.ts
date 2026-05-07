@@ -6,6 +6,7 @@ import { AuthController } from "./auth.controller";
 import { DataController } from "./data.controller";
 import { StorageController } from "./storage.controller";
 import { FunctionsController } from "./functions.controller";
+import { SocialModule } from "./social/social.module";
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { FunctionsController } from "./functions.controller";
       secret: process.env.JWT_SECRET || "starline-secret",
       signOptions: { expiresIn: "7d" },
     }),
+    SocialModule,
   ],
   controllers: [AuthController, DataController, StorageController, FunctionsController],
   providers: [DatabaseService, AuthService],

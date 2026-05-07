@@ -1,11 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
-import { properties } from "@/data/properties";
+import { getDefaultHeroSlides } from "@/lib/defaultHeroSlides";
 
 interface Props {
   bannerTitle?: string;
   bannerSubtitle?: string;
+  /** URLs for the rotating hero backgrounds (managed in Admin → Hero Section) */
+  heroSlideUrls?: string[];
+  /** Legacy single banner; shows as first slide if heroSlideUrls empty */
+  bannerImageUrl?: string;
   badgeText?: string;
   showBadge?: boolean;
   ctaPrimaryText?: string;
@@ -22,6 +26,8 @@ interface Props {
 const HeroSection = ({
   bannerTitle,
   bannerSubtitle,
+  heroSlideUrls,
+  bannerImageUrl,
   badgeText = "Trusted Since 2010",
   showBadge = true,
   ctaPrimaryText = "Explore Properties",
@@ -42,10 +48,15 @@ const HeroSection = ({
     return href;
   };
 
-  const slides = useMemo(
-    () => Array.from(new Set(properties.map((p) => p.images?.[0]).filter(Boolean))).slice(0, 5),
-    [],
-  );
+  const defaultSlides = useMemo(() => getDefaultHeroSlides(5), []);
+
+  const slides = useMemo(() => {
+    const fromAdmin = (heroSlideUrls || []).map((u) => u.trim()).filter(Boolean);
+    if (fromAdmin.length > 0) return Array.from(new Set(fromAdmin));
+    const legacy = bannerImageUrl?.trim();
+    if (legacy) return [legacy];
+    return defaultSlides;
+  }, [heroSlideUrls, bannerImageUrl, defaultSlides]);
   const title = bannerTitle || "Building Dreams, Crafting Futures";
   const subtitle = bannerSubtitle || "Premium construction and real estate services by Starline Builder's Ltd. We build more than structures — we create lasting legacies.";
 

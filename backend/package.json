@@ -8,6 +8,6 @@
     "start": "node dist/main.js",
     "db:init": "ts-node scripts/init-db.ts",
     "seed:admin": "ts-node scripts/seed-admin.ts",
-    "import:supabase": "ts-node scripts/import-supabase-json.ts"
+    "import:data": "ts-node scripts/import-data-export.ts"
   }
 }

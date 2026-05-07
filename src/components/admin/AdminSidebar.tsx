@@ -22,7 +22,7 @@ const navSections: NavSection[] = [
     items: [
       { id: "dashboard", icon: LayoutDashboard, label: "Dashboard", gradient: "bg-dash-blue" },
       { id: "customers", icon: Users, label: "Customers", gradient: "bg-dash-green" },
-      { id: "projects", icon: Home, label: "Projects", gradient: "bg-dash-orange" },
+      { id: "projects", icon: Home, label: "Properties", gradient: "bg-dash-orange" },
     ],
   },
   {
@@ -39,7 +39,7 @@ const navSections: NavSection[] = [
   {
     title: "Content",
     items: [
-      { id: "images", icon: Images, label: "Project Images", gradient: "bg-dash-purple" },
+      { id: "images", icon: Images, label: "Property Images", gradient: "bg-dash-purple" },
       { id: "work_updates", icon: ClipboardList, label: "Work Updates", gradient: "bg-dash-teal" },
       { id: "documents", icon: FolderOpen, label: "Documents", gradient: "bg-dash-pink" },
       { id: "social_media", icon: Share2, label: "Social Media", gradient: "bg-dash-blue" },

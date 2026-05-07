@@ -10,12 +10,11 @@
     "api:start": "npm run start --prefix backend",
     "db:init": "npm run db:init --prefix backend",
     "admin:seed": "npm run seed:admin --prefix backend",
-    "import:supabase": "npm run import:supabase --prefix backend",
+    "import:data": "npm run import:data --prefix backend",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "admin:upsert": "node scripts/upsert-admin.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

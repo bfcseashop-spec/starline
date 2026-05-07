@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { Save, Loader2, User, Phone, Mail, MapPin, Building2, Ruler } from "lucide-react";
 
@@ -21,8 +21,8 @@ const CustomerProfile = () => {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase.from("profiles").select("full_name, phone, address").eq("user_id", user.id).maybeSingle(),
-      supabase.from("customer_projects").select("project_name, total_amount, location, status").eq("user_id", user.id),
+      backend.from("profiles").select("full_name, phone, address").eq("user_id", user.id).maybeSingle(),
+      backend.from("customer_projects").select("project_name, total_amount, location, status").eq("user_id", user.id),
     ]).then(([profileRes, projectsRes]) => {
       if (profileRes.data) setForm({ full_name: profileRes.data.full_name || "", phone: profileRes.data.phone || "", address: profileRes.data.address || "" });
       setProjects((projectsRes.data as ProjectSummary[]) || []);
@@ -38,7 +38,7 @@ const CustomerProfile = () => {
     if (form.address && form.address.length > 500) { toast.error("Address too long"); return; }
 
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await backend
       .from("profiles")
       .update({ full_name: form.full_name.trim(), phone: form.phone.trim(), address: form.address.trim() })
       .eq("user_id", user.id);

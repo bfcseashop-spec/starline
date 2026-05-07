@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { FileText, Loader2, Download, File, FileCheck, FileSpreadsheet } from "lucide-react";
 
 interface Document {
@@ -30,7 +30,7 @@ const CustomerDocuments = () => {
     if (!user) return;
     setError(null);
     setLoading(true);
-    const { data, error: err } = await supabase
+    const { data, error: err } = await backend
       .from("documents")
       .select("*")
       .eq("user_id", user.id)

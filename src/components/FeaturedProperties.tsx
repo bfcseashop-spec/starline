@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Bed, Bath, Maximize, ArrowRight } from "lucide-react";
+import { Bed, Bath, Maximize, ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { properties } from "@/data/properties";
+import { properties as fallbackProperties } from "@/data/properties";
+import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
 import type { Filters } from "./PropertySearch";
 
 const priceFilter = (priceNum: number, range: string) => {
@@ -26,7 +27,9 @@ interface Props {
 }
 
 const FeaturedProperties = ({ filters }: Props) => {
-  const filtered = properties.filter((p) => {
+  const { data: catalog, isPending } = usePropertyCatalog();
+  const source = catalog ?? fallbackProperties;
+  const filtered = source.filter((p) => {
     if (filters.location !== "All Locations" && p.location !== filters.location) return false;
     if (filters.propertyType !== "All Types" && p.type !== filters.propertyType) return false;
     if (!bedsFilter(p.beds, filters.bedrooms)) return false;
@@ -49,7 +52,11 @@ const FeaturedProperties = ({ filters }: Props) => {
         </motion.div>
 
         <AnimatePresence mode="wait">
-          {filtered.length > 0 ? (
+          {isPending && !catalog ? (
+            <div key="loading" className="flex justify-center py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-gold opacity-70" aria-hidden />
+            </div>
+          ) : filtered.length > 0 ? (
             <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid md:grid-cols-3 gap-5 md:gap-8">
               {filtered.map((property, i) => (
                 <motion.article

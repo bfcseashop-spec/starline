@@ -1,3 +1,8 @@
+/**
+ * Import table JSON dumps into PostgreSQL (e.g. from a prior CSV/JSON export).
+ * Place files as `<DATA_EXPORT_DIR>/<table>.json` (array of row objects).
+ * Env: DATA_EXPORT_DIR (default: `./data-export` next to cwd — use `backend/data-export` when you run via `npm run import:data`).
+ */
 import fs from "node:fs";
 import path from "node:path";
 import { Client } from "pg";
@@ -22,7 +27,7 @@ const tables = [
 ];
 
 async function main() {
-  const sourceDir = process.env.SUPABASE_EXPORT_DIR || path.resolve(process.cwd(), "backend/data-export");
+  const sourceDir = process.env.DATA_EXPORT_DIR || path.resolve(process.cwd(), "data-export");
   const client = new Client({
     host: process.env.PGHOST || "localhost",
     port: Number(process.env.PGPORT || 5432),

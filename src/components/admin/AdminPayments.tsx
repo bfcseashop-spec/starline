@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { toast } from "@/components/ui/use-toast";
-import { withMutationToast } from "@/lib/supabase-helpers";
+import { withMutationToast } from "@/lib/mutationToast";
 import {
   CreditCard, Plus, Loader2, Save, X, Eye, Pencil, Trash2, Printer,
   Search, ChevronDown, DollarSign, Upload, Image,
@@ -90,10 +90,10 @@ const AdminPayments = () => {
 
   const fetchData = async () => {
     const [payRes, profRes, projRes, rolesRes] = await Promise.all([
-      supabase.from("payments").select("*").order("payment_date", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("customer_projects").select("id, project_name, user_id"),
-      supabase.from("user_roles").select("user_id, role").eq("role", "customer"),
+      backend.from("payments").select("*").order("payment_date", { ascending: false }),
+      backend.from("profiles").select("user_id, full_name"),
+      backend.from("customer_projects").select("id, project_name, user_id"),
+      backend.from("user_roles").select("user_id, role").eq("role", "customer"),
     ]);
 
     const custIds = new Set((rolesRes.data || []).map((r) => r.user_id));
@@ -140,9 +140,9 @@ const AdminPayments = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from("payment-images").upload(path, file);
+    const { error } = await backend.storage.from("payment-images").upload(path, file);
     if (error) { toast.error("Upload failed: " + error.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("payment-images").getPublicUrl(path);
+    const { data: urlData } = backend.storage.from("payment-images").getPublicUrl(path);
     setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
     setUploading(false);
     toast.success("Image uploaded!");
@@ -187,19 +187,19 @@ const AdminPayments = () => {
     const ok = await withMutationToast(
       async () => {
         const result = editId
-          ? await supabase.from("payments").update(payload).eq("id", editId)
-          : await supabase.from("payments").insert(payload);
+          ? await backend.from("payments").update(payload).eq("id", editId)
+          : await backend.from("payments").insert(payload);
 
         // Best-effort project paid_amount update on newly completed payments
         if (!editId && !result.error && form.project_id && form.status === "completed") {
-          const { data: proj } = await supabase
+          const { data: proj } = await backend
             .from("customer_projects")
             .select("paid_amount")
             .eq("id", form.project_id)
             .maybeSingle();
 
           if (proj) {
-            await supabase
+            await backend
               .from("customer_projects")
               .update({ paid_amount: Number(proj.paid_amount) + Number(form.amount) })
               .eq("id", form.project_id);
@@ -225,7 +225,7 @@ const AdminPayments = () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
     const ok = await withMutationToast(
-      () => supabase.from("payments").delete().eq("id", deleteTarget.id),
+      () => backend.from("payments").delete().eq("id", deleteTarget.id),
       { successMessage: "Payment deleted" },
     );
     setDeleteLoading(false);

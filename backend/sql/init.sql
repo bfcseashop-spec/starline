@@ -175,3 +175,73 @@ CREATE TABLE IF NOT EXISTS investment_shares (
   amount NUMERIC DEFAULT 0,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Social broadcasting (one post -> many platforms)
+
+CREATE TABLE IF NOT EXISTS social_connections (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  platform TEXT NOT NULL,
+  account_label TEXT,
+  account_external_id TEXT,
+  credentials_enc TEXT,
+  meta JSONB DEFAULT '{}'::jsonb,
+  status TEXT DEFAULT 'active',
+  expires_at TIMESTAMP,
+  last_error TEXT,
+  last_used_at TIMESTAMP,
+  created_by UUID,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS social_connections_platform_idx ON social_connections(platform);
+CREATE INDEX IF NOT EXISTS social_connections_status_idx ON social_connections(status);
+
+CREATE TABLE IF NOT EXISTS social_broadcasts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  content TEXT,
+  image_url TEXT,
+  video_url TEXT,
+  link TEXT,
+  scheduled_at TIMESTAMP,
+  status TEXT DEFAULT 'pending',
+  created_by UUID,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS social_broadcasts_status_idx ON social_broadcasts(status);
+CREATE INDEX IF NOT EXISTS social_broadcasts_scheduled_idx ON social_broadcasts(scheduled_at);
+
+CREATE TABLE IF NOT EXISTS social_broadcast_targets (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  broadcast_id UUID NOT NULL,
+  connection_id UUID,
+  platform TEXT NOT NULL,
+  status TEXT DEFAULT 'pending',
+  external_id TEXT,
+  external_url TEXT,
+  error_message TEXT,
+  attempts INTEGER DEFAULT 0,
+  scheduled_at TIMESTAMP,
+  published_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS sbt_broadcast_idx ON social_broadcast_targets(broadcast_id);
+CREATE INDEX IF NOT EXISTS sbt_status_idx ON social_broadcast_targets(status);
+CREATE INDEX IF NOT EXISTS sbt_scheduled_idx ON social_broadcast_targets(scheduled_at);
+
+CREATE TABLE IF NOT EXISTS social_audit_log (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  connection_id UUID,
+  platform TEXT,
+  event TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  actor_id UUID,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS sal_connection_idx ON social_audit_log(connection_id);
+
+-- Optional override for public featured portfolio (JSON: { "items": Property[] }). Empty array = app uses built-in catalog.
+INSERT INTO site_settings (setting_key, setting_value)
+SELECT 'marketing_properties', '{"items":[]}'::jsonb
+WHERE NOT EXISTS (SELECT 1 FROM site_settings WHERE setting_key = 'marketing_properties');

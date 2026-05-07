@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 
 export interface SystemSettings {
   banner_title: string;
   banner_subtitle: string;
   banner_image_url: string;
+  /** Managed hero carousel image URLs (empty = use defaults on frontend) */
+  hero_slide_urls?: string[];
   primary_color: string;
   accent_color: string;
   theme: string;
@@ -111,6 +113,7 @@ const DEFAULT_SYSTEM: SystemSettings = {
   banner_title: "",
   banner_subtitle: "",
   banner_image_url: "",
+  hero_slide_urls: [],
   primary_color: "#c9a55a",
   accent_color: "#1a1a2e",
   theme: "dark",
@@ -154,7 +157,7 @@ export const useSiteSettings = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase.from("site_settings").select("setting_key, setting_value");
+      const { data } = await backend.from("site_settings").select("setting_key, setting_value");
       if (data) {
         data.forEach((r: any) => {
           if (r.setting_key === "system") setSystem({ ...DEFAULT_SYSTEM, ...r.setting_value });

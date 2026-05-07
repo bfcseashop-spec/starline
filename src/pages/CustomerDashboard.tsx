@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { HardHat, CreditCard, FileText, User, Clock, ChevronRight, Wallet, BadgeDollarSign, TrendingDown, CalendarClock, Banknote, ArrowUpRight, Megaphone, Wrench, Sun, Moon } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -95,7 +95,7 @@ const OverviewTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
     if (!user) return;
     setFetchError(null);
     setLoadingFinancials(true);
-    const { data, error } = await supabase
+    const { data, error } = await backend
       .from("customer_projects")
       .select("total_amount, paid_amount, monthly_installment")
       .eq("user_id", user.id);
@@ -246,7 +246,7 @@ const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
     if (!user) return;
     setError(null);
     setLoading(true);
-    const { data: projects, error: projErr } = await supabase
+    const { data: projects, error: projErr } = await backend
       .from("customer_projects")
       .select("total_amount, paid_amount")
       .eq("user_id", user.id);
@@ -264,7 +264,7 @@ const HomeTab = ({ onNavigate }: { onNavigate: (tab: Tab) => void }) => {
       setBalance({ ...totals, remaining: totals.total - totals.paid });
     }
 
-    const { data: payments } = await supabase
+    const { data: payments } = await backend
       .from("payments")
       .select("*")
       .eq("user_id", user.id)

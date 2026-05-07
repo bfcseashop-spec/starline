@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { useAuth } from "@/hooks/useAuth";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -59,8 +59,8 @@ const AdminBankStatement = () => {
     const fetchData = async () => {
       setLoading(true);
       const [payRes, profRes] = await Promise.all([
-        supabase.from("payments").select("*").gte("payment_date", dateFrom).lte("payment_date", dateTo).eq("status", "completed").order("payment_date", { ascending: false }),
-        supabase.from("profiles").select("user_id, full_name"),
+        backend.from("payments").select("*").gte("payment_date", dateFrom).lte("payment_date", dateTo).eq("status", "completed").order("payment_date", { ascending: false }),
+        backend.from("profiles").select("user_id, full_name"),
       ]);
       const nameMap: Record<string, string> = {};
       (profRes.data || []).forEach((p) => { nameMap[p.user_id] = p.full_name || "Unnamed"; });
@@ -98,7 +98,7 @@ const AdminBankStatement = () => {
   const handleManualSave = async () => {
     if (!manualForm.amount) { toast.error("Amount is required"); return; }
     setSaving(true);
-    const { error } = await supabase.from("payments").insert({
+    const { error } = await backend.from("payments").insert({
       user_id: user?.id || "",
       amount: Number(manualForm.amount),
       payment_method: manualForm.payment_method,

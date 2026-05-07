@@ -13,16 +13,15 @@ const PROJECT_IMAGES = {
   ongoing: {
     towerOne: "/properties/starline-tower-one/1.png",
     neeraloyVilla: "/properties/starline-neeraloy-villa/01.png",
-    tower: "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg",
+    tower: "/properties/starline-tower-one/02.png",
     shantiNiketon: "/properties/starline-shanti-niketon/01.png",
   },
   upcoming: {
-    eastSenpara: "https://wellassetgroup.com/uploads/backend/images/projects/916057683.jpeg",
-    eastShawraPara: "https://wellassetgroup.com/uploads/backend/images/projects/1286103583.jpeg",
-    uttara: "https://wellassetgroup.com/uploads/backend/images/projects/647424063.jpeg",
+    eastSenpara: "/properties/starline-tower-one/1.png",
+    eastShawraPara: "/properties/starline-neeraloy-villa/02.png",
+    uttara: "/properties/starline-tower-one/03.png",
   },
-  handoverFallback:
-    "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
+  handoverFallback: "/properties/starline-shanti-niketon/02.png",
 } as const;
 
 export interface AboutContentSection {
@@ -53,15 +52,15 @@ export const aboutContent: AboutPageContent = {
     {
       title: "Our Story",
       body:
-        "Housing shapes how people live, work and build a future for their families. Our journey began with a simple question: what truly makes a home feel secure, inviting and long‑lasting? The answer lies in getting every detail right—from planning and approvals to design, materials and after‑handover service. Today, Starline Builder's Ltd. brings together experienced professionals who have delivered numerous successful apartment projects in Dhaka, always with a commitment to integrity and on‑time handover.",
+        "Housing shapes how people live, work and build a future for their families. Our journey began with a simple question: what truly makes a home feel secure, inviting and long‑lasting? The answer lies in getting every detail right—from planning and approvals to design, materials and after‑handover service. Today, Starline Builder's Ltd. brings together experienced professionals who have delivered numerous successful apartment properties in Dhaka, always with a commitment to integrity and on‑time handover.",
     },
     {
       title: "The Challenge We Embrace",
       body:
-        "Developing a home is like solving a complex puzzle. Beautiful visuals alone are not enough; the structure must be safe, practical and comfortable. Our teams continuously balance design, engineering and budget so that each project finds the right harmony between aesthetics and function. From soil tests and structural design to ventilation, light and common‑area planning, we aim to deliver apartments that feel generous, livable and future‑ready.",
+        "Developing a home is like solving a complex puzzle. Beautiful visuals alone are not enough; the structure must be safe, practical and comfortable. Our teams continuously balance design, engineering and budget so that each development finds the right harmony between aesthetics and function. From soil tests and structural design to ventilation, light and common‑area planning, we aim to deliver apartments that feel generous, livable and future‑ready.",
     },
     {
-      title: "People Behind the Projects",
+      title: "People Behind Starline Properties",
       body:
         "Behind every Starline building is a coordinated team of architects, structural engineers, electrical and plumbing consultants, interior specialists, site supervisors and skilled construction workers. Many of them have decades of experience in the country’s leading developments. Their combined expertise allows us to offer a variety of layouts and finishes while keeping quality consistent from foundation to finishing.",
     },
@@ -168,7 +167,7 @@ export const upcomingProjects: ProjectSummary[] = [
     slug: "starline-uttara-vista",
     address: "Uttara",
     city: "Dhaka",
-    notes: "Future premium project in a fast‑growing urban hub of the capital.",
+    notes: "Future premium property in a fast‑growing urban hub of the capital.",
     image: PROJECT_IMAGES.upcoming.uttara,
   },
 ];
@@ -195,7 +194,7 @@ export const ongoingProjects: ProjectSummary[] = [
     slug: "starline-shanti-niketon",
     address: "Kazipara, Mirpur",
     city: "Dhaka 1216",
-    notes: "Community‑oriented project designed for everyday comfort.",
+    notes: "Community‑oriented residence designed for everyday comfort.",
     image: PROJECT_IMAGES.ongoing.shantiNiketon,
   },
 ];

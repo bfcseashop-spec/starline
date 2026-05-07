@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { Loader2, BarChart3, TrendingUp, TrendingDown, Calendar, DollarSign, Users, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -18,10 +18,10 @@ const AdminReports = () => {
     const fetchData = async () => {
       setLoading(true);
       const [payRes, expRes, custRes, projRes] = await Promise.all([
-        supabase.from("payments").select("amount, payment_date, status, payment_method").eq("status", "completed"),
-        supabase.from("expenses").select("amount, expense_date, category, status").eq("status", "approved"),
-        supabase.from("user_roles").select("id").eq("role", "customer"),
-        supabase.from("customer_projects").select("id"),
+        backend.from("payments").select("amount, payment_date, status, payment_method").eq("status", "completed"),
+        backend.from("expenses").select("amount, expense_date, category, status").eq("status", "approved"),
+        backend.from("user_roles").select("id").eq("role", "customer"),
+        backend.from("customer_projects").select("id"),
       ]);
       setPayments(payRes.data || []);
       setExpenses(expRes.data || []);

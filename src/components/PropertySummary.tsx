@@ -1,40 +1,26 @@
 import { motion } from "framer-motion";
 import { Building2, Tag, Key, MapPin } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { properties } from "@/data/properties";
+import { useMemo } from "react";
+import { properties as fallbackCatalog } from "@/data/properties";
+import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
 
 const PropertySummary = () => {
-  const { data } = useQuery({
-    queryKey: ["property-summary"],
-    queryFn: async () => {
-      const { data: projects, error } = await supabase.from("customer_projects").select("status, location");
-      if (error || !projects || projects.length === 0) {
-        const total = properties.length;
-        const forSale = properties.filter((p) => p.type !== "Handover").length;
-        const forRent = 0;
-        const cities = new Set(properties.map((p) => p.location.split(",").slice(-1)[0]?.trim()).filter(Boolean)).size;
-        return { total, forSale, forRent, cities };
-      }
-
-      const total = projects.length;
-      const forSale = projects.filter((p) => p.status === "completed" || p.status === "for_sale" || p.status === "in_progress").length;
-      const forRent = projects.filter((p) => p.status === "for_rent").length;
-      const cities = new Set(
-        projects
-          .map((p) => p.location?.split(",").slice(-1)[0]?.trim())
-          .filter(Boolean),
-      ).size;
-      return { total, forSale, forRent, cities };
-    },
-  });
+  const { data: catalog } = usePropertyCatalog();
+  const counts = useMemo(() => {
+    const list = catalog ?? fallbackCatalog;
+    const total = list.length;
+    const active = list.filter((p) => p.type === "Ongoing" || p.type === "Upcoming").length;
+    const sold = list.filter((p) => p.type === "Handed-over").length;
+    const cities = new Set(list.map((p) => p.location.split(",").slice(-1)[0]?.trim()).filter(Boolean)).size;
+    return { total, active, sold, cities };
+  }, [catalog]);
 
   const items = [
-    { icon: Building2, value: String(data?.total ?? 0), label: "Total Properties", gradient: "bg-dash-blue", to: "/properties/ongoing" },
-    { icon: Tag, value: String(data?.forSale ?? 0), label: "For Sale", gradient: "bg-dash-green", to: "/properties/ongoing" },
-    { icon: Key, value: String(data?.forRent ?? 0), label: "For Rent", gradient: "bg-dash-orange", to: "/properties/handover" },
-    { icon: MapPin, value: String(data?.cities ?? 0), label: "Cities", gradient: "bg-dash-purple", to: "/properties/upcoming" },
+    { icon: Building2, value: String(counts.total), label: "Total Properties", gradient: "bg-dash-blue", to: "/properties/ongoing" },
+    { icon: Tag, value: String(counts.active), label: "Active", gradient: "bg-dash-green", to: "/properties/ongoing" },
+    { icon: Key, value: String(counts.sold), label: "Handover", gradient: "bg-dash-orange", to: "/properties/handover" },
+    { icon: MapPin, value: String(counts.cities), label: "Areas", gradient: "bg-dash-purple", to: "/properties/upcoming" },
   ];
 
   return (

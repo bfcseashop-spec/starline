@@ -1,10 +1,11 @@
-const towerOneImage = "https://wellassetgroup.com/uploads/backend/images/projects/2103092219.jpg";
-const neeraloyImage = "https://wellassetgroup.com/uploads/backend/images/projects/631571038.jpg";
-const towerImage = "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg";
-const shantiNiketonImage = "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg";
-const upcomingSenparaImage = "https://wellassetgroup.com/uploads/backend/images/projects/916057683.jpeg";
-const upcomingShawraImage = "https://wellassetgroup.com/uploads/backend/images/projects/1286103583.jpeg";
-const upcomingUttaraImage = "https://wellassetgroup.com/uploads/backend/images/projects/647424063.jpeg";
+const fallbackImg = "/properties/starline-tower-one/1.png";
+const towerOneImage = fallbackImg;
+const neeraloyImage = "/properties/starline-neeraloy-villa/01.png";
+const towerImage = "/properties/starline-tower-one/1.png";
+const shantiNiketonImage = "/properties/starline-shanti-niketon/01.png";
+const upcomingSenparaImage = fallbackImg;
+const upcomingShawraImage = "/properties/starline-neeraloy-villa/02.png";
+const upcomingUttaraImage = "/properties/starline-tower-one/02.png";
 
 export interface Property {
   id: number;
@@ -80,7 +81,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "4.5 katha",
     description:
-      "Starline Tower - 1 is a contemporary residential development at Sector-11, Avenue 5, Mirpur 11, Dhaka. The project focuses on efficient apartment layouts, practical circulation, and quality materials to ensure long-term comfort for urban families.",
+      "Starline Tower - 1 is a contemporary residential development at Sector-11, Avenue 5, Mirpur 11, Dhaka. The property focuses on efficient apartment layouts, practical circulation, and quality materials to ensure long-term comfort for urban families.",
     amenities: [
       "Modern Lift",
       "Generator Backup",
@@ -107,7 +108,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "2.5 katha",
     description:
-      "Starline Niraloy Villa delivers comfortable city living with practical planning for family use. Located in Shekhertek, Mohammadpur, the project combines modern architecture with thoughtful natural light and ventilation strategies.",
+      "Starline Niraloy Villa delivers comfortable city living with practical planning for family use. Located in Shekhertek, Mohammadpur, the development combines modern architecture with thoughtful natural light and ventilation strategies.",
     amenities: [
       "Contemporary Facade",
       "Functional Balcony Layouts",
@@ -180,7 +181,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "2.5 katha",
     description:
-      "Starline Nur Hosen Villa is a completed project in Mirpur, delivered with a quality finish and reliable post-handover support.",
+      "Starline Nur Hosen Villa is a completed development in Mirpur, delivered with a quality finish and reliable post-handover support.",
     amenities: ["Completed Handover", "Lift", "Generator Backup", "Functional Layout", "Community Location"],
   },
   {
@@ -200,7 +201,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "2.5 katha",
     description:
-      "Starline Sarkar Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
+      "Starline Sarkar Villa is a completed handed-over property in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
     amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
   },
   {
@@ -220,7 +221,7 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "2.5 katha",
     description:
-      "Starline Monoara Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and practical layouts.",
+      "Starline Monoara Villa is a completed handed-over property in Sector-11, Mirpur-11 with thoughtful circulation and practical layouts.",
     amenities: ["Completed Handover", "Modern Lift", "Generator", "Security", "Functional Layout"],
   },
   {
@@ -239,8 +240,8 @@ export const properties: Property[] = [
     yearBuilt: 2027,
     garage: 1,
     lotSize: "2.5 katha",
-    description: "Upcoming residential project in East Senpara, Monipur, Mirpur with modern planning and family-oriented layouts.",
-    amenities: ["Planned Project", "Family Layout", "Parking", "Lift Provision", "Utility Planning"],
+    description: "Upcoming residential property in East Senpara, Monipur, Mirpur with modern planning and family-oriented layouts.",
+    amenities: ["Planned development", "Family Layout", "Parking", "Lift Provision", "Utility Planning"],
   },
   {
     id: 9,
@@ -258,8 +259,8 @@ export const properties: Property[] = [
     yearBuilt: 2027,
     garage: 1,
     lotSize: "2.5 katha",
-    description: "Upcoming apartment project in East Shawra Para, Mirpur with efficient unit layouts and practical circulation.",
-    amenities: ["Planned Project", "Efficient Layout", "Parking", "Lift Provision", "Utility Planning"],
+    description: "Upcoming apartment building in East Shawra Para, Mirpur with efficient unit layouts and practical circulation.",
+    amenities: ["Planned development", "Efficient Layout", "Parking", "Lift Provision", "Utility Planning"],
   },
   {
     id: 10,
@@ -277,8 +278,8 @@ export const properties: Property[] = [
     yearBuilt: 2027,
     garage: 1,
     lotSize: "2.5 katha",
-    description: "Future premium project in Uttara with modern design language and practical urban living standards.",
-    amenities: ["Planned Project", "Modern Facade", "Parking", "Lift Provision", "Utility Planning"],
+    description: "Future premium address in Uttara with modern design language and practical urban living standards.",
+    amenities: ["Planned development", "Modern Facade", "Parking", "Lift Provision", "Utility Planning"],
   },
 ];
 

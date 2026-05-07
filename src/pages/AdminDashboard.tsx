@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, Search, Home, Users, DollarSign, AlertTriangle, FileText, BarChart3, Sun, Moon, Calendar, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,13 +27,15 @@ import AdminExpenses from "@/components/admin/AdminExpenses";
 import AdminHeroSection from "@/components/admin/AdminHeroSection";
 import AdminHeaderManagement from "@/components/admin/AdminHeaderManagement";
 import AdminInvestment from "@/components/admin/AdminInvestment";
+import { useQuery } from "@tanstack/react-query";
+import { backend } from "@/lib/backendClient";
 
 const pageTitle: Record<AdminPage, string> = {
   dashboard: "Dashboard",
   customers: "Customers",
-  projects: "Projects",
+  projects: "Properties",
   payments: "Payments",
-  images: "Project Images",
+  images: "Property Images",
   work_updates: "Work Updates",
   documents: "Documents",
   settings: "Settings",
@@ -208,28 +210,74 @@ const ComingSoon = ({ label }: { label: string }) => (
   </div>
 );
 
-const DashboardContent = () => (
+type DashboardOverview = {
+  customers: number;
+  propertyRecords: number;
+  revenueCollected: number;
+  outstanding: number;
+  paymentEntries: number;
+  documents: number;
+};
+
+const DashboardContent = () => {
+  const { data: overview, isPending } = useQuery({
+    queryKey: ["admin-dashboard-overview"],
+    queryFn: async (): Promise<DashboardOverview> => {
+      const [rolesRes, projRes, payRes, docRes] = await Promise.all([
+        backend.from("user_roles").select(),
+        backend.from("customer_projects").select("total_amount,paid_amount"),
+        backend.from("payments").select("amount,status"),
+        backend.from("documents").select(),
+      ]);
+
+      const roles = (rolesRes.data || []) as { role: string }[];
+      const customers = roles.filter((r) => r.role === "customer").length;
+
+      const projects = (projRes.data || []) as { total_amount: number; paid_amount: number }[];
+      const propertyRecords = projects.length;
+      const totalContract = projects.reduce((s, p) => s + Number(p.total_amount || 0), 0);
+      const paidOnProperties = projects.reduce((s, p) => s + Number(p.paid_amount || 0), 0);
+      const outstanding = Math.max(0, totalContract - paidOnProperties);
+
+      const pays = (payRes.data || []) as { amount: number; status: string }[];
+      const revenueCollected = pays
+        .filter((p) => p.status === "completed")
+        .reduce((s, p) => s + Number(p.amount || 0), 0);
+
+      const documents = Array.isArray(docRes.data) ? docRes.data.length : 0;
+
+      return {
+        customers,
+        propertyRecords,
+        revenueCollected,
+        outstanding,
+        paymentEntries: pays.length,
+        documents,
+      };
+    },
+  });
+
+  const fmt = (n: number) => `৳${Math.round(n).toLocaleString()}`;
+  const show = (n: number) => (isPending ? "…" : n);
+  const showMoney = (n: number) => (isPending ? "…" : fmt(n));
+
+  const statItems: { value: string | number; label: string; gradient: string; icon: ReactNode }[] = [
+    { value: show(overview?.customers ?? 0), label: "customers", gradient: "bg-dash-purple", icon: <Users size={18} className="text-white/80" /> },
+    { value: show(overview?.propertyRecords ?? 0), label: "properties", gradient: "bg-dash-blue", icon: <Home size={18} className="text-white/80" /> },
+    { value: showMoney(overview?.revenueCollected ?? 0), label: "revenue collected", gradient: "bg-dash-green", icon: <DollarSign size={18} className="text-white/80" /> },
+    { value: showMoney(overview?.outstanding ?? 0), label: "outstanding balance", gradient: "bg-dash-pink", icon: <AlertTriangle size={18} className="text-white/80" /> },
+    { value: show(overview?.paymentEntries ?? 0), label: "payment records", gradient: "bg-dash-orange", icon: <BarChart3 size={18} className="text-white/80" /> },
+    { value: show(overview?.documents ?? 0), label: "documents", gradient: "bg-dash-teal", icon: <FileText size={18} className="text-white/80" /> },
+  ];
+
+  return (
   <>
-    {/* Stat cards */}
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }}>
-        <StatCard value={124} label="properties" color="" gradient="bg-dash-blue" icon={<Home size={18} className="text-white/80" />} />
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-        <StatCard value={18} label="new inquiries" color="" gradient="bg-dash-orange" icon={<BarChart3 size={18} className="text-white/80" />} />
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <StatCard value="$2.4M" label="revenue" color="" gradient="bg-dash-green" icon={<DollarSign size={18} className="text-white/80" />} />
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-        <StatCard value={7} label="pending payments" color="" gradient="bg-dash-pink" icon={<AlertTriangle size={18} className="text-white/80" />} />
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <StatCard value={32} label="customers" color="" gradient="bg-dash-purple" icon={<Users size={18} className="text-white/80" />} />
-      </motion.div>
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-        <StatCard value={46} label="documents" color="" gradient="bg-dash-teal" icon={<FileText size={18} className="text-white/80" />} />
-      </motion.div>
+      {statItems.map((s, i) => (
+        <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+          <StatCard value={s.value} label={s.label} color="" gradient={s.gradient} icon={s.icon} />
+        </motion.div>
+      ))}
     </div>
 
     {/* Row 1 */}
@@ -316,6 +364,7 @@ const DashboardContent = () => (
       ]} />
     </div>
   </>
-);
+  );
+};
 
 export default AdminDashboard;

@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { CreditCard, Loader2, CheckCircle, Clock, XCircle, ArrowUpDown, Image, X } from "lucide-react";
 
 interface Payment {
@@ -48,11 +48,11 @@ const CustomerPayments = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewSlip, setViewSlip] = useState<string | null>(null);
 
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     if (!user) return;
     setError(null);
     setLoading(true);
-    const { data, error: err } = await supabase
+    const { data, error: err } = await backend
       .from("payments")
       .select("*")
       .eq("user_id", user.id)
@@ -64,26 +64,23 @@ const CustomerPayments = () => {
     }
     setPayments((data as Payment[]) || []);
     setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchPayments();
   }, [user]);
 
-  // Real-time subscription
+  useEffect(() => {
+    void fetchPayments();
+  }, [fetchPayments]);
+
+  /** No Postgres LISTEN/realtime in this stack — refresh periodically while mounted. */
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel("customer-payments")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${user.id}` },
-        () => fetchPayments()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    const id = window.setInterval(() => void fetchPayments(), 45_000);
+    const onFocus = () => void fetchPayments();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [user, fetchPayments]);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import type { ProjectSummary } from "@/data/siteContent";
 
 export type PublicPropertyCategory = "upcoming" | "ongoing" | "handover";
@@ -49,7 +49,7 @@ export const usePublicProperties = (
       setLoading(true);
 
       const statuses = STATUS_BY_CATEGORY[category];
-      const { data: projects, error } = await supabase
+      const { data: projects, error } = await backend
         .from("customer_projects")
         .select("id, project_name, location, status, building_image_url")
         .in("status", statuses)
@@ -62,7 +62,7 @@ export const usePublicProperties = (
       }
 
       const ids = projects.map((p) => p.id);
-      const { data: images } = await supabase
+      const { data: images } = await backend
         .from("project_images")
         .select("project_id, image_url, sort_order")
         .in("project_id", ids)

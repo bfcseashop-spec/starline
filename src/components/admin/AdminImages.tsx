@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { Images, Upload, Loader2, Trash2, X } from "lucide-react";
 import { motion } from "framer-motion";
@@ -24,13 +24,15 @@ const AdminImages = () => {
   const [images, setImages] = useState<ProjectImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [imageUrlDraft, setImageUrlDraft] = useState("");
+  const [addingUrl, setAddingUrl] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetch = async () => {
       const [projRes, profRes] = await Promise.all([
-        supabase.from("customer_projects").select("id, project_name, user_id").order("project_name"),
-        supabase.from("profiles").select("user_id, full_name"),
+        backend.from("customer_projects").select("id, project_name, user_id").order("project_name"),
+        backend.from("profiles").select("user_id, full_name"),
       ]);
       const nameMap: Record<string, string> = {};
       (profRes.data || []).forEach((p) => { nameMap[p.user_id] = p.full_name || "Unnamed"; });
@@ -42,7 +44,7 @@ const AdminImages = () => {
 
   useEffect(() => {
     if (!selectedProject) { setImages([]); return; }
-    supabase.from("project_images").select("*").eq("project_id", selectedProject).order("sort_order").then(({ data }) => {
+    backend.from("project_images").select("*").eq("project_id", selectedProject).order("sort_order").then(({ data }) => {
       setImages((data as ProjectImage[]) || []);
     });
   }, [selectedProject]);
@@ -59,11 +61,11 @@ const AdminImages = () => {
 
       const ext = file.name.split(".").pop();
       const path = `${selectedProject}/${Date.now()}-${i}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from("project-images").upload(path, file);
+      const { error: uploadErr } = await backend.storage.from("project-images").upload(path, file);
       if (uploadErr) { toast.error(`Upload failed: ${uploadErr.message}`); continue; }
 
-      const { data: urlData } = supabase.storage.from("project-images").getPublicUrl(path);
-      const { error: insertErr } = await supabase.from("project_images").insert({
+      const { data: urlData } = backend.storage.from("project-images").getPublicUrl(path);
+      const { error: insertErr } = await backend.from("project_images").insert({
         project_id: selectedProject,
         image_url: urlData.publicUrl,
         caption: file.name.replace(/\.[^.]+$/, ""),
@@ -75,38 +77,77 @@ const AdminImages = () => {
     toast.success("Images uploaded!");
     setUploading(false);
     // Refresh
-    const { data } = await supabase.from("project_images").select("*").eq("project_id", selectedProject).order("sort_order");
+    const { data } = await backend.from("project_images").select("*").eq("project_id", selectedProject).order("sort_order");
     setImages((data as ProjectImage[]) || []);
   };
 
-  const handleDelete = async (img: ProjectImage) => {
-    // Extract path from URL
-    const url = new URL(img.image_url);
-    const pathParts = url.pathname.split("/project-images/");
-    if (pathParts[1]) {
-      await supabase.storage.from("project-images").remove([pathParts[1]]);
+  const storagePathFromImageUrl = (raw: string): string | null => {
+    try {
+      const pathname = new URL(raw).pathname;
+      const marker = "/project-images/";
+      const i = pathname.indexOf(marker);
+      if (i < 0) return null;
+      return pathname.slice(i + marker.length);
+    } catch {
+      return null;
     }
-    const { error } = await supabase.from("project_images").delete().eq("id", img.id);
+  };
+
+  const handleAddByUrl = async () => {
+    const urlStr = imageUrlDraft.trim();
+    if (!selectedProject || !urlStr) { toast.error("Select a property and enter an image URL"); return; }
+    try {
+      const u = new URL(urlStr);
+      if (!/^https?:$/i.test(u.protocol)) throw new Error("protocol");
+    } catch {
+      toast.error("Enter a valid http(s) image URL");
+      return;
+    }
+    setAddingUrl(true);
+    const maxOrder = images.length > 0 ? Math.max(...images.map((i) => i.sort_order)) + 1 : 0;
+    const { error } = await backend.from("project_images").insert({
+      project_id: selectedProject,
+      image_url: urlStr,
+      caption: "URL",
+      sort_order: maxOrder,
+    });
+    setAddingUrl(false);
+    if (error) {
+      toast.error(error.message || "Could not save URL");
+      return;
+    }
+    setImageUrlDraft("");
+    const { data } = await backend.from("project_images").select("*").eq("project_id", selectedProject).order("sort_order");
+    setImages((data as ProjectImage[]) || []);
+    toast.success("Image URL added");
+  };
+
+  const handleDelete = async (img: ProjectImage) => {
+    const path = storagePathFromImageUrl(img.image_url);
+    if (path) {
+      await backend.storage.from("project-images").remove([path]).catch(() => undefined);
+    }
+    const { error } = await backend.from("project_images").delete().eq("id", img.id);
     if (error) { toast.error(error.message); return; }
     setImages((prev) => prev.filter((i) => i.id !== img.id));
-    toast.success("Image deleted");
+    toast.success("Image removed");
   };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-gold" size={32} /></div>;
 
   return (
     <div>
-      <h2 className="font-heading text-2xl font-bold text-foreground mb-6">Project Images</h2>
+      <h2 className="font-heading text-2xl font-bold text-foreground mb-6">Property Images</h2>
 
       {/* Project Selector */}
       <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm">
-        <label className="text-sm font-medium text-foreground mb-2 block">Select Project</label>
+        <label className="text-sm font-medium text-foreground mb-2 block">Select Property</label>
         <select
           value={selectedProject}
           onChange={(e) => setSelectedProject(e.target.value)}
           className="w-full bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring"
         >
-          <option value="">Choose a project...</option>
+          <option value="">Choose a property...</option>
           {projects.map((p) => (
             <option key={p.id} value={p.id}>{p.project_name} — {p.customer_name}</option>
           ))}
@@ -115,10 +156,31 @@ const AdminImages = () => {
 
       {selectedProject && (
         <>
+          <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm">
+            <p className="text-sm font-medium text-foreground mb-2">Add by image URL</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="url"
+                value={imageUrlDraft}
+                onChange={(e) => setImageUrlDraft(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 bg-muted text-foreground rounded-xl px-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring"
+              />
+              <button
+                type="button"
+                disabled={addingUrl}
+                onClick={handleAddByUrl}
+                className="rounded-xl px-5 py-3 text-sm font-semibold bg-dash-blue text-white hover:opacity-90 disabled:opacity-50 shrink-0"
+              >
+                {addingUrl ? <Loader2 size={18} className="animate-spin mx-auto" /> : "Add URL"}
+              </button>
+            </div>
+          </div>
+
           {/* Upload Area */}
           <div
             className="bg-card rounded-2xl border-2 border-dashed border-border hover:border-gold/50 p-8 mb-6 text-center cursor-pointer transition-colors shadow-sm"
-            onClick={() => fileRef.current?.click()}
+            onClick={() => !uploading && fileRef.current?.click()}
           >
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files)} />
             {uploading ? (
@@ -126,7 +188,7 @@ const AdminImages = () => {
             ) : (
               <>
                 <Upload size={32} className="text-muted-foreground mx-auto mb-3" />
-                <p className="text-foreground font-medium">Click to upload images</p>
+                <p className="text-foreground font-medium">Upload from device</p>
                 <p className="text-muted-foreground text-sm mt-1">JPG, PNG, WebP • Max 5MB each</p>
               </>
             )}

@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
-import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye, List, LayoutGrid } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { backend } from "@/lib/backendClient";
+import { usePortfolioTemplates } from "@/hooks/usePropertyCatalog";
+import { uploadProjectCoverImage } from "@/lib/uploadProjectImage";
+import { adminToastErr, adminToastOk } from "@/lib/adminToast";
+import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye, List, LayoutGrid, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
@@ -29,7 +31,7 @@ const statusOptions = ["planned", "in_progress", "completed", "on_hold", "for_sa
 
 type FilterStatus = "all" | "planned" | "in_progress" | "completed" | "on_hold" | "for_sale" | "for_rent";
 const filterLabels: Record<FilterStatus, string> = {
-  all: "All Projects",
+  all: "All Properties",
   planned: "Planned",
   in_progress: "In Progress",
   completed: "Completed",
@@ -52,8 +54,10 @@ const AdminProjects = () => {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [form, setForm] = useState({
     user_id: "",
+    portfolio_template_slug: "",
     project_name: "",
     location: "",
+    building_image_url: "",
     status: "planned",
     total_amount: "",
     paid_amount: "",
@@ -62,12 +66,22 @@ const AdminProjects = () => {
     expected_completion: "",
   });
 
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const { data: portfolioTemplates = [], isFetching: tmplLoading } = usePortfolioTemplates(showForm);
+
   const fetchData = async () => {
     const [projRes, custRes, rolesRes] = await Promise.all([
-      supabase.from("customer_projects").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name"),
-      supabase.from("user_roles").select("user_id, role").eq("role", "customer"),
+      backend.from("customer_projects").select("*").order("created_at", { ascending: false }),
+      backend.from("profiles").select("user_id, full_name"),
+      backend.from("user_roles").select("user_id, role").eq("role", "customer"),
     ]);
+
+    if (projRes.error || custRes.error || rolesRes.error) {
+      adminToastErr(projRes.error || custRes.error || rolesRes.error, "Couldn't load properties");
+      setLoading(false);
+      return;
+    }
 
     const customerIds = new Set((rolesRes.data || []).map((r) => r.user_id));
     const custList = (custRes.data || []).filter((c) => customerIds.has(c.user_id));
@@ -84,7 +98,19 @@ const AdminProjects = () => {
   useEffect(() => { fetchData(); }, []);
 
   const resetForm = () => {
-    setForm({ user_id: "", project_name: "", location: "", status: "planned", total_amount: "", paid_amount: "", monthly_installment: "", start_date: "", expected_completion: "" });
+    setForm({
+      user_id: "",
+      portfolio_template_slug: "",
+      project_name: "",
+      location: "",
+      building_image_url: "",
+      status: "planned",
+      total_amount: "",
+      paid_amount: "",
+      monthly_installment: "",
+      start_date: "",
+      expected_completion: "",
+    });
     setEditId(null);
     setShowForm(false);
   };
@@ -92,8 +118,10 @@ const AdminProjects = () => {
   const openEdit = (p: Project) => {
     setForm({
       user_id: p.user_id,
+      portfolio_template_slug: "",
       project_name: p.project_name,
       location: p.location || "",
+      building_image_url: p.building_image_url || "",
       status: p.status,
       total_amount: String(p.total_amount),
       paid_amount: String(p.paid_amount),
@@ -106,13 +134,17 @@ const AdminProjects = () => {
   };
 
   const handleSave = async () => {
-    if (!form.user_id || !form.project_name) { toast.error("Customer and project name are required"); return; }
+    if (!form.user_id || !form.project_name) {
+      adminToastErr("Customer and property name are required");
+      return;
+    }
     setSaving(true);
 
     const payload = {
       user_id: form.user_id,
       project_name: form.project_name.trim(),
       location: form.location.trim() || null,
+      building_image_url: form.building_image_url.trim() || null,
       status: form.status,
       total_amount: Number(form.total_amount) || 0,
       paid_amount: Number(form.paid_amount) || 0,
@@ -123,14 +155,17 @@ const AdminProjects = () => {
 
     let error;
     if (editId) {
-      ({ error } = await supabase.from("customer_projects").update(payload).eq("id", editId));
+      ({ error } = await backend.from("customer_projects").update(payload).eq("id", editId));
     } else {
-      ({ error } = await supabase.from("customer_projects").insert(payload));
+      ({ error } = await backend.from("customer_projects").insert(payload));
     }
 
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(editId ? "Project updated!" : "Project created!");
+    if (error) {
+      adminToastErr(error, editId ? "Couldn't update property" : "Couldn't create property");
+      return;
+    }
+    adminToastOk(editId ? "Property updated!" : "Property created!");
     resetForm();
     fetchData();
   };
@@ -146,13 +181,13 @@ const AdminProjects = () => {
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("customer_projects").delete().eq("id", deleteTarget.id);
+    const { error } = await backend.from("customer_projects").delete().eq("id", deleteTarget.id);
     setDeleteLoading(false);
     if (error) {
-      toast.error(error.message);
+      adminToastErr(error, "Couldn't delete property");
       return;
     }
-    toast.success("Project deleted");
+    adminToastOk("Property deleted");
     setDeleteTarget(null);
     fetchData();
   };
@@ -174,11 +209,11 @@ const AdminProjects = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <h2 className="font-heading text-2xl font-bold text-foreground">Projects</h2>
+          <h2 className="font-heading text-2xl font-bold text-foreground">Properties</h2>
           <span className="bg-dash-orange text-white text-xs font-bold px-3 py-1.5 rounded-full">{filtered.length}</span>
         </div>
         <button onClick={() => { resetForm(); setShowForm(true); }} className="bg-dash-blue text-white px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-md">
-          <Plus size={16} /> Add Project
+          <Plus size={16} /> Add Property
         </button>
       </div>
 
@@ -189,7 +224,7 @@ const AdminProjects = () => {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by project name, customer, or location..."
+            placeholder="Search by property name, customer, or location..."
             className="w-full bg-card text-foreground rounded-xl pl-11 pr-4 py-3 text-sm outline-none border border-border focus:ring-2 focus:ring-ring transition-shadow"
           />
         </div>
@@ -225,7 +260,7 @@ const AdminProjects = () => {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Total Projects", value: projects.length, color: "bg-dash-blue", icon: <HardHat size={16} /> },
+          { label: "Total Properties", value: projects.length, color: "bg-dash-blue", icon: <HardHat size={16} /> },
           { label: "In Progress", value: projects.filter((p) => p.status === "in_progress").length, color: "bg-dash-orange", icon: <HardHat size={16} /> },
           { label: "Completed", value: projects.filter((p) => p.status === "completed").length, color: "bg-dash-green", icon: <HardHat size={16} /> },
           { label: "Total Value", value: formatCurrency(projects.reduce((s, p) => s + p.total_amount, 0)), color: "bg-dash-purple", icon: <DollarSign size={16} /> },
@@ -248,7 +283,7 @@ const AdminProjects = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center mb-5">
-              <h3 className="font-heading text-lg font-bold text-foreground">{editId ? "Edit Project" : "New Project"}</h3>
+              <h3 className="font-heading text-lg font-bold text-foreground">{editId ? "Edit Property" : "New Property"}</h3>
               <button onClick={resetForm} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
             </div>
             <div className="space-y-4">
@@ -260,12 +295,83 @@ const AdminProjects = () => {
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Project Name *</label>
-                <input value={form.project_name} onChange={(e) => setForm((f) => ({ ...f, project_name: e.target.value }))} className={inputClass} placeholder="e.g. Starline Heights - Unit 5B" maxLength={200} />
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Portfolio property</label>
+                <select
+                  disabled={tmplLoading}
+                  value={form.portfolio_template_slug}
+                  onChange={(e) => {
+                    const slug = e.target.value;
+                    if (!slug) {
+                      setForm((f) => ({ ...f, portfolio_template_slug: "" }));
+                      return;
+                    }
+                    const t = portfolioTemplates.find((x) => x.slug === slug);
+                    if (!t) return;
+                    setForm((f) => ({
+                      ...f,
+                      portfolio_template_slug: slug,
+                      project_name: t.title,
+                      location: t.location,
+                      building_image_url: t.coverImage || "",
+                    }));
+                  }}
+                  className={inputClass}
+                >
+                  <option value="">Custom — enter below</option>
+                  {portfolioTemplates.map((t) => (
+                    <option key={t.slug} value={t.slug}>{t.title} ({t.location})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Property Name *</label>
+                <input value={form.project_name} onChange={(e) => setForm((f) => ({ ...f, portfolio_template_slug: "", project_name: e.target.value }))} className={inputClass} placeholder="e.g. Starline Heights - Unit 5B" maxLength={200} />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Location</label>
-                <input value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} className={inputClass} placeholder="e.g. Bashundhara R/A, Dhaka" maxLength={200} />
+                <input value={form.location} onChange={(e) => setForm((f) => ({ ...f, portfolio_template_slug: "", location: e.target.value }))} className={inputClass} placeholder="e.g. Bashundhara R/A, Dhaka" maxLength={200} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Cover image</label>
+                <input
+                  type="url"
+                  value={form.building_image_url}
+                  onChange={(e) => setForm((f) => ({ ...f, building_image_url: e.target.value }))}
+                  className={`${inputClass} mb-2`}
+                  placeholder="https://… or upload"
+                />
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (!file) return;
+                    setCoverUploading(true);
+                    const folder = editId ? `covers/${editId}` : "staging";
+                    const { url, error: upErr } = await uploadProjectCoverImage(file, folder);
+                    setCoverUploading(false);
+                    if (upErr || !url) {
+                      adminToastErr(upErr || "Upload failed");
+                      return;
+                    }
+                    setForm((f) => ({ ...f, building_image_url: url }));
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={coverUploading}
+                  className="w-full py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted/60 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {coverUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                  Upload cover image
+                </button>
+                {form.building_image_url && (
+                  <img src={form.building_image_url} alt="" className="mt-3 w-full max-h-36 object-cover rounded-xl border border-border" />
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Status</label>
@@ -275,7 +381,7 @@ const AdminProjects = () => {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Total Project Budget</label>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Total Budget</label>
                   <input type="number" value={form.total_amount} onChange={(e) => setForm((f) => ({ ...f, total_amount: e.target.value }))} className={inputClass} placeholder="0" />
                 </div>
                 <div>
@@ -319,7 +425,7 @@ const AdminProjects = () => {
               </div>
               <button onClick={handleSave} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                {editId ? "Update Project" : "Create Project"}
+                {editId ? "Update Property" : "Create Property"}
               </button>
             </div>
           </motion.div>
@@ -485,7 +591,7 @@ const AdminProjects = () => {
         {filtered.length === 0 && (
           <div className="text-center py-20 text-muted-foreground col-span-full">
             <HardHat size={48} className="mx-auto mb-4 opacity-40" />
-            <p>{search || filter !== "all" ? "No projects match your search/filter." : "No projects yet. Click \"Add Project\" to create one."}</p>
+            <p>{search || filter !== "all" ? "No properties match your search/filter." : "No properties yet. Click \"Add Property\" to create one."}</p>
           </div>
         )}
       </div>
@@ -506,7 +612,7 @@ const AdminProjects = () => {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex justify-between items-center mb-5">
-                  <h3 className="font-heading text-lg font-bold text-foreground">Project Details</h3>
+                  <h3 className="font-heading text-lg font-bold text-foreground">Property Details</h3>
                   <button onClick={() => setViewProject(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
                 </div>
 

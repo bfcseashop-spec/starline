@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { backend } from "@/lib/backendClient";
 import { toast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,7 +79,7 @@ const AdminHeaderManagement = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data } = await supabase.from("site_settings").select("setting_key, setting_value")
+      const { data } = await backend.from("site_settings").select("setting_key, setting_value")
         .in("setting_key", ["header_config", "company_info"]);
       if (data) {
         data.forEach((r: any) => {
@@ -98,15 +98,15 @@ const AdminHeaderManagement = () => {
   const handleSave = async () => {
     setSaving(true);
     // Save header config
-    const { error } = await supabase.from("site_settings").upsert(
+    const { error } = await backend.from("site_settings").upsert(
       { setting_key: "header_config", setting_value: form as any },
       { onConflict: "setting_key" }
     );
     // Also sync header_style to system settings
-    const { data: sysData } = await supabase.from("site_settings").select("setting_value").eq("setting_key", "system").single();
+    const { data: sysData } = await backend.from("site_settings").select("setting_value").eq("setting_key", "system").single();
     if (sysData) {
       const sys = { ...(sysData.setting_value as Record<string, any> || {}), header_style: form.header_style };
-      await supabase.from("site_settings").upsert(
+      await backend.from("site_settings").upsert(
         { setting_key: "system", setting_value: sys as any },
         { onConflict: "setting_key" }
       );
@@ -122,15 +122,15 @@ const AdminHeaderManagement = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `logos/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("company-assets").upload(filePath, file);
+    const { error } = await backend.storage.from("company-assets").upload(filePath, file);
     setUploading(false);
     if (error) { toast.error("Upload failed"); return; }
-    const { data: pub } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+    const { data: pub } = backend.storage.from("company-assets").getPublicUrl(filePath);
     setLogoUrl(pub.publicUrl);
     // Update company_info
-    const { data: ci } = await supabase.from("site_settings").select("setting_value").eq("setting_key", "company_info").single();
+    const { data: ci } = await backend.from("site_settings").select("setting_value").eq("setting_key", "company_info").single();
     const updated = { ...(ci?.setting_value as Record<string, any> || {}), logo_url: pub.publicUrl };
-    await supabase.from("site_settings").upsert(
+    await backend.from("site_settings").upsert(
       { setting_key: "company_info", setting_value: updated as any },
       { onConflict: "setting_key" }
     );
