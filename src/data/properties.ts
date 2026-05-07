@@ -27,7 +27,7 @@ export interface Property {
 }
 
 const starlineTowerOneImages = [
-  "/properties/starline-tower-one/01.png",
+  "/properties/starline-tower-one/1.png",
   "/properties/starline-tower-one/02.png",
   "/properties/starline-tower-one/03.png",
 ];
