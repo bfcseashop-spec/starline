@@ -47,8 +47,19 @@ exit 0
 fi
 
 echo ""
-echo "[2/8] git pull (uses --autostash so local .env is stashed during pull)"
+echo "[2/8] git pull (uses --autostash for other local edits)"
+# VPS should not keep a forked lockfile; stashing it causes "autostash → conflicts" after pull.
+if git status --porcelain 2>/dev/null | grep -q 'package-lock.json'; then
+  echo "  Note: discarding local package-lock.json changes (use the version from git)."
+  git restore package-lock.json 2>/dev/null || git checkout -- package-lock.json
+fi
 git pull --autostash
+# If autostash pop conflicted (common on package-lock.json), leave a clean tree at HEAD.
+if [ -n "$(git ls-files -u 2>/dev/null)" ]; then
+  echo "  Warning: merge conflicts after pull — resetting to last commit and dropping top stash entry."
+  git reset --hard HEAD
+  git stash drop 2>/dev/null || true
+fi
 
 echo "[3/8] npm install"
 npm install
