@@ -46,6 +46,11 @@ const starlineShantiNiketonImages = [
   "/properties/starline-shanti-niketon/02.png",
   "/properties/starline-shanti-niketon/03.png",
 ];
+const starlineNurHosenVillaImages = [
+  "/properties/starline-nur-hosen-villa/01.png",
+  "/properties/starline-nur-hosen-villa/02.png",
+  "/properties/starline-nur-hosen-villa/03.png",
+];
 
 export const properties: Property[] = [
   {
@@ -60,7 +65,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,350",
     tag: "Featured",
-    type: "Apartment",
+    type: "Ongoing",
     yearBuilt: 2026,
     garage: 1,
     lotSize: "4.5 katha",
@@ -87,7 +92,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,450",
     tag: "New",
-    type: "Residential",
+    type: "Ongoing",
     yearBuilt: 2026,
     garage: 1,
     lotSize: "2.5 katha",
@@ -114,7 +119,7 @@ export const properties: Property[] = [
     baths: 2,
     sqft: "1,187",
     tag: "Exclusive",
-    type: "Handover",
+    type: "Ongoing",
     yearBuilt: 2025,
     garage: 0,
     lotSize: "2.5 katha",
@@ -140,7 +145,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,263",
     tag: "Ongoing",
-    type: "Apartment",
+    type: "Ongoing",
     yearBuilt: 2026,
     garage: 1,
     lotSize: "N/A",
@@ -151,16 +156,16 @@ export const properties: Property[] = [
   {
     id: 6,
     slug: "starline-nur-hosen-villa",
-    images: [shantiNiketonImage, shantiNiketonImage, shantiNiketonImage],
+    images: starlineNurHosenVillaImages,
     title: "Starline Nur Hosen Villa",
-    location: "Mirpur, Dhaka",
+    location: "Sector-11, Mirpur-11",
     price: "Handover Complete",
     priceNum: 0,
     beds: 3,
     baths: 3,
     sqft: "1,263",
     tag: "Handover",
-    type: "Handover",
+    type: "Handed-over",
     yearBuilt: 2025,
     garage: 1,
     lotSize: "N/A",
