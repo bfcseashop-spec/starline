@@ -51,6 +51,11 @@ const starlineNurHosenVillaImages = [
   "/properties/starline-nur-hosen-villa/02.png",
   "/properties/starline-nur-hosen-villa/03.png",
 ];
+const starlineSarkarVillaImages = [
+  "/properties/starline-sarkar-villa/01.png",
+  "/properties/starline-sarkar-villa/02.png",
+  "/properties/starline-sarkar-villa/03.png",
+];
 const starlineMonoaraVillaImages = [
   "/properties/starline-monoara-villa/01.png",
   "/properties/starline-monoara-villa/02.png",
@@ -181,6 +186,26 @@ export const properties: Property[] = [
   {
     id: 7,
     slug: "starline-sarkar-villa",
+    images: starlineSarkarVillaImages,
+    title: "Starline Sarkar Villa",
+    location: "Sector-11, Mirpur-11",
+    price: "Handover Complete",
+    priceNum: 0,
+    beds: 3,
+    baths: 3,
+    sqft: "1,350",
+    tag: "Handover",
+    type: "Handed-over",
+    yearBuilt: 2025,
+    garage: 1,
+    lotSize: "N/A",
+    description:
+      "Starline Sarkar Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
+    amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
+  },
+  {
+    id: 11,
+    slug: "starline-monoara-villa",
     images: starlineMonoaraVillaImages,
     title: "Starline Monoara Villa",
     location: "Sector-11, Mirpur-11",
@@ -195,8 +220,8 @@ export const properties: Property[] = [
     garage: 1,
     lotSize: "N/A",
     description:
-      "Starline Monoara Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
-    amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
+      "Starline Monoara Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and practical layouts.",
+    amenities: ["Completed Handover", "Modern Lift", "Generator", "Security", "Functional Layout"],
   },
   {
     id: 8,
@@ -210,7 +235,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,350",
     tag: "Upcoming",
-    type: "Residential",
+    type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
     lotSize: "N/A",
@@ -229,7 +254,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,263",
     tag: "Upcoming",
-    type: "Residential",
+    type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
     lotSize: "N/A",
@@ -248,7 +273,7 @@ export const properties: Property[] = [
     baths: 3,
     sqft: "1,187",
     tag: "Upcoming",
-    type: "Residential",
+    type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
     lotSize: "N/A",
