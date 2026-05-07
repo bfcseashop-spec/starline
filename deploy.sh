@@ -60,7 +60,7 @@ echo "[5/8] npm run api:build"
 npm run api:build
 
 echo "[6/8] Restarting PM2 (starline)"
-pm2 restart starline || pm2 start serve --name starline -- -s dist -l 5174
+pm2 restart starline --update-env || pm2 start serve --name starline -- -s dist -l 5174
 
 echo "[7/8] Restarting PM2 (starline-api)"
 API_PORT_VALUE="${API_PORT:-4042}"
