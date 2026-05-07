@@ -1,6 +1,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Client } from "pg";
+import { loadRepoEnv } from "./load-repo-env";
+
+loadRepoEnv();
 
 type PortfolioItem = {
   id: number;

@@ -1,5 +1,8 @@
 import { Client } from "pg";
 import bcrypt from "bcryptjs";
+import { loadRepoEnv } from "./load-repo-env";
+
+loadRepoEnv();
 
 async function main() {
   const email = process.env.DEFAULT_ADMIN_EMAIL || process.env.ADMIN_EMAIL || "admin@starlineb.com";

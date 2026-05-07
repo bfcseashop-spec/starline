@@ -3,9 +3,12 @@
  * Place files as `<DATA_EXPORT_DIR>/<table>.json` (array of row objects).
  * Env: DATA_EXPORT_DIR (default: `./data-export` next to cwd — use `backend/data-export` when you run via `npm run import:data`).
  */
-import fs from "node:fs";
-import path from "node:path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Client } from "pg";
+import { loadRepoEnv } from "./load-repo-env";
+
+loadRepoEnv();
 
 const tables = [
   "profiles",

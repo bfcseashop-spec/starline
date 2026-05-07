@@ -1,6 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Client } from "pg";
+import { loadRepoEnv } from "./load-repo-env";
+
+loadRepoEnv();
 
 async function main() {
   const client = new Client({
@@ -11,7 +14,7 @@ async function main() {
     database: process.env.PGDATABASE || "starline",
   });
   await client.connect();
-  const sql = fs.readFileSync(path.resolve(process.cwd(), "backend/sql/init.sql"), "utf8");
+  const sql = fs.readFileSync(path.resolve(__dirname, "../sql/init.sql"), "utf8");
   await client.query(sql);
   await client.end();
   console.log("Database initialized.");
