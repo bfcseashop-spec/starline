@@ -36,6 +36,11 @@ const starlineNeeraloyVillaImages = [
   "/properties/starline-neeraloy-villa/02.png",
   "/properties/starline-neeraloy-villa/03.png",
 ];
+const starlineSapiyaManjilImages = [
+  "/properties/starline-sapiya-manjil/01.png",
+  "/properties/starline-sapiya-manjil/02.png",
+  "/properties/starline-sapiya-manjil/03.png",
+];
 
 export const properties: Property[] = [
   {
@@ -95,9 +100,9 @@ export const properties: Property[] = [
   {
     id: 3,
     slug: "starline-sapiya-manjil",
-    images: [towerImage, towerImage, towerImage],
-    title: "Starline Sapiya Manjil",
-    location: "Mirpur-10, Dhaka",
+    images: starlineSapiyaManjilImages,
+    title: "Starline Tower",
+    location: "Shah Ali bug, Mirpur",
     price: "Handover Complete",
     priceNum: 0,
     beds: 3,
@@ -107,9 +112,9 @@ export const properties: Property[] = [
     type: "Handover",
     yearBuilt: 2025,
     garage: 0,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
-      "Starline Sapiya Manjil is one of our completed and handed-over properties in Mirpur-10. It reflects our commitment to timely delivery and quality-focused construction.",
+      "Starline Tower is one of our completed and handed-over properties in Shah Ali Bug, Mirpur. It reflects our commitment to timely delivery and quality-focused construction.",
     amenities: [
       "Completed Handover",
       "Practical Unit Layout",
