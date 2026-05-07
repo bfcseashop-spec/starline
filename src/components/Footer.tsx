@@ -30,7 +30,7 @@ interface Props {
 
 const Footer = ({ company, social, content }: Props) => {
   const brandName = company?.name || "Starline Builder's";
-  const activeSocials = socialLabels.filter((s) => social?.[s.key]);
+  const activeSocials = socialLabels.filter((s) => s.key === "facebook" || social?.[s.key]);
   const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
   const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
   const primaryPhone = "+880 1334-563765";
@@ -124,7 +124,7 @@ const Footer = ({ company, social, content }: Props) => {
                   return (
                     <a
                       key={s.key}
-                      href={social?.[s.key] || "#"}
+                      href={social?.[s.key] || (s.key === "facebook" ? "https://facebook.com" : "#")}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-white/70 hover:text-gold text-sm border border-white/10 rounded-lg px-3 py-2 hover:border-gold/40 transition-all inline-flex items-center justify-between"

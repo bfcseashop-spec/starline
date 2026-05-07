@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { DatabaseService } from "../services/database.service";
 
 @Controller("api/functions")
