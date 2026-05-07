@@ -8,6 +8,7 @@
     "start": "node dist/src/main.js",
     "db:init": "ts-node scripts/init-db.ts",
     "seed:admin": "ts-node scripts/seed-admin.ts",
+    "seed:properties": "ts-node scripts/seed-default-properties.ts",
     "import:data": "ts-node scripts/import-data-export.ts"
   }
 }

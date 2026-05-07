@@ -10,6 +10,7 @@
     "api:start": "npm run start --prefix backend",
     "db:init": "npm run db:init --prefix backend",
     "admin:seed": "npm run seed:admin --prefix backend",
+    "seed:properties": "npm run seed:properties --prefix backend",
     "import:data": "npm run import:data --prefix backend",
     "build": "vite build",
     "build:dev": "vite build --mode development",

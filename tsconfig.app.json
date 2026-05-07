@@ -10,6 +10,7 @@
     ],
     "module": "ESNext",
     "moduleDetection": "force",
+    "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "noEmit": true,
     "noFallthroughCasesInSwitch": false,

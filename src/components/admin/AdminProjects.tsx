@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 
 interface Project {
   id: string;
-  user_id: string;
+  user_id: string | null;
   project_name: string;
   location: string | null;
   status: string;
@@ -90,7 +90,10 @@ const AdminProjects = () => {
 
     setCustomers(custList);
     setProjects(
-      (projRes.data || []).map((p) => ({ ...p, customer_name: custMap[p.user_id] || "Unknown" })) as Project[]
+      (projRes.data || []).map((p) => ({
+        ...p,
+        customer_name: p.user_id ? (custMap[p.user_id] || "Unknown") : "Portfolio (public)",
+      })) as Project[],
     );
     setLoading(false);
   };
@@ -117,7 +120,7 @@ const AdminProjects = () => {
 
   const openEdit = (p: Project) => {
     setForm({
-      user_id: p.user_id,
+      user_id: p.user_id ?? "",
       portfolio_template_slug: "",
       project_name: p.project_name,
       location: p.location || "",
@@ -134,14 +137,14 @@ const AdminProjects = () => {
   };
 
   const handleSave = async () => {
-    if (!form.user_id || !form.project_name) {
-      adminToastErr("Customer and property name are required");
+    if (!form.project_name.trim()) {
+      adminToastErr("Property name is required");
       return;
     }
     setSaving(true);
 
     const payload = {
-      user_id: form.user_id,
+      user_id: form.user_id.trim() ? form.user_id : null,
       project_name: form.project_name.trim(),
       location: form.location.trim() || null,
       building_image_url: form.building_image_url.trim() || null,
@@ -288,9 +291,9 @@ const AdminProjects = () => {
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Customer *</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Customer (optional)</label>
                 <select value={form.user_id} onChange={(e) => setForm((f) => ({ ...f, user_id: e.target.value }))} className={inputClass}>
-                  <option value="">Select customer...</option>
+                  <option value="">— Public portfolio listing —</option>
                   {customers.map((c) => <option key={c.user_id} value={c.user_id}>{c.full_name || "Unnamed"}</option>)}
                 </select>
               </div>
