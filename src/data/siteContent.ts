@@ -12,7 +12,7 @@ export interface ProjectSummary {
 const PROJECT_IMAGES = {
   ongoing: {
     towerOne: "/properties/starline-tower-one/1.png",
-    neeraloyVilla: "https://wellassetgroup.com/uploads/backend/images/projects/631571038.jpg",
+    neeraloyVilla: "/properties/starline-neeraloy-villa/01.png",
     tower: "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg",
     shantiNiketon: "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
   },
@@ -183,9 +183,9 @@ export const ongoingProjects: ProjectSummary[] = [
     image: PROJECT_IMAGES.ongoing.towerOne,
   },
   {
-    name: "Starline Neeraloy Villa",
+    name: "Starline Niraloy Villa",
     slug: "starline-neeraloy-villa",
-    address: "Shekhertek, Shyamoli Housing Society, House-27/C, Road-6, Mohammadpur",
+    address: "Shekhertek, Mohammadpur",
     city: "Dhaka 1207",
     notes: "Family‑focused apartments with attention to light, air and circulation.",
     image: PROJECT_IMAGES.ongoing.neeraloyVilla,

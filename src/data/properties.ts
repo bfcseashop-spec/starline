@@ -31,6 +31,11 @@ const starlineTowerOneImages = [
   "/properties/starline-tower-one/02.png",
   "/properties/starline-tower-one/03.png",
 ];
+const starlineNeeraloyVillaImages = [
+  "/properties/starline-neeraloy-villa/01.png",
+  "/properties/starline-neeraloy-villa/02.png",
+  "/properties/starline-neeraloy-villa/03.png",
+];
 
 export const properties: Property[] = [
   {
@@ -63,9 +68,9 @@ export const properties: Property[] = [
   {
     id: 2,
     slug: "starline-neeraloy-villa",
-    images: [neeraloyImage, neeraloyImage, neeraloyImage],
-    title: "Starline Neeraloy Villa",
-    location: "Mohammadpur, Dhaka",
+    images: starlineNeeraloyVillaImages,
+    title: "Starline Niraloy Villa",
+    location: "Shekhertek, Mohammadpur",
     price: "Contact for Price",
     priceNum: 0,
     beds: 3,
@@ -75,9 +80,9 @@ export const properties: Property[] = [
     type: "Residential",
     yearBuilt: 2026,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
-      "Starline Neeraloy Villa delivers comfortable city living with practical planning for family use. Located in Mohammadpur, the project combines modern architecture with thoughtful natural light and ventilation strategies.",
+      "Starline Niraloy Villa delivers comfortable city living with practical planning for family use. Located in Shekhertek, Mohammadpur, the project combines modern architecture with thoughtful natural light and ventilation strategies.",
     amenities: [
       "Contemporary Facade",
       "Functional Balcony Layouts",
