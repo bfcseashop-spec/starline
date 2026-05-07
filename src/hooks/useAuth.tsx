@@ -1,6 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+
+type Session = {
+  access_token: string;
+  user: { id: string; email: string };
+};
+
+type User = { id: string; email: string };
 
 type AppRole = "admin" | "customer";
 

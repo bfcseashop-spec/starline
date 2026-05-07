@@ -1,7 +1,8 @@
-import { PostgrestError } from "@supabase/supabase-js";
 import { toast } from "@/components/ui/use-toast";
 
-const getErrorMessage = (error: PostgrestError | Error | null | undefined): string =>
+type DbError = { message?: string } | Error | null | undefined;
+
+const getErrorMessage = (error: DbError): string =>
   error?.message ?? "Something went wrong.";
 
 /**
@@ -9,7 +10,7 @@ const getErrorMessage = (error: PostgrestError | Error | null | undefined): stri
  * Returns true if successful, false otherwise.
  */
 export async function withMutationToast<T>(
-  operation: () => Promise<{ error: PostgrestError | null; data?: T }>,
+  operation: () => Promise<{ error: DbError; data?: T }>,
   options: { successMessage?: string; errorMessage?: string } = {}
 ): Promise<boolean> {
   const { data, error } = await operation();
@@ -28,7 +29,7 @@ export async function withMutationToast<T>(
  * Returns true if no error, false otherwise.
  */
 export async function withErrorToast<T>(
-  operation: () => Promise<{ error: PostgrestError | Error | null; data?: T }>,
+  operation: () => Promise<{ error: DbError; data?: T }>,
   errorMessage?: string
 ): Promise<boolean> {
   const result = await operation();
@@ -44,7 +45,7 @@ export async function withErrorToast<T>(
  * Extract user-friendly message from Supabase or Edge function response.
  */
 export function getSupabaseErrorMessage(
-  error: PostgrestError | Error | null | undefined,
+  error: DbError,
   fallback = "Something went wrong."
 ): string {
   if (!error) return fallback;

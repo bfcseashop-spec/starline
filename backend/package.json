@@ -1,0 +1,13 @@
+{
+  "name": "starline-backend",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "ts-node src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "db:init": "ts-node scripts/init-db.ts",
+    "seed:admin": "ts-node scripts/seed-admin.ts",
+    "import:supabase": "ts-node scripts/import-supabase-json.ts"
+  }
+}
