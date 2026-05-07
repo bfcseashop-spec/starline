@@ -11,7 +11,7 @@ export interface ProjectSummary {
 
 const PROJECT_IMAGES = {
   ongoing: {
-    towerOne: "/properties/starline-tower-one/01.png",
+    towerOne: "/properties/starline-tower-one/1.png",
     neeraloyVilla: "https://wellassetgroup.com/uploads/backend/images/projects/631571038.jpg",
     tower: "https://wellassetgroup.com/uploads/backend/images/projects/709332200.jpg",
     shantiNiketon: "https://wellassetgroup.com/uploads/backend/images/projects/1170747971.jpg",
