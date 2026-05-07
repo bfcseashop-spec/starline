@@ -220,10 +220,10 @@ export const handoverProjects: ProjectSummary[] = [
   {
     name: "Starline Sarkar Villa",
     slug: "starline-sarkar-villa",
-    address: "House: 299–300, Road 18, Block A, Avenue 5, Section 11, Mirpur",
+    address: "Sector-11, Mirpur-11",
     city: "Dhaka 1216",
     notes: "Corner plot development emphasizing light, ventilation and functional layouts.",
-    image: PROJECT_IMAGES.handoverFallback,
+    image: "/properties/starline-sarkar-villa/01.png",
   },
 ];
 

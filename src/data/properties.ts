@@ -51,6 +51,11 @@ const starlineNurHosenVillaImages = [
   "/properties/starline-nur-hosen-villa/02.png",
   "/properties/starline-nur-hosen-villa/03.png",
 ];
+const starlineSarkarVillaImages = [
+  "/properties/starline-sarkar-villa/01.png",
+  "/properties/starline-sarkar-villa/02.png",
+  "/properties/starline-sarkar-villa/03.png",
+];
 
 export const properties: Property[] = [
   {
@@ -176,21 +181,21 @@ export const properties: Property[] = [
   {
     id: 7,
     slug: "starline-sarkar-villa",
-    images: [towerOneImage, towerOneImage, towerOneImage],
+    images: starlineSarkarVillaImages,
     title: "Starline Sarkar Villa",
-    location: "Mirpur, Dhaka",
+    location: "Sector-11, Mirpur-11",
     price: "Handover Complete",
     priceNum: 0,
     beds: 3,
     baths: 3,
     sqft: "1,350",
     tag: "Handover",
-    type: "Handover",
+    type: "Handed-over",
     yearBuilt: 2025,
     garage: 1,
     lotSize: "N/A",
     description:
-      "Starline Sarkar Villa is a completed corner-plot development with thoughtful circulation and daylight-focused planning.",
+      "Starline Sarkar Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
     amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
   },
   {
