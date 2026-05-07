@@ -132,7 +132,7 @@ export const properties: Property[] = [
     type: "Handed-over",
     yearBuilt: 2025,
     garage: 0,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
       "Starline Sapiya Manjil is one of our completed and handed-over properties in Senpara, Mirpur-10. It reflects our commitment to timely delivery and quality-focused construction.",
     amenities: [
@@ -158,7 +158,7 @@ export const properties: Property[] = [
     type: "Ongoing",
     yearBuilt: 2026,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
       "Starline Shanti Niketon is an ongoing residential development in Kazipara, Mirpur designed for practical family living and better day-to-day comfort.",
     amenities: ["Modern Lift", "Generator Backup", "Ventilated Layout", "Parking", "Fire Safety"],
@@ -178,7 +178,7 @@ export const properties: Property[] = [
     type: "Handed-over",
     yearBuilt: 2025,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
       "Starline Nur Hosen Villa is a completed project in Mirpur, delivered with a quality finish and reliable post-handover support.",
     amenities: ["Completed Handover", "Lift", "Generator Backup", "Functional Layout", "Community Location"],
@@ -198,7 +198,7 @@ export const properties: Property[] = [
     type: "Handed-over",
     yearBuilt: 2025,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
       "Starline Sarkar Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and daylight-focused planning.",
     amenities: ["Completed Handover", "Corner Plot Design", "Modern Lift", "Generator", "Security"],
@@ -218,7 +218,7 @@ export const properties: Property[] = [
     type: "Handed-over",
     yearBuilt: 2025,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description:
       "Starline Monoara Villa is a completed handed-over project in Sector-11, Mirpur-11 with thoughtful circulation and practical layouts.",
     amenities: ["Completed Handover", "Modern Lift", "Generator", "Security", "Functional Layout"],
@@ -238,7 +238,7 @@ export const properties: Property[] = [
     type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description: "Upcoming residential project in East Senpara, Monipur, Mirpur with modern planning and family-oriented layouts.",
     amenities: ["Planned Project", "Family Layout", "Parking", "Lift Provision", "Utility Planning"],
   },
@@ -257,7 +257,7 @@ export const properties: Property[] = [
     type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description: "Upcoming apartment project in East Shawra Para, Mirpur with efficient unit layouts and practical circulation.",
     amenities: ["Planned Project", "Efficient Layout", "Parking", "Lift Provision", "Utility Planning"],
   },
@@ -276,7 +276,7 @@ export const properties: Property[] = [
     type: "Upcoming",
     yearBuilt: 2027,
     garage: 1,
-    lotSize: "N/A",
+    lotSize: "2.5 katha",
     description: "Future premium project in Uttara with modern design language and practical urban living standards.",
     amenities: ["Planned Project", "Modern Facade", "Parking", "Lift Provision", "Utility Planning"],
   },

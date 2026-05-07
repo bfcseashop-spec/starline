@@ -42,7 +42,10 @@ const Navbar = ({ company, headerConfig }: Props) => {
       if (href.startsWith("#")) return { label: n.label, to: `/${href}` };
       return { label: n.label, to: href || "/" };
     });
-  const navLinks = configLinks.length > 0 ? configLinks : links;
+  const navLinks = (configLinks.length > 0 ? configLinks : links).filter(
+    (item, index, array) =>
+      index === array.findIndex((candidate) => candidate.label === item.label && candidate.to === item.to),
+  );
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 18);

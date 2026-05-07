@@ -5,6 +5,7 @@ import type { CompanySettings, SocialLinks, FooterContent } from "@/hooks/useSit
 const socialLabels: { key: keyof SocialLinks; label: string }[] = [
   { key: "facebook", label: "Facebook" },
   { key: "instagram", label: "Instagram" },
+  { key: "linkedin", label: "LinkedIn" },
   { key: "tiktok", label: "TikTok" },
   { key: "whatsapp", label: "WhatsApp" },
   { key: "telegram", label: "Telegram" },
@@ -22,10 +23,9 @@ const Footer = ({ company, social, content }: Props) => {
   const activeSocials = socialLabels.filter((s) => social?.[s.key]);
   const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
   const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
-  const fallbackPhone = "+8801334563765";
+  const primaryPhone = "+880 1334-563765";
   const fallbackAddress = "3-No, Gate, Road#11, House#E43, Block#E, Level-1, B-1, Niketon, Gulshan, Dhaka-1212";
   const primaryEmail = company?.email || "admin@starlineb.com";
-  const officePhone = company?.phone || fallbackPhone;
   const quickLinks = [
     { label: "Home", to: "/" },
     { label: "Properties", to: "/properties/ongoing" },
@@ -66,7 +66,7 @@ const Footer = ({ company, social, content }: Props) => {
               </a>
               <p className="inline-flex items-center gap-2 text-white/80 text-sm">
                 <Phone size={15} className="text-gold" />
-                {officePhone}
+                {primaryPhone}
               </p>
               <p className="inline-flex items-center gap-2 text-white/80 text-sm">
                 <Phone size={15} className="text-gold" />

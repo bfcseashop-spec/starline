@@ -27,6 +27,7 @@ export interface CompanySettings {
 export interface SocialLinks {
   facebook: string;
   instagram: string;
+  linkedin: string;
   tiktok: string;
   whatsapp: string;
   telegram: string;
@@ -90,8 +91,7 @@ const DEFAULT_HEADER: HeaderConfig = {
     { id: "1", label: "Home", href: "/", visible: true },
     { id: "2", label: "Properties", href: "/#properties", visible: true },
     { id: "3", label: "About", href: "/about", visible: true },
-    { id: "4", label: "Properties", href: "/properties/ongoing", visible: true },
-    { id: "5", label: "Contact", href: "/#contact", visible: true },
+    { id: "4", label: "Contact", href: "/#contact", visible: true },
   ],
   bg_color_scrolled: "#1a1a2e",
   bg_color_initial: "transparent",
@@ -132,11 +132,12 @@ const DEFAULT_COMPANY: CompanySettings = {
 
 const DEFAULT_SOCIAL: SocialLinks = {
   facebook: "",
-  instagram: "",
+  instagram: "https://www.instagram.com/sales.starlinebd/",
+  linkedin: "https://www.linkedin.com/company/starline-builders-ltd-bd",
   tiktok: "",
   whatsapp: "",
   telegram: "",
-  youtube: "",
+  youtube: "https://www.youtube.com/@StarlineBuildersLTD",
 };
 
 export const useSiteSettings = () => {
