@@ -8,6 +8,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+  echo "Do not run deploy as root."
+  echo "Use admin93 user: ./deploy.sh"
+  exit 1
+fi
+
 BACKUP_DIR="${BACKUP_DIR:-$SCRIPT_DIR/backups}"
 mkdir -p "$BACKUP_DIR"
 TIMESTAMP=$(date +%m-%d-%Y-%H-%M)
@@ -57,7 +63,8 @@ echo "[6/8] Restarting PM2 (starline)"
 pm2 restart starline || pm2 start serve --name starline -- -s dist -l 5174
 
 echo "[7/8] Restarting PM2 (starline-api)"
-pm2 restart starline-api --update-env || pm2 start "npm run api:start" --name starline-api --update-env
+API_PORT_VALUE="${API_PORT:-4042}"
+pm2 restart starline-api --update-env || API_PORT="$API_PORT_VALUE" pm2 start "npm run api:start" --name starline-api --update-env
 
 echo "[8/8] Saving PM2 state"
 pm2 save
