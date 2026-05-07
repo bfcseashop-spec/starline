@@ -202,9 +202,9 @@ export const ongoingProjects: ProjectSummary[] = [
 
 export const handoverProjects: ProjectSummary[] = [
   {
-    name: "Starline Tower",
+    name: "Starline Sapiya Manjil",
     slug: "starline-sapiya-manjil",
-    address: "Shah Ali bug, Mirpur",
+    address: "Senpara, Mirpur-10",
     city: "Dhaka 1216",
     notes: "Completed and handed‑over apartments known for reliable construction quality.",
     image: "/properties/starline-sapiya-manjil/01.png",
