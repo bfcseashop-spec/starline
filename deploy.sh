@@ -47,13 +47,19 @@ git pull
 echo "[3/6] npm install"
 npm install
 
-echo "[4/6] npm run build"
+echo "[4/8] npm run build"
 npm run build
 
-echo "[5/6] Restarting PM2 (starline)"
+echo "[5/8] npm run api:build"
+npm run api:build
+
+echo "[6/8] Restarting PM2 (starline)"
 pm2 restart starline || pm2 start serve --name starline -- -s dist -l 5174
 
-echo "[6/6] Saving PM2 state"
+echo "[7/8] Restarting PM2 (starline-api)"
+pm2 restart starline-api --update-env || pm2 start "npm run api:start" --name starline-api --update-env
+
+echo "[8/8] Saving PM2 state"
 pm2 save
 
 echo ""

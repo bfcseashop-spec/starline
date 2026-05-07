@@ -1,4 +1,4 @@
-import { MapPin, Mail, Phone, ArrowUpRight } from "lucide-react";
+import { MapPin, Mail, Phone, ArrowUpRight, Facebook, Instagram, Linkedin, Music2, MessageCircle, Send, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { CompanySettings, SocialLinks, FooterContent } from "@/hooks/useSiteSettings";
 
@@ -11,6 +11,16 @@ const socialLabels: { key: keyof SocialLinks; label: string }[] = [
   { key: "telegram", label: "Telegram" },
   { key: "youtube", label: "YouTube" },
 ];
+
+const socialIcons: Partial<Record<keyof SocialLinks, typeof Facebook>> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  linkedin: Linkedin,
+  tiktok: Music2,
+  whatsapp: MessageCircle,
+  telegram: Send,
+  youtube: Youtube,
+};
 
 interface Props {
   company?: CompanySettings;
@@ -109,17 +119,24 @@ const Footer = ({ company, social, content }: Props) => {
             <h4 className="text-gold text-sm font-semibold uppercase tracking-wider mb-5">Connect</h4>
             <div className="flex flex-col gap-2.5">
               {activeSocials.length > 0 ? (
-                activeSocials.map((s) => (
-                  <a
-                    key={s.key}
-                    href={social?.[s.key] || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-white/70 hover:text-gold text-sm border border-white/10 rounded-lg px-3 py-2 hover:border-gold/40 transition-all inline-flex items-center justify-between"
-                  >
-                    {s.label} <ArrowUpRight size={13} />
-                  </a>
-                ))
+                activeSocials.map((s) => {
+                  const Icon = socialIcons[s.key] || ArrowUpRight;
+                  return (
+                    <a
+                      key={s.key}
+                      href={social?.[s.key] || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white/70 hover:text-gold text-sm border border-white/10 rounded-lg px-3 py-2 hover:border-gold/40 transition-all inline-flex items-center justify-between"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Icon size={14} />
+                        {s.label}
+                      </span>
+                      <ArrowUpRight size={13} />
+                    </a>
+                  );
+                })
               ) : (
                 <p className="text-white/45 text-sm">Social links will appear here.</p>
               )}
