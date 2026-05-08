@@ -41,7 +41,7 @@ async function bootstrap() {
     maxAge: 86_400,
   });
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: false }));
-  await app.listen(Number(process.env.API_PORT || 4000));
+  await app.listen(Number(process.env.API_PORT || 4042));
 }
 
 bootstrap().catch((err: unknown) => {
