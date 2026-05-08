@@ -8,10 +8,12 @@ import ImageGallery from "@/components/ImageGallery";
 import ContactForm from "@/components/ContactForm";
 import { properties as fallbackProperties } from "@/data/properties";
 import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const PropertyDetail = () => {
   const { slug } = useParams<{ slug: string }>();
   const { data: catalog, isPending } = usePropertyCatalog();
+  const { company, social, socialPlatforms, headerConfig, footerContent } = useSiteSettings();
   const property = useMemo(() => {
     const list = catalog ?? fallbackProperties;
     return list.find((p) => p.slug === slug);
@@ -28,7 +30,7 @@ const PropertyDetail = () => {
   if (!property) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <Navbar company={company} headerConfig={headerConfig} social={social} socialPlatforms={socialPlatforms} />
         <div className="flex items-center justify-center min-h-[60vh] pt-20">
           <div className="text-center">
             <h1 className="font-heading text-3xl font-bold text-foreground mb-2">Property Not Found</h1>
@@ -38,7 +40,7 @@ const PropertyDetail = () => {
             </Link>
           </div>
         </div>
-        <Footer />
+        <Footer company={company} social={social} content={footerContent} />
       </div>
     );
   }
@@ -54,7 +56,7 @@ const PropertyDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <Navbar company={company} headerConfig={headerConfig} social={social} socialPlatforms={socialPlatforms} />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-6">
           {/* Back link */}
@@ -121,7 +123,7 @@ const PropertyDetail = () => {
           </div>
         </div>
       </main>
-      <Footer />
+      <Footer company={company} social={social} content={footerContent} />
     </div>
   );
 };

@@ -1,11 +1,12 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { backend } from "@/lib/backendClient";
-import { usePortfolioTemplates } from "@/hooks/usePropertyCatalog";
+import { fetchPropertyCatalog, usePortfolioTemplates } from "@/hooks/usePropertyCatalog";
 import { uploadProjectCoverImage } from "@/lib/uploadProjectImage";
 import { adminToastErr, adminToastOk } from "@/lib/adminToast";
 import { HardHat, Plus, Loader2, MapPin, Calendar, X, Save, Trash2, Search, ChevronDown, DollarSign, Eye, List, LayoutGrid, Upload } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import type { Property } from "@/data/properties";
 
 interface Project {
   id: string;
@@ -28,6 +29,13 @@ interface CustomerOption {
 }
 
 const statusOptions = ["planned", "in_progress", "completed", "on_hold", "for_sale", "for_rent"];
+const portfolioTypeOptions = ["Upcoming", "Ongoing", "Handed-over"];
+
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 
 type FilterStatus = "all" | "planned" | "in_progress" | "completed" | "on_hold" | "for_sale" | "for_rent";
 const filterLabels: Record<FilterStatus, string> = {
@@ -67,8 +75,35 @@ const AdminProjects = () => {
   });
 
   const [coverUploading, setCoverUploading] = useState(false);
+  const [catalogSaving, setCatalogSaving] = useState(false);
+  const [catalogItems, setCatalogItems] = useState<Property[]>([]);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const { data: portfolioTemplates = [], isFetching: tmplLoading } = usePortfolioTemplates(showForm);
+  const [formMeta, setFormMeta] = useState({
+    slug: "",
+    price: "Contact for Price",
+    priceNum: "0",
+    tag: "Featured",
+    type: "Ongoing",
+    beds: "3",
+    baths: "3",
+    sqft: "",
+    yearBuilt: String(new Date().getFullYear()),
+    garage: "1",
+    lotSize: "",
+    description: "",
+    amenitiesText: "",
+    imagesText: "",
+  });
+  const isPublicPortfolio = !form.user_id.trim();
+  const hasMetaDraft = useMemo(
+    () =>
+      formMeta.slug.trim().length > 0 ||
+      formMeta.description.trim().length > 0 ||
+      formMeta.imagesText.trim().length > 0 ||
+      formMeta.amenitiesText.trim().length > 0,
+    [formMeta],
+  );
 
   const fetchData = async () => {
     const [projRes, custRes, rolesRes] = await Promise.all([
@@ -99,6 +134,48 @@ const AdminProjects = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (!showForm) return;
+    fetchPropertyCatalog().then(setCatalogItems).catch(() => setCatalogItems([]));
+  }, [showForm]);
+
+  const hydrateMetaFromCatalog = (item: Property | null) => {
+    if (!item) {
+      setFormMeta({
+        slug: "",
+        price: "Contact for Price",
+        priceNum: "0",
+        tag: "Featured",
+        type: "Ongoing",
+        beds: "3",
+        baths: "3",
+        sqft: "",
+        yearBuilt: String(new Date().getFullYear()),
+        garage: "1",
+        lotSize: "",
+        description: "",
+        amenitiesText: "",
+        imagesText: "",
+      });
+      return;
+    }
+    setFormMeta({
+      slug: item.slug || "",
+      price: item.price || "Contact for Price",
+      priceNum: String(item.priceNum ?? 0),
+      tag: item.tag || "Featured",
+      type: item.type || "Ongoing",
+      beds: String(item.beds ?? 0),
+      baths: String(item.baths ?? 0),
+      sqft: item.sqft || "",
+      yearBuilt: String(item.yearBuilt ?? new Date().getFullYear()),
+      garage: String(item.garage ?? 0),
+      lotSize: item.lotSize || "",
+      description: item.description || "",
+      amenitiesText: (item.amenities || []).join("\n"),
+      imagesText: (item.images || []).join("\n"),
+    });
+  };
 
   const resetForm = () => {
     setForm({
@@ -114,14 +191,20 @@ const AdminProjects = () => {
       start_date: "",
       expected_completion: "",
     });
+    hydrateMetaFromCatalog(null);
     setEditId(null);
     setShowForm(false);
   };
 
   const openEdit = (p: Project) => {
+    const nTitle = normalize(p.project_name || "");
+    const matchedCatalog =
+      catalogItems.find((x) => normalize(x.title) === nTitle) ||
+      catalogItems.find((x) => normalize(x.slug) === nTitle) ||
+      null;
     setForm({
       user_id: p.user_id ?? "",
-      portfolio_template_slug: "",
+      portfolio_template_slug: matchedCatalog?.slug || "",
       project_name: p.project_name,
       location: p.location || "",
       building_image_url: p.building_image_url || "",
@@ -132,6 +215,7 @@ const AdminProjects = () => {
       start_date: p.start_date || "",
       expected_completion: p.expected_completion || "",
     });
+    hydrateMetaFromCatalog(matchedCatalog);
     setEditId(p.id);
     setShowForm(true);
   };
@@ -161,6 +245,73 @@ const AdminProjects = () => {
       ({ error } = await backend.from("customer_projects").update(payload).eq("id", editId));
     } else {
       ({ error } = await backend.from("customer_projects").insert(payload));
+    }
+    if (!error && isPublicPortfolio && hasMetaDraft) {
+      try {
+        setCatalogSaving(true);
+        const { data: settingRow } = await backend
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "marketing_properties")
+          .single();
+        const currentItems = Array.isArray((settingRow as { setting_value?: { items?: Property[] } } | null)?.setting_value?.items)
+          ? ((settingRow as { setting_value?: { items?: Property[] } }).setting_value?.items as Property[])
+          : catalogItems;
+
+        const amenities = formMeta.amenitiesText
+          .split("\n")
+          .map((x) => x.trim())
+          .filter(Boolean);
+        const images = formMeta.imagesText
+          .split("\n")
+          .map((x) => x.trim())
+          .filter(Boolean);
+        const slug = (formMeta.slug || form.project_name)
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+
+        const updatedItem: Property = {
+          id: Date.now(),
+          slug,
+          images: images.length ? images : (form.building_image_url.trim() ? [form.building_image_url.trim()] : []),
+          title: form.project_name.trim(),
+          location: form.location.trim(),
+          price: formMeta.price.trim() || "Contact for Price",
+          priceNum: Number(formMeta.priceNum) || 0,
+          beds: Number(formMeta.beds) || 0,
+          baths: Number(formMeta.baths) || 0,
+          sqft: formMeta.sqft.trim(),
+          tag: formMeta.tag.trim() || "Featured",
+          type: formMeta.type.trim() || "Ongoing",
+          description: formMeta.description.trim(),
+          amenities,
+          yearBuilt: Number(formMeta.yearBuilt) || new Date().getFullYear(),
+          garage: Number(formMeta.garage) || 0,
+          lotSize: formMeta.lotSize.trim(),
+        };
+
+        const idx = currentItems.findIndex((x) => x.slug === updatedItem.slug || normalize(x.title) === normalize(updatedItem.title));
+        const nextItems = [...currentItems];
+        if (idx >= 0) {
+          nextItems[idx] = { ...nextItems[idx], ...updatedItem, id: nextItems[idx].id || updatedItem.id };
+        } else {
+          nextItems.unshift(updatedItem);
+        }
+        const { error: catalogErr } = await backend
+          .from("site_settings")
+          .upsert({ setting_key: "marketing_properties", setting_value: { items: nextItems } }, { onConflict: "setting_key" });
+        if (catalogErr) {
+          adminToastErr(catalogErr, "Saved project, but failed to update public property details");
+        } else {
+          setCatalogItems(nextItems);
+        }
+      } catch (metaErr) {
+        adminToastErr(metaErr, "Saved project, but failed to update public property details");
+      } finally {
+        setCatalogSaving(false);
+      }
     }
 
     setSaving(false);
@@ -310,6 +461,7 @@ const AdminProjects = () => {
                     }
                     const t = portfolioTemplates.find((x) => x.slug === slug);
                     if (!t) return;
+                    const source = catalogItems.find((x) => x.slug === slug) || null;
                     setForm((f) => ({
                       ...f,
                       portfolio_template_slug: slug,
@@ -317,6 +469,7 @@ const AdminProjects = () => {
                       location: t.location,
                       building_image_url: t.coverImage || "",
                     }));
+                    hydrateMetaFromCatalog(source);
                   }}
                   className={inputClass}
                 >
@@ -382,6 +535,80 @@ const AdminProjects = () => {
                   {statusOptions.map((s) => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
                 </select>
               </div>
+              {isPublicPortfolio && (
+                <>
+                  <div className="pt-1 border-t border-border">
+                    <p className="text-sm font-semibold text-foreground mb-2">Public property details</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      These fields power the public property pages (tag, specs, amenities, gallery, description).
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Slug</label>
+                      <input value={formMeta.slug} onChange={(e) => setFormMeta((m) => ({ ...m, slug: e.target.value }))} className={inputClass} placeholder="starline-monoara-villa" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Tag</label>
+                      <input value={formMeta.tag} onChange={(e) => setFormMeta((m) => ({ ...m, tag: e.target.value }))} className={inputClass} placeholder="Featured / Upcoming / Handover" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Type</label>
+                      <select value={formMeta.type} onChange={(e) => setFormMeta((m) => ({ ...m, type: e.target.value }))} className={inputClass}>
+                        {portfolioTypeOptions.map((x) => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Price label</label>
+                      <input value={formMeta.price} onChange={(e) => setFormMeta((m) => ({ ...m, price: e.target.value }))} className={inputClass} placeholder="Contact for Price" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Bedrooms</label>
+                      <input type="number" value={formMeta.beds} onChange={(e) => setFormMeta((m) => ({ ...m, beds: e.target.value }))} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Bathrooms</label>
+                      <input type="number" value={formMeta.baths} onChange={(e) => setFormMeta((m) => ({ ...m, baths: e.target.value }))} className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Sq. Ft.</label>
+                      <input value={formMeta.sqft} onChange={(e) => setFormMeta((m) => ({ ...m, sqft: e.target.value }))} className={inputClass} placeholder="1,350" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Year Built</label>
+                      <input type="number" value={formMeta.yearBuilt} onChange={(e) => setFormMeta((m) => ({ ...m, yearBuilt: e.target.value }))} className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Garage</label>
+                      <input type="number" value={formMeta.garage} onChange={(e) => setFormMeta((m) => ({ ...m, garage: e.target.value }))} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1.5 block">Lot Size</label>
+                      <input value={formMeta.lotSize} onChange={(e) => setFormMeta((m) => ({ ...m, lotSize: e.target.value }))} className={inputClass} placeholder="2.5 katha" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Description</label>
+                    <textarea value={formMeta.description} onChange={(e) => setFormMeta((m) => ({ ...m, description: e.target.value }))} className={inputClass} rows={3} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Amenities (one per line)</label>
+                    <textarea value={formMeta.amenitiesText} onChange={(e) => setFormMeta((m) => ({ ...m, amenitiesText: e.target.value }))} className={inputClass} rows={4} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Gallery image URLs (one per line)</label>
+                    <textarea value={formMeta.imagesText} onChange={(e) => setFormMeta((m) => ({ ...m, imagesText: e.target.value }))} className={inputClass} rows={4} placeholder="/properties/project/01.png" />
+                  </div>
+                </>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Total Budget</label>
@@ -426,7 +653,7 @@ const AdminProjects = () => {
                   <input type="date" value={form.expected_completion} onChange={(e) => setForm((f) => ({ ...f, expected_completion: e.target.value }))} className={inputClass} />
                 </div>
               </div>
-              <button onClick={handleSave} disabled={saving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
+              <button onClick={handleSave} disabled={saving || catalogSaving} className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition-opacity shadow-md">
                 {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 {editId ? "Update Property" : "Create Property"}
               </button>

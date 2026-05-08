@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
 import { Clock, Bell, Play } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import type { ComingSoonProject } from "@/hooks/useSiteSettings";
+import { properties as fallbackCatalog } from "@/data/properties";
+import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
 
 const defaultProjects: ComingSoonProject[] = [
   { title: "Starline Heights", location: "Downtown Metro", type: "Residential Tower", units: "120 Units", eta: "Q3 2026" },
@@ -22,10 +24,34 @@ const getEmbedUrl = (url: string) => {
   return url;
 };
 
+const normalize = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
 const ComingSoon = ({ projects }: Props) => {
   const list = projects && projects.length > 0 ? projects : defaultProjects;
   const [notified, setNotified] = useState<Set<number>>(new Set());
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
+  const { data: catalog } = usePropertyCatalog();
+  const catalogRows = catalog ?? fallbackCatalog;
+
+  const cards = useMemo(
+    () =>
+      list.map((project) => {
+        const nameNorm = normalize(project.title || "");
+        const match =
+          catalogRows.find((p) => normalize(p.title) === nameNorm) ||
+          catalogRows.find((p) => normalize(p.slug) === nameNorm) ||
+          catalogRows.find((p) => normalize(p.title).includes(nameNorm) || nameNorm.includes(normalize(p.title)));
+        return {
+          ...project,
+          image_url: project.image_url || match?.images?.[0] || "",
+        };
+      }),
+    [catalogRows, list],
+  );
 
   const notify = (i: number) => {
     setNotified((prev) => new Set(prev).add(i));
@@ -50,7 +76,7 @@ const ComingSoon = ({ projects }: Props) => {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {list.map((project, i) => (
+          {cards.map((project, i) => (
             <motion.div
               key={project.title + i}
               initial={{ opacity: 0, y: 20 }}
