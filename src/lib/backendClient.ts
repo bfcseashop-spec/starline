@@ -360,6 +360,7 @@ export const backend = {
         async upload(remotePath: string, file: File) {
           const form = new FormData();
           form.append("file", file);
+          form.append("path", remotePath);
           const token = localStorage.getItem(BACKEND_AUTH_TOKEN_KEY) || "";
           const res = await fetch(`${API_URL}/api/storage/upload/${bucket}`, {
             method: "POST",

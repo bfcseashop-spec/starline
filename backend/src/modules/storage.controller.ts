@@ -14,15 +14,23 @@ function ensureDir(dir: string) {
 export class StorageController {
   @Post("upload/:bucket")
   @UseInterceptors(FileInterceptor("file"))
-  upload(@Param("bucket") bucket: string, @UploadedFile() file: Express.Multer.File) {
-    ensureDir(path.join(storageRoot, bucket));
-    const filename = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
-    const finalPath = path.join(storageRoot, bucket, filename);
+  upload(@Param("bucket") bucket: string, @Req() req: Request, @UploadedFile() file: Express.Multer.File) {
+    const requested = String((req.body as { path?: string } | undefined)?.path || "");
+    const cleaned = requested
+      .replace(/\\/g, "/")
+      .split("/")
+      .map((seg) => seg.trim())
+      .filter((seg) => seg && seg !== "." && seg !== "..")
+      .join("/");
+    const fallbackName = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
+    const relativePath = cleaned || fallbackName;
+    ensureDir(path.join(storageRoot, bucket, path.dirname(relativePath)));
+    const finalPath = path.join(storageRoot, bucket, relativePath);
     fs.writeFileSync(finalPath, file.buffer);
     return {
       data: {
-        path: `${bucket}/${filename}`,
-        publicUrl: `/api/storage/public/${bucket}/${filename}`,
+        path: `${bucket}/${relativePath}`,
+        publicUrl: `/api/storage/public/${bucket}/${relativePath}`,
       },
       error: null,
     };
