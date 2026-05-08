@@ -1,6 +1,7 @@
 import { MapPin, Mail, Phone, ArrowUpRight, Facebook, Instagram, Linkedin, Music2, MessageCircle, Send, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { CompanySettings, SocialLinks, FooterContent } from "@/hooks/useSiteSettings";
+import { useState } from "react";
 
 const socialLabels: { key: keyof SocialLinks; label: string }[] = [
   { key: "facebook", label: "Facebook" },
@@ -29,14 +30,20 @@ interface Props {
 }
 
 const Footer = ({ company, social, content }: Props) => {
-  const brandName = company?.name || "Starline Builder's";
-  const logoUrl = company?.logo_url || "/logo-main.png";
+  const [logoFailed, setLogoFailed] = useState(false);
+  const pick = (value: string | null | undefined, fallback: string) => {
+    const normalized = (value || "").trim();
+    return normalized.length > 0 ? normalized : fallback;
+  };
+  const brandName = pick(company?.name, "Starline Builder's");
+  const logoUrl = !logoFailed && (company?.logo_url || "").trim() ? (company?.logo_url as string) : "/logo-main.png";
   const activeSocials = socialLabels.filter((s) => s.key === "facebook" || social?.[s.key]);
-  const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
-  const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
-  const primaryPhone = "+880 1334-563765";
+  const description = pick(content?.description, "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.");
+  const copyright = pick(content?.copyright, `© 2026 ${brandName} All rights reserved.`);
+  const primaryPhone = pick(company?.phone, "+880 1334-563765");
+  const website = pick(company?.website, "https://starlineb.com");
   const fallbackAddress = "3-No, Gate, Road#11, House#E43, Block#E, Level-1, B-1, Niketon, Gulshan, Dhaka-1212";
-  const primaryEmail = company?.email || "admin@starlineb.com";
+  const primaryEmail = pick(company?.email, "admin@starlineb.com");
   const quickLinks = [
     { label: "Home", to: "/" },
     { label: "Properties", to: "/properties/ongoing" },
@@ -63,7 +70,7 @@ const Footer = ({ company, social, content }: Props) => {
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
             <div className="flex items-center gap-3 mb-5">
-              <img src={logoUrl} alt="Starline logo" className="w-auto h-12 object-contain" />
+              <img src={logoUrl} alt="Starline logo" onError={() => setLogoFailed(true)} className="w-auto h-12 object-contain" />
               <div>
                 <p className="font-heading text-xl font-bold text-white">{brandName}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-white/60">Premium Real Estate Partner</p>
@@ -85,8 +92,12 @@ const Footer = ({ company, social, content }: Props) => {
               </p>
               <p className="inline-flex items-start gap-2 text-white/75 text-sm leading-relaxed">
                 <MapPin size={15} className="text-gold mt-0.5 shrink-0" />
-                {company?.address || fallbackAddress}
+                {pick(company?.address, fallbackAddress)}
               </p>
+              <a href={website.startsWith("http") ? website : `https://${website}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-white/80 hover:text-gold text-sm">
+                <ArrowUpRight size={15} className="text-gold" />
+                {website}
+              </a>
             </div>
           </div>
 

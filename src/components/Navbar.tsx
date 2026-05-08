@@ -18,8 +18,9 @@ const Navbar = ({ company, headerConfig }: Props) => {
   const { user, role } = useAuth();
 
   const dashboardPath = role === "admin" ? "/admin" : "/dashboard";
-  const logoUrl = company?.logo_url || defaultLogo;
-  const brandName = company?.name || "Starline Builder's Ltd.";
+  const [logoFailed, setLogoFailed] = useState(false);
+  const logoUrl = !logoFailed && company?.logo_url?.trim() ? company.logo_url : defaultLogo;
+  const brandName = company?.name?.trim() || "Starline Builder's Ltd.";
   const slogan = headerConfig?.slogan || "Property Partner in Bangladesh";
 
   const links = [
@@ -65,7 +66,7 @@ const Navbar = ({ company, headerConfig }: Props) => {
         >
           <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3 min-w-0">
-              <img src={logoUrl} alt="Starline logo" className="w-auto h-12 object-contain shrink-0" />
+              <img src={logoUrl} alt="Starline logo" onError={() => setLogoFailed(true)} className="w-auto h-12 object-contain shrink-0" />
               <div className="min-w-0">
                 <p className="font-heading text-sm md:text-base font-bold text-white truncate">{brandName}</p>
                 <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-white/70 truncate">{slogan}</p>

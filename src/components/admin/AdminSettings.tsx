@@ -121,6 +121,18 @@ const AdminSettings = () => {
       address: info.address || "", website: info.website || "", tax_id: info.tax_id || "",
       tagline: info.tagline || "", version: info.version || "1.0.0",
     });
+    useEffect(() => {
+      setForm({
+        name: info.name || "",
+        email: info.email || "",
+        phone: info.phone || "",
+        address: info.address || "",
+        website: info.website || "",
+        tax_id: info.tax_id || "",
+        tagline: info.tagline || "",
+        version: info.version || "1.0.0",
+      });
+    }, [info.address, info.email, info.name, info.phone, info.tagline, info.tax_id, info.version, info.website]);
 
     return (
       <div className="space-y-6 max-w-2xl">
@@ -383,7 +395,6 @@ const AdminSettings = () => {
   const SystemTab = () => {
     const sys = settings.system || {};
     const [form, setForm] = useState({
-      banner_title: sys.banner_title || "", banner_subtitle: sys.banner_subtitle || "",
       primary_color: sys.primary_color || "#c9a55a", accent_color: sys.accent_color || "#1a1a2e",
       theme: sys.theme || "dark", header_style: sys.header_style || "default",
       show_stats: sys.show_stats !== false, show_featured: sys.show_featured !== false,
@@ -439,14 +450,6 @@ const AdminSettings = () => {
             </div>
             <input ref={bannerRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
             {bannerUploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading...</p>}
-          </div>
-          <div>
-            <Label className="text-xs font-semibold text-foreground">Banner Title</Label>
-            <Input value={form.banner_title} onChange={(e) => setForm({ ...form, banner_title: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="Welcome to Starline..." />
-          </div>
-          <div>
-            <Label className="text-xs font-semibold text-foreground">Banner Subtitle</Label>
-            <Input value={form.banner_subtitle} onChange={(e) => setForm({ ...form, banner_subtitle: e.target.value })} className="mt-1.5 bg-muted/50" />
           </div>
         </SectionCard>
 

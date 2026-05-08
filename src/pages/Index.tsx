@@ -34,21 +34,11 @@ const Index = () => {
       <Navbar company={company} headerConfig={headerConfig} social={social} socialPlatforms={socialPlatforms} />
       <main>
         <HeroSection
-          bannerTitle={system.banner_title}
-          bannerSubtitle={system.banner_subtitle}
           heroSlideUrls={system.hero_slide_urls}
           bannerImageUrl={system.banner_image_url}
-          badgeText={(system as any).badge_text}
-          showBadge={(system as any).show_badge}
-          ctaPrimaryText={(system as any).cta_primary_text}
-          ctaPrimaryLink={(system as any).cta_primary_link}
-          ctaSecondaryText={(system as any).cta_secondary_text}
-          ctaSecondaryLink={(system as any).cta_secondary_link}
           overlayColor={(system as any).overlay_color}
           overlayOpacity={(system as any).overlay_opacity}
-          textAlignment={(system as any).text_alignment}
           minHeight={(system as any).min_height}
-          showScrollIndicator={(system as any).show_scroll_indicator}
         />
         <PropertySummary />
         {(system as any).show_search !== false && <PropertySearch onFilter={setFilters} />}
