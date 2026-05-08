@@ -59,6 +59,7 @@ const AdminSettings = () => {
   const [uploading, setUploading] = useState(false);
   const logoRef = useRef<HTMLInputElement>(null);
   const bannerRef = useRef<HTMLInputElement>(null);
+  const faviconRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -395,6 +396,7 @@ const AdminSettings = () => {
       favicon_url: sys.favicon_url || "",
     });
     const [bannerUploading, setBannerUploading] = useState(false);
+    const [faviconUploading, setFaviconUploading] = useState(false);
 
     const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -403,6 +405,15 @@ const AdminSettings = () => {
       const url = await uploadFile(file, "banners");
       setBannerUploading(false);
       if (url) setForm({ ...form, banner_image_url: url });
+    };
+
+    const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setFaviconUploading(true);
+      const url = await uploadFile(file, "favicons");
+      setFaviconUploading(false);
+      if (url) setForm((prev) => ({ ...prev, favicon_url: url }));
     };
 
     return (
@@ -513,6 +524,40 @@ const AdminSettings = () => {
           <div>
             <Label className="text-xs font-semibold text-foreground">Google Analytics ID</Label>
             <Input value={form.google_analytics_id} onChange={(e) => setForm({ ...form, google_analytics_id: e.target.value })} className="mt-1.5 bg-muted/50" placeholder="G-XXXXXXXXXX" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-foreground">Favicon</Label>
+            <div className="flex items-center gap-2 mt-1.5">
+              {form.favicon_url && (
+                <img
+                  src={form.favicon_url}
+                  alt="Favicon preview"
+                  className="w-8 h-8 rounded border border-border bg-white object-contain"
+                />
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={() => faviconRef.current?.click()} className="gap-1.5 text-xs">
+                <Upload size={12} /> Upload Favicon
+              </Button>
+              {form.favicon_url && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setForm({ ...form, favicon_url: "" })} className="text-destructive text-xs">
+                  <X size={12} /> Remove
+                </Button>
+              )}
+              <input
+                ref={faviconRef}
+                type="file"
+                accept="image/*,.ico"
+                className="hidden"
+                onChange={handleFaviconUpload}
+              />
+            </div>
+            <Input
+              value={form.favicon_url}
+              onChange={(e) => setForm({ ...form, favicon_url: e.target.value })}
+              className="mt-2 bg-muted/50"
+              placeholder="https://.../favicon.ico"
+            />
+            {faviconUploading && <p className="text-xs text-primary animate-pulse mt-1">Uploading favicon...</p>}
           </div>
         </SectionCard>
 

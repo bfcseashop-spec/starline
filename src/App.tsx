@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SiteMetaManager from "@/components/SiteMetaManager";
 const Index = lazy(() => import("./pages/Index"));
 const PropertyDetail = lazy(() => import("./pages/PropertyDetail"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -47,6 +48,7 @@ const App = () => (
         <Toaster />
         <BrowserRouter>
           <HashScroll />
+          <SiteMetaManager />
           <Suspense fallback={<div className="min-h-screen bg-background" />}>
             <Routes>
               <Route path="/" element={<Index />} />

@@ -14,6 +14,9 @@ export interface SystemSettings {
   show_stats: boolean;
   show_featured: boolean;
   show_contact: boolean;
+  meta_title?: string;
+  meta_description?: string;
+  favicon_url?: string;
 }
 
 export interface CompanySettings {
@@ -121,6 +124,9 @@ const DEFAULT_SYSTEM: SystemSettings = {
   show_stats: true,
   show_featured: true,
   show_contact: true,
+  meta_title: "",
+  meta_description: "",
+  favicon_url: "",
 };
 
 const DEFAULT_COMPANY: CompanySettings = {

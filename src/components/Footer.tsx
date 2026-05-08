@@ -30,6 +30,7 @@ interface Props {
 
 const Footer = ({ company, social, content }: Props) => {
   const brandName = company?.name || "Starline Builder's";
+  const logoUrl = company?.logo_url || "/logo-main.png";
   const activeSocials = socialLabels.filter((s) => s.key === "facebook" || social?.[s.key]);
   const description = content?.description || "Premium construction and real estate services delivering extraordinary properties. Building trust, quality, and lifelong relationships since 2010.";
   const copyright = content?.copyright || `© 2026 ${brandName} All rights reserved.`;
@@ -62,7 +63,7 @@ const Footer = ({ company, social, content }: Props) => {
         <div className="grid lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
             <div className="flex items-center gap-3 mb-5">
-              <img src="/logo-main.png" alt="Starline logo" className="w-auto h-12 object-contain" />
+              <img src={logoUrl} alt="Starline logo" className="w-auto h-12 object-contain" />
               <div>
                 <p className="font-heading text-xl font-bold text-white">{brandName}</p>
                 <p className="text-xs uppercase tracking-[0.2em] text-white/60">Premium Real Estate Partner</p>
