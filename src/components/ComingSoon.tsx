@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 import type { ComingSoonProject } from "@/hooks/useSiteSettings";
 import { properties as fallbackCatalog } from "@/data/properties";
+import { upcomingProjects } from "@/data/siteContent";
 import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
 
 const defaultProjects: ComingSoonProject[] = [
@@ -45,9 +46,10 @@ const ComingSoon = ({ projects }: Props) => {
           catalogRows.find((p) => normalize(p.title) === nameNorm) ||
           catalogRows.find((p) => normalize(p.slug) === nameNorm) ||
           catalogRows.find((p) => normalize(p.title).includes(nameNorm) || nameNorm.includes(normalize(p.title)));
+        const upcomingFallbackImage = upcomingProjects[i % upcomingProjects.length]?.image || "";
         return {
           ...project,
-          image_url: project.image_url || match?.images?.[0] || "",
+          image_url: project.image_url || match?.images?.[0] || upcomingFallbackImage,
         };
       }),
     [catalogRows, list],
