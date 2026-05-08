@@ -6,6 +6,7 @@ import type { ComingSoonProject } from "@/hooks/useSiteSettings";
 import { properties as fallbackCatalog } from "@/data/properties";
 import { upcomingProjects } from "@/data/siteContent";
 import { usePropertyCatalog } from "@/hooks/usePropertyCatalog";
+import { usePublicProperties } from "@/hooks/usePublicProperties";
 
 const defaultProjects: ComingSoonProject[] = [
   { title: "Starline Heights", location: "Downtown Metro", type: "Residential Tower", units: "120 Units", eta: "Q3 2026" },
@@ -36,23 +37,38 @@ const ComingSoon = ({ projects }: Props) => {
   const [notified, setNotified] = useState<Set<number>>(new Set());
   const [playingVideo, setPlayingVideo] = useState<number | null>(null);
   const { data: catalog } = usePropertyCatalog();
+  const { items: liveUpcoming } = usePublicProperties("upcoming", upcomingProjects);
   const catalogRows = catalog ?? fallbackCatalog;
+  const liveCards = useMemo(
+    () =>
+      liveUpcoming.map((item, i) => ({
+        title: item.name,
+        location: `${item.address}, ${item.city}`,
+        type: "Upcoming Property",
+        units: "Contact for Details",
+        eta: `Q${(i % 4) + 1} ${new Date().getFullYear() + 1}`,
+        image_url: item.image,
+        video_url: "",
+      })),
+    [liveUpcoming],
+  );
+  const source = liveCards.length > 0 ? liveCards : list;
 
   const cards = useMemo(
     () =>
-      list.map((project) => {
+      source.map((project, i) => {
         const nameNorm = normalize(project.title || "");
         const match =
           catalogRows.find((p) => normalize(p.title) === nameNorm) ||
           catalogRows.find((p) => normalize(p.slug) === nameNorm) ||
           catalogRows.find((p) => normalize(p.title).includes(nameNorm) || nameNorm.includes(normalize(p.title)));
-        const upcomingFallbackImage = upcomingProjects[i % upcomingProjects.length]?.image || "";
+        const upcomingFallbackImage = upcomingProjects[i % upcomingProjects.length]?.image || "/properties/starline-tower-one/1.png";
         return {
           ...project,
           image_url: project.image_url || match?.images?.[0] || upcomingFallbackImage,
         };
       }),
-    [catalogRows, list],
+    [catalogRows, source],
   );
 
   const notify = (i: number) => {
@@ -88,41 +104,30 @@ const ComingSoon = ({ projects }: Props) => {
               className="bg-card rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-shadow group"
             >
               {/* Image / Video */}
-              {(project.image_url || project.video_url) && (
-                <div className="relative h-48 bg-muted">
-                  {playingVideo === i && project.video_url ? (
-                    <iframe
-                      src={getEmbedUrl(project.video_url)}
-                      className="w-full h-full"
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                    />
-                  ) : project.image_url ? (
-                    <>
-                      <img src={project.image_url} alt={project.title} className="w-full h-full object-cover" />
-                      {project.video_url && (
-                        <button
-                          onClick={() => setPlayingVideo(i)}
-                          className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
-                        >
-                          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
-                            <Play size={20} className="text-navy ml-0.5" />
-                          </div>
-                        </button>
-                      )}
-                    </>
-                  ) : project.video_url ? (
-                    <button
-                      onClick={() => setPlayingVideo(i)}
-                      className="w-full h-full flex items-center justify-center bg-navy/10 hover:bg-navy/20 transition-colors"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-gold/20 flex items-center justify-center">
-                        <Play size={20} className="text-gold ml-0.5" />
-                      </div>
-                    </button>
-                  ) : null}
-                </div>
-              )}
+              <div className="relative h-48 bg-muted">
+                {playingVideo === i && project.video_url ? (
+                  <iframe
+                    src={getEmbedUrl(project.video_url)}
+                    className="w-full h-full"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                ) : (
+                  <>
+                    <img src={project.image_url || "/properties/starline-tower-one/1.png"} alt={project.title} className="w-full h-full object-cover" />
+                    {project.video_url && (
+                      <button
+                        onClick={() => setPlayingVideo(i)}
+                        className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                          <Play size={20} className="text-navy ml-0.5" />
+                        </div>
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
 
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
