@@ -89,10 +89,13 @@ const AdminSettings = () => {
     setUploading(true);
     const ext = file.name.split(".").pop();
     const filePath = `${path}/${Date.now()}.${ext}`;
-    const { error } = await backend.storage.from("company-assets").upload(filePath, file);
+    const { data: uploaded, error } = await backend.storage.from("company-assets").upload(filePath, file);
     setUploading(false);
     if (error) { toast.error("Upload failed"); return null; }
-    const { data: pub } = backend.storage.from("company-assets").getPublicUrl(filePath);
+    const actualPath = (uploaded as { path?: string; fullPath?: string } | null)?.path
+      || (uploaded as { path?: string; fullPath?: string } | null)?.fullPath
+      || filePath;
+    const { data: pub } = backend.storage.from("company-assets").getPublicUrl(actualPath);
     return pub.publicUrl;
   };
 
