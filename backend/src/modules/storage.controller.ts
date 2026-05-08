@@ -1,6 +1,6 @@
-import { Controller, Delete, Get, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Delete, Get, Param, Post, Req, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -28,14 +28,16 @@ export class StorageController {
     };
   }
 
-  @Get("public/:bucket/:filename")
-  getFile(@Param("bucket") bucket: string, @Param("filename") filename: string, @Res() res: Response) {
+  @Get("public/:bucket/*")
+  getFile(@Param("bucket") bucket: string, @Req() req: Request, @Res() res: Response) {
+    const filename = String(req.params[0] || "");
     const finalPath = path.join(storageRoot, bucket, filename);
     return res.sendFile(finalPath);
   }
 
-  @Delete(":bucket/:filename")
-  remove(@Param("bucket") bucket: string, @Param("filename") filename: string) {
+  @Delete(":bucket/*")
+  remove(@Param("bucket") bucket: string, @Req() req: Request) {
+    const filename = String(req.params[0] || "");
     const finalPath = path.join(storageRoot, bucket, filename);
     if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
     return { data: true, error: null };
