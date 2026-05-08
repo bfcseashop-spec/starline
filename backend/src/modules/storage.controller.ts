@@ -36,16 +36,16 @@ export class StorageController {
     };
   }
 
-  @Get("public/:bucket/*")
+  @Get("public/:bucket/:filePath(*)")
   getFile(@Param("bucket") bucket: string, @Req() req: Request, @Res() res: Response) {
-    const filename = String(req.params[0] || "");
+    const filename = String((req.params as Record<string, string>).filePath || "");
     const finalPath = path.join(storageRoot, bucket, filename);
     return res.sendFile(finalPath);
   }
 
-  @Delete(":bucket/*")
+  @Delete(":bucket/:filePath(*)")
   remove(@Param("bucket") bucket: string, @Req() req: Request) {
-    const filename = String(req.params[0] || "");
+    const filename = String((req.params as Record<string, string>).filePath || "");
     const finalPath = path.join(storageRoot, bucket, filename);
     if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
     return { data: true, error: null };
