@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogIn, Shield, User, Loader2 } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { backend } from "@/lib/backendClient";
 import starlineLogo from "@/assets/starline-logo.png";
 
 const loginSchema = z.object({
@@ -13,11 +12,8 @@ const loginSchema = z.object({
   password: z.string().min(6, "Min 6 characters").max(128),
 });
 
-type LoginType = "customer" | "admin";
-
 const Auth = () => {
   const { user, role, loading: authLoading, signIn } = useAuth();
-  const [loginType, setLoginType] = useState<LoginType>("customer");
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -61,40 +57,7 @@ const Auth = () => {
       toast.error(error.message);
       return;
     }
-
-    // Successful sign-in: check role against selected login type
-    try {
-      const {
-        data: { user: authedUser },
-      } = await backend.auth.getUser();
-
-      if (authedUser) {
-        const { data, error: roleError } = await backend
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", authedUser.id);
-
-        if (roleError) {
-          throw roleError;
-        }
-
-        const roles = (data ?? []).map((r) => (r as { role: string }).role);
-        const effectiveRole: "admin" | "customer" =
-          (roles.includes("admin") ? "admin" : roles.includes("customer") ? "customer" : "customer");
-
-        if (loginType === "admin" && effectiveRole !== "admin") {
-          // Customer trying to use Admin portal: keep them as customer
-          toast.error("This account does not have admin access. Opening your customer dashboard instead.");
-          setLoginType("customer");
-        } else if (loginType === "customer" && effectiveRole === "admin") {
-          // Admin trying to use Customer portal: nudge them to Admin
-          toast.error("This is an admin account. Switched to the Admin portal.");
-          setLoginType("admin");
-        }
-      }
-    } catch {
-      // If role lookup fails, fall back to normal redirect behavior.
-    }
+    // On success, useAuth resolves the role and the redirect above handles routing.
   };
 
   const inputClass = (field: string) =>
@@ -109,7 +72,6 @@ const Auth = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo & Brand */}
         <div className="text-center mb-8 flex flex-col items-center gap-3">
           <img src={starlineLogo} alt="Starline Builder's Ltd." className="w-24 h-24 rounded-2xl object-contain shadow-lg" />
           <div>
@@ -123,38 +85,10 @@ const Auth = () => {
         </div>
 
         <div className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-lg">
-          <h2 className="text-lg font-semibold text-foreground text-center mb-2">Welcome Back</h2>
-          <p className="text-xs text-muted-foreground text-center mb-5">
-            Choose your portal. We’ll redirect you after sign in.
+          <h2 className="text-lg font-semibold text-foreground text-center mb-2">Sign In</h2>
+          <p className="text-xs text-muted-foreground text-center mb-6">
+            We'll take you to the right portal based on your account.
           </p>
-
-          {/* Login type toggle */}
-          <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => setLoginType("customer")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                loginType === "customer"
-                  ? "bg-gold-gradient text-accent-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <User size={16} />
-              Customer
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginType("admin")}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                loginType === "admin"
-                  ? "bg-gold-gradient text-accent-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Shield size={16} />
-              Admin
-            </button>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -185,7 +119,7 @@ const Auth = () => {
               className="w-full bg-gold-gradient text-accent-foreground py-3 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-              Sign In as {loginType === "admin" ? "Admin" : "Customer"}
+              Sign In
             </button>
           </form>
         </div>
