@@ -39,7 +39,7 @@ class QueryBuilder implements PromiseLike<{ data: any; error: { message: string 
 
   constructor(private readonly table: string) {}
 
-  select() {
+  select(..._args: any[]) {
     this.action = "select";
     return this;
   }
