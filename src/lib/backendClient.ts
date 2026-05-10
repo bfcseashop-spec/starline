@@ -28,7 +28,7 @@ async function parseJsonBody(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-class QueryBuilder implements PromiseLike<{ data?: unknown; error?: { message: string } | null }> {
+class QueryBuilder implements PromiseLike<{ data: any; error: { message: string } | null }> {
   private filters: Record<string, any> = {};
   private action: QueryAction = "select";
   private payload: any = null;
