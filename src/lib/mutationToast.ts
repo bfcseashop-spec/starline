@@ -8,7 +8,7 @@ const getErrorMessage = (error: ApiError): string => error?.message ?? "Somethin
  * Run an API-backed mutation (insert/update/delete) and show success or error toast.
  */
 export async function withMutationToast<T>(
-  operation: () => Promise<{ error: ApiError; data?: T }>,
+  operation: () => PromiseLike<{ error: ApiError; data?: T }>,
   options: { successMessage?: string; errorMessage?: string } = {}
 ): Promise<boolean> {
   const { error } = await operation();
@@ -26,7 +26,7 @@ export async function withMutationToast<T>(
  * Same as mutation toast helper but only surfaces failures.
  */
 export async function withErrorToast<T>(
-  operation: () => Promise<{ error: ApiError; data?: T }>,
+  operation: () => PromiseLike<{ error: ApiError; data?: T }>,
   errorMessage?: string
 ): Promise<boolean> {
   const result = await operation();

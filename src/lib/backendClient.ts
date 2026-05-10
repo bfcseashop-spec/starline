@@ -28,7 +28,7 @@ async function parseJsonBody(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
-class QueryBuilder implements PromiseLike<{ data?: unknown; error?: { message: string } | null }> {
+class QueryBuilder implements PromiseLike<{ data: any; error: { message: string } | null }> {
   private filters: Record<string, any> = {};
   private action: QueryAction = "select";
   private payload: any = null;
@@ -39,7 +39,7 @@ class QueryBuilder implements PromiseLike<{ data?: unknown; error?: { message: s
 
   constructor(private readonly table: string) {}
 
-  select() {
+  select(..._args: any[]) {
     this.action = "select";
     return this;
   }
@@ -91,6 +91,14 @@ class QueryBuilder implements PromiseLike<{ data?: unknown; error?: { message: s
   order(key: string, opts?: { ascending?: boolean }) {
     this.orderBy = key;
     this.ascending = opts?.ascending !== false;
+    return this;
+  }
+
+  limit(_n: number) {
+    return this;
+  }
+
+  range(_from: number, _to: number) {
     return this;
   }
 
@@ -233,8 +241,11 @@ class QueryBuilder implements PromiseLike<{ data?: unknown; error?: { message: s
     return { data: out.data, error: null };
   }
 
-  then(resolve: any, reject: any) {
-    return this.execute().then(resolve, reject);
+  then<TResult1 = { data: any; error: { message: string } | null }, TResult2 = never>(
+    onfulfilled?: ((value: { data: any; error: { message: string } | null }) => TResult1 | PromiseLike<TResult1>) | undefined | null,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null,
+  ): Promise<TResult1 | TResult2> {
+    return this.execute().then(onfulfilled, onrejected);
   }
 }
 
@@ -242,7 +253,7 @@ const authListeners = new Set<(event: string, session: SessionPayload | null) =>
 
 export type SessionPayload = {
   access_token: string;
-  user: { id: string; email: string };
+  user: { id: string; email: string; user_metadata?: Record<string, any> };
   expires_in?: number;
   token_type?: string;
 };
@@ -412,7 +423,7 @@ export const backend = {
 
   functions: {
     /** @deprecated Prefer naming this "invoke" only; kept for compatibility with older call sites. */
-    async invoke(name: string, opts: { body?: Record<string, unknown> } = {}) {
+    async invoke(name: string, opts: { body?: Record<string, unknown> } = {}): Promise<{ data: any; error: { message: string } | null }> {
       const token = localStorage.getItem(BACKEND_AUTH_TOKEN_KEY) || "";
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
@@ -421,17 +432,17 @@ export const backend = {
         headers,
         body: JSON.stringify(opts.body ?? {}),
       });
-      let out: { data?: unknown; error?: string | null; message?: string } = {};
+      let out: { data?: any; error?: any; message?: string } = {};
       try {
         out = await res.json();
       } catch {
-        return { data: null, error: res.ok ? "Invalid response" : res.statusText || `Request failed (${res.status})` };
+        return { data: null, error: { message: res.ok ? "Invalid response" : res.statusText || `Request failed (${res.status})` } };
       }
-      const err =
-        (out.error !== undefined && out.error !== null ? String(out.error) : null) ||
+      const errMsg =
+        (out.error !== undefined && out.error !== null && typeof out.error !== "object" ? String(out.error) : null) ||
         (typeof out.message === "string" ? out.message : null) ||
         (!res.ok ? `Request failed (${res.status})` : null);
-      return { data: out.data ?? null, error: err };
+      return { data: out.data ?? null, error: errMsg ? { message: errMsg } : null };
     },
   },
 };

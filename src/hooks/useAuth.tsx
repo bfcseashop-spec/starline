@@ -6,7 +6,7 @@ type Session = {
   user: { id: string; email: string };
 };
 
-type User = { id: string; email: string };
+type User = { id: string; email: string; user_metadata?: Record<string, any> };
 
 type AppRole = "admin" | "customer";
 
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
