@@ -6,7 +6,7 @@ type Session = {
   user: { id: string; email: string };
 };
 
-type User = { id: string; email: string };
+type User = { id: string; email: string; user_metadata?: Record<string, any> };
 
 type AppRole = "admin" | "customer";
 
