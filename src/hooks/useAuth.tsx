@@ -1,18 +1,12 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { backend } from "@/lib/backendClient";
-
-type Session = {
-  access_token: string;
-  user: { id: string; email: string };
-};
-
-type User = { id: string; email: string; user_metadata?: Record<string, any> };
+import { supabase } from "@/integrations/supabase/client";
+import type { Session as SBSession, User as SBUser } from "@supabase/supabase-js";
 
 type AppRole = "admin" | "customer";
 
 interface AuthContextType {
-  session: Session | null;
-  user: User | null;
+  session: SBSession | null;
+  user: SBUser | null;
   role: AppRole | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
@@ -23,13 +17,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<SBSession | null>(null);
+  const [user, setUser] = useState<SBUser | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchRole = async (userId: string) => {
-    const { data, error } = await backend
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
@@ -40,34 +34,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const roles = (data ?? []).map((r) => (r as { role: string }).role);
-    if (roles.includes("admin")) {
-      setRole("admin");
-    } else if (roles.includes("customer")) {
-      setRole("customer");
-    } else {
-      setRole("customer");
-    }
+    const roles = (data ?? []).map((r: any) => r.role as string);
+    if (roles.includes("admin")) setRole("admin");
+    else setRole("customer");
   };
 
   useEffect(() => {
-    const { data: { subscription } } = backend.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => fetchRole(session.user.id), 0);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      if (sess?.user) {
+        setTimeout(() => fetchRole(sess.user.id), 0);
       } else {
         setRole(null);
       }
       setLoading(false);
     });
 
-    backend.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRole(session.user.id);
-      }
+    supabase.auth.getSession().then(({ data: { session: sess } }) => {
+      setSession(sess);
+      setUser(sess?.user ?? null);
+      if (sess?.user) fetchRole(sess.user.id);
       setLoading(false);
     });
 
@@ -75,21 +62,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await backend.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName }, emailRedirectTo: window.location.origin },
+      options: { data: { full_name: fullName }, emailRedirectTo: `${window.location.origin}/` },
     });
     return { error: error as Error | null };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await backend.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
-    await backend.auth.signOut();
+    await supabase.auth.signOut();
   };
 
   return (
