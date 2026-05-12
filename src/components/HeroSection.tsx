@@ -64,7 +64,7 @@ const HeroSection = ({
           className="absolute inset-0"
           style={{
             background: hasSlides
-              ? `linear-gradient(to right, ${overlayColor}e6, ${overlayColor}b3, ${overlayColor}66)`
+              ? `linear-gradient(to top, ${overlayColor}b3 0%, ${overlayColor}40 45%, transparent 100%)`
               : "linear-gradient(135deg, #020817 0%, #0a1633 45%, #10224a 100%)",
             opacity: overlayOpacity / 100,
           }}
