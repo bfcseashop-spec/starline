@@ -46,7 +46,7 @@ const HeroSection = ({
   }, [currentSlide, slides.length]);
 
   return (
-    <section className="relative flex items-center overflow-hidden" style={{ minHeight }}>
+    <section className="relative flex items-center overflow-hidden" style={{ minHeight, height: minHeight }}>
       {/* Background */}
       <div className="absolute inset-0">
         {hasSlides &&
