@@ -16,8 +16,8 @@ const HeroSection = ({
   heroSlideUrls,
   bannerImageUrl,
   overlayColor = "#1a1a2e",
-  overlayOpacity = 70,
-  minHeight = "60vh",
+  overlayOpacity = 35,
+  minHeight = "85vh",
 }: Props) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -46,7 +46,7 @@ const HeroSection = ({
   }, [currentSlide, slides.length]);
 
   return (
-    <section className="relative flex items-center overflow-hidden" style={{ minHeight }}>
+    <section className="relative flex items-center overflow-hidden" style={{ minHeight, height: minHeight }}>
       {/* Background */}
       <div className="absolute inset-0">
         {hasSlides &&
@@ -64,7 +64,7 @@ const HeroSection = ({
           className="absolute inset-0"
           style={{
             background: hasSlides
-              ? `linear-gradient(to right, ${overlayColor}e6, ${overlayColor}b3, ${overlayColor}66)`
+              ? `linear-gradient(to top, ${overlayColor}b3 0%, ${overlayColor}40 45%, transparent 100%)`
               : "linear-gradient(135deg, #020817 0%, #0a1633 45%, #10224a 100%)",
             opacity: overlayOpacity / 100,
           }}
