@@ -16,8 +16,8 @@ const HeroSection = ({
   heroSlideUrls,
   bannerImageUrl,
   overlayColor = "#1a1a2e",
-  overlayOpacity = 70,
-  minHeight = "60vh",
+  overlayOpacity = 35,
+  minHeight = "85vh",
 }: Props) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
