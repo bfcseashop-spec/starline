@@ -49,13 +49,16 @@ const Index = () => {
         />
         <PropertySummary />
         {(system as any).show_search !== false && <PropertySearch onFilter={setFilters} />}
+        <AboutSection />
         {system.show_featured && <FeaturedProperties filters={filters} />}
         {system.show_stats && <StatsSection items={statsItems} />}
         <OurProcess />
         <ComingSoon projects={comingSoon} />
         {(system as any).show_why_us !== false && <WhyStarline reasons={whyUsReasons} />}
+        <GallerySection />
         <Testimonials />
         <FAQ />
+        <ContactSection phone={company.phone} email={company.email} address={company.address} />
         <CTABanner />
       </main>
       <Footer company={company} social={social} content={footerContent} />
