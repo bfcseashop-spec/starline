@@ -162,24 +162,29 @@ export const useSiteSettings = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data } = await backend.from("site_settings").select("setting_key, setting_value");
-      if (data) {
-        data.forEach((r: any) => {
-          if (r.setting_key === "system") setSystem({ ...DEFAULT_SYSTEM, ...r.setting_value });
-          if (r.setting_key === "company_info") setCompany({ ...DEFAULT_COMPANY, ...r.setting_value });
-          if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
-          if (r.setting_key === "social_platforms") setSocialPlatforms(r.setting_value || {});
-          if (r.setting_key === "header_config") setHeaderConfig({ ...DEFAULT_HEADER, ...r.setting_value });
-          if (r.setting_key === "coming_soon") setComingSoon(r.setting_value?.items || []);
-          if (r.setting_key === "why_us_reasons") setWhyUsReasons(r.setting_value?.items || []);
-          if (r.setting_key === "stats_items") setStatsItems(r.setting_value?.items || []);
-          if (r.setting_key === "footer_content") setFooterContent(r.setting_value || { description: "", copyright: "", quick_links: "" });
-        });
+    const fetchSettings = async () => {
+      try {
+        const { data } = await supabase.from("site_settings").select("setting_key, setting_value");
+        if (data) {
+          data.forEach((r: any) => {
+            if (r.setting_key === "system") setSystem({ ...DEFAULT_SYSTEM, ...r.setting_value });
+            if (r.setting_key === "company_info") setCompany({ ...DEFAULT_COMPANY, ...r.setting_value });
+            if (r.setting_key === "social_links") setSocial({ ...DEFAULT_SOCIAL, ...r.setting_value });
+            if (r.setting_key === "social_platforms") setSocialPlatforms(r.setting_value || {});
+            if (r.setting_key === "header_config") setHeaderConfig({ ...DEFAULT_HEADER, ...r.setting_value });
+            if (r.setting_key === "coming_soon") setComingSoon(r.setting_value?.items || []);
+            if (r.setting_key === "why_us_reasons") setWhyUsReasons(r.setting_value?.items || []);
+            if (r.setting_key === "stats_items") setStatsItems(r.setting_value?.items || []);
+            if (r.setting_key === "footer_content") setFooterContent(r.setting_value || { description: "", copyright: "", quick_links: "" });
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load site settings", e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetch();
+    fetchSettings();
   }, []);
 
   return { system, company, social, socialPlatforms, headerConfig, comingSoon, whyUsReasons, statsItems, footerContent, loading };
