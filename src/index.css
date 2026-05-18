@@ -15,40 +15,40 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 30% 12%;
 
-    --primary: 222 47% 18%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 160 84% 16%;
+    --primary-foreground: 45 53% 95%;
 
-    --secondary: 210 16% 93%;
-    --secondary-foreground: 222 30% 12%;
+    --secondary: 45 40% 94%;
+    --secondary-foreground: 160 84% 16%;
 
-    --muted: 210 16% 93%;
-    --muted-foreground: 215 14% 45%;
+    --muted: 45 25% 93%;
+    --muted-foreground: 160 18% 32%;
 
-    --accent: 38 92% 55%;
-    --accent-foreground: 222 47% 18%;
+    --accent: 45 55% 54%;
+    --accent-foreground: 160 84% 14%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 214 18% 90%;
-    --input: 214 18% 90%;
-    --ring: 38 92% 55%;
+    --border: 45 20% 86%;
+    --input: 45 20% 86%;
+    --ring: 45 55% 54%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 222 47% 18%;
-    --sidebar-foreground: 210 16% 93%;
-    --sidebar-primary: 38 92% 55%;
-    --sidebar-primary-foreground: 222 47% 18%;
-    --sidebar-accent: 222 35% 26%;
-    --sidebar-accent-foreground: 210 16% 93%;
-    --sidebar-border: 222 35% 26%;
-    --sidebar-ring: 38 92% 55%;
+    --sidebar-background: 160 84% 14%;
+    --sidebar-foreground: 45 53% 92%;
+    --sidebar-primary: 45 55% 54%;
+    --sidebar-primary-foreground: 160 84% 14%;
+    --sidebar-accent: 162 60% 22%;
+    --sidebar-accent-foreground: 45 53% 92%;
+    --sidebar-border: 162 60% 22%;
+    --sidebar-ring: 45 55% 54%;
 
-    --gold: 38 92% 55%;
-    --gold-light: 40 70% 72%;
-    --navy: 222 47% 18%;
-    --navy-light: 222 30% 28%;
+    --gold: 45 55% 54%;
+    --gold-light: 45 70% 72%;
+    --navy: 160 84% 16%;
+    --navy-light: 162 60% 26%;
 
     /* Dashboard accent colors */
     --dash-blue: 217 91% 60%;
@@ -58,8 +58,8 @@
     --dash-pink: 340 82% 62%;
     --dash-teal: 174 72% 46%;
 
-    --font-heading: 'Spectral', serif;
-    --font-body: 'DM Sans', sans-serif;
+    --font-heading: 'Libre Baskerville', serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
   }
 
   .dark {
