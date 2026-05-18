@@ -17,6 +17,8 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const ProjectsUpcoming = lazy(() => import("./pages/ProjectsUpcoming"));
 const ProjectsOngoing = lazy(() => import("./pages/ProjectsOngoing"));
 const ProjectsHandover = lazy(() => import("./pages/ProjectsHandover"));
+const ProjectsList = lazy(() => import("./pages/ProjectsList"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
