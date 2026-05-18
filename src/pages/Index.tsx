@@ -7,6 +7,10 @@ import FeaturedProperties from "@/components/FeaturedProperties";
 import StatsSection from "@/components/StatsSection";
 import ComingSoon from "@/components/ComingSoon";
 import WhyStarline from "@/components/WhyStarline";
+import OurProcess from "@/components/OurProcess";
+import Testimonials from "@/components/Testimonials";
+import FAQ from "@/components/FAQ";
+import CTABanner from "@/components/CTABanner";
 import Footer from "@/components/Footer";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -44,8 +48,12 @@ const Index = () => {
         {(system as any).show_search !== false && <PropertySearch onFilter={setFilters} />}
         {system.show_featured && <FeaturedProperties filters={filters} />}
         {system.show_stats && <StatsSection items={statsItems} />}
+        <OurProcess />
         <ComingSoon projects={comingSoon} />
         {(system as any).show_why_us !== false && <WhyStarline reasons={whyUsReasons} />}
+        <Testimonials />
+        <FAQ />
+        <CTABanner />
       </main>
       <Footer company={company} social={social} content={footerContent} />
     </div>
