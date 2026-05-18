@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string
+          phone: string | null
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       contributions: {
         Row: {
           amount: number
@@ -498,6 +531,175 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      project_inquiries: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string | null
+          name: string
+          phone: string
+          project_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          phone: string
+          project_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          project_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_inquiries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          media_type: string
+          project_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_type?: string
+          project_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          media_type?: string
+          project_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_media_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          amenities: Json | null
+          brochure_url: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          down_payment: number | null
+          featured: boolean
+          floor_plan_url: string | null
+          handover_date: string | null
+          id: string
+          installment_months: number | null
+          location: string | null
+          map_embed: string | null
+          monthly_installment: number | null
+          name: string
+          plots_count: number | null
+          price_max: number | null
+          price_min: number | null
+          short_description: string | null
+          size_max: number | null
+          size_min: number | null
+          slug: string
+          sort_order: number
+          status: string
+          unit_type: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          amenities?: Json | null
+          brochure_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          down_payment?: number | null
+          featured?: boolean
+          floor_plan_url?: string | null
+          handover_date?: string | null
+          id?: string
+          installment_months?: number | null
+          location?: string | null
+          map_embed?: string | null
+          monthly_installment?: number | null
+          name: string
+          plots_count?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          short_description?: string | null
+          size_max?: number | null
+          size_min?: number | null
+          slug: string
+          sort_order?: number
+          status?: string
+          unit_type?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          amenities?: Json | null
+          brochure_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          down_payment?: number | null
+          featured?: boolean
+          floor_plan_url?: string | null
+          handover_date?: string | null
+          id?: string
+          installment_months?: number | null
+          location?: string | null
+          map_embed?: string | null
+          monthly_installment?: number | null
+          name?: string
+          plots_count?: number | null
+          price_max?: number | null
+          price_min?: number | null
+          short_description?: string | null
+          size_max?: number | null
+          size_min?: number | null
+          slug?: string
+          sort_order?: number
+          status?: string
+          unit_type?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: []
       }
       site_settings: {
         Row: {
