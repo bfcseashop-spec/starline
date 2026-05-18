@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { backend } from "@/lib/backendClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SystemSettings {
   banner_title: string;
