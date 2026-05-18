@@ -17,6 +17,8 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const ProjectsUpcoming = lazy(() => import("./pages/ProjectsUpcoming"));
 const ProjectsOngoing = lazy(() => import("./pages/ProjectsOngoing"));
 const ProjectsHandover = lazy(() => import("./pages/ProjectsHandover"));
+const ProjectsList = lazy(() => import("./pages/ProjectsList"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -57,9 +59,11 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="/projects" element={<ProjectsList />} />
               <Route path="/projects/upcoming" element={<ProjectsUpcoming />} />
               <Route path="/projects/ongoing" element={<ProjectsOngoing />} />
               <Route path="/projects/handover" element={<ProjectsHandover />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/properties/upcoming" element={<ProjectsUpcoming />} />
               <Route path="/properties/ongoing" element={<ProjectsOngoing />} />
               <Route path="/properties/handover" element={<ProjectsHandover />} />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getDefaultHeroSlides } from "@/lib/defaultHeroSlides";
 
 interface Props {
@@ -74,6 +75,36 @@ const HeroSection = ({
       {/* Decorative shapes */}
       <div className="absolute top-20 right-10 w-72 h-72 bg-gold/10 rounded-full blur-3xl" />
       <div className="absolute bottom-20 left-10 w-96 h-96 bg-gold/5 rounded-full blur-3xl" />
+
+      {/* Tagline + CTAs */}
+      <div className="relative z-10 container">
+        <div className="max-w-3xl animate-fade-in">
+          <span className="inline-block text-accent uppercase tracking-[0.3em] text-xs md:text-sm font-semibold mb-4 px-3 py-1 rounded-full bg-white/10 backdrop-blur-sm border border-white/15">
+            Trusted Since 2010 · Dhaka
+          </span>
+          <h1 className="text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+            Crafting homes that <span className="text-gradient-gold">stand the test of time.</span>
+          </h1>
+          <p className="mt-5 text-base md:text-lg text-white/85 max-w-2xl leading-relaxed">
+            Premium residential developments across Dhaka — built with verified land, in-house engineering and a relationship that lasts well beyond handover.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              to="/projects"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-accent-foreground font-semibold hover:opacity-90 transition shadow-lg shadow-accent/20"
+            >
+              Explore Projects <ArrowRight size={18} />
+            </Link>
+            <a
+              href="#contact"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold hover:bg-white/15 transition"
+            >
+              <Phone size={16} /> Contact Us
+            </a>
+          </div>
+        </div>
+      </div>
+
 
       {slides.length > 1 && (
         <>
