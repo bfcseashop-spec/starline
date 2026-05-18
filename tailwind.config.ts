@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Spectral', 'serif'],
-        body: ['DM Sans', 'sans-serif'],
+        heading: ['Libre Baskerville', 'serif'],
+        body: ['IBM Plex Sans', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
