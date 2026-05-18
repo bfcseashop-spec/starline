@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, Phone } from "lucide-react";
+import { Link } from "react-router-dom";
 import { getDefaultHeroSlides } from "@/lib/defaultHeroSlides";
 
 interface Props {
